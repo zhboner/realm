@@ -1,12 +1,10 @@
 use std::thread;
 // use std::io::Read;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
-use std::net::{TcpListener, TcpStream, Shutdown};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use structopt::StructOpt;
 
 mod relay;
-
-
 
 /// Search for a pattern in a file and display the lines that contain it.
 #[derive(StructOpt)]
@@ -19,8 +17,6 @@ struct Cli {
     #[structopt(short = "r", long = "remote")]
     remote: String,
 }
-
-
 
 fn main() {
     let cli = Cli::from_args();
