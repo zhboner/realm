@@ -1,16 +1,11 @@
-use std::io::prelude::*;
-use std::net::SocketAddr;
-// use std::net::{Shutdown, TcpListener, TcpStream};
 use std::error::Error;
+use std::net::SocketAddr;
 
-use std::net::Shutdown;
+use futures::future::try_join;
+use futures::FutureExt;
 use tokio;
 use tokio::io;
 use tokio::net;
-use futures::future::try_join;
-use futures::FutureExt;
-
-const BUFFER_SIZE: usize = 1024 * 2;
 
 pub async fn start(
     client_socket: SocketAddr,
@@ -22,7 +17,7 @@ pub async fn start(
     while let Ok((inbound, _)) = listener.accept().await {
         let transfer = transfer(inbound, remote_socket.clone()).map(|r| {
             if let Err(_) = r {
-                return
+                return;
             }
         });
         tokio::spawn(transfer);
@@ -30,7 +25,10 @@ pub async fn start(
     Ok(())
 }
 
-async fn transfer(mut inbound: net::TcpStream, remote_socket: SocketAddr) -> Result<(), Box<dyn Error>> {
+async fn transfer(
+    mut inbound: net::TcpStream,
+    remote_socket: SocketAddr,
+) -> Result<(), Box<dyn Error>> {
     let mut outbound = net::TcpStream::connect(remote_socket).await?;
     let (mut ri, mut wi) = inbound.split();
     let (mut ro, mut wo) = outbound.split();

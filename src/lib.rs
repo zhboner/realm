@@ -12,7 +12,6 @@ pub struct Cli {
     pub remote: String,
 }
 
-
 pub fn parse_arguments() -> Cli {
     return Cli::from_args();
 }
