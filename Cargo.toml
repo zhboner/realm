@@ -7,5 +7,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# pnet = "0.26.0"
+tokio = { version = "0.2", features = ["full"] }
+futures = "0.3"
 structopt = "0.3.14"

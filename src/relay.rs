@@ -1,118 +1,44 @@
 use std::io::prelude::*;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
-use std::net::{Shutdown, TcpListener, TcpStream};
-use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
+use std::net::SocketAddr;
+// use std::net::{Shutdown, TcpListener, TcpStream};
+use std::error::Error;
+
+use std::net::Shutdown;
+use tokio;
+use tokio::io;
+use tokio::net;
+use futures::future::try_join;
+use futures::FutureExt;
 
 const BUFFER_SIZE: usize = 1024 * 2;
 
-pub fn start(client_socket: SocketAddr, remote_socket: SocketAddr) {
-    let listener = TcpListener::bind(client_socket).unwrap_or_else(|err| {
-        println!("Failed to start listener.");
-        panic!(err);
-    });
+pub async fn start(
+    client_socket: SocketAddr,
+    remote_socket: SocketAddr,
+) -> Result<(), Box<dyn Error>> {
+    let mut listener = net::TcpListener::bind(&client_socket).await?;
+    println!("Listening on: {}", client_socket);
 
-    for stream in listener.incoming() {
-        match stream {
-            Err(e) => println!("Error: {}", e),
-            Ok(stream) => {
-                thread::spawn(move || handle_client(stream, remote_socket));
+    while let Ok((inbound, _)) = listener.accept().await {
+        let transfer = transfer(inbound, remote_socket.clone()).map(|r| {
+            if let Err(_) = r {
+                return
             }
-        }
+        });
+        tokio::spawn(transfer);
     }
+    Ok(())
 }
 
-fn handle_client(mut stream: TcpStream, remote_socket: SocketAddr) {
-    let (forward_tx, forward_rx) = mpsc::channel();
-    let (backward_tx, backward_rx) = mpsc::channel();
+async fn transfer(mut inbound: net::TcpStream, remote_socket: SocketAddr) -> Result<(), Box<dyn Error>> {
+    let mut outbound = net::TcpStream::connect(remote_socket).await?;
+    let (mut ri, mut wi) = inbound.split();
+    let (mut ro, mut wo) = outbound.split();
 
-    let mut cl_stream = stream;
-    let mut lc_stream = cl_stream
-        .try_clone()
-        .expect("Failed to clone client stream");
+    let client_to_server = io::copy(&mut ri, &mut wo);
+    let server_to_client = io::copy(&mut ro, &mut wi);
 
-    let mut lr_stream =
-        TcpStream::connect(remote_socket).expect("Failed to connect to remote host");
-    let mut rl_stream = lr_stream
-        .try_clone()
-        .expect("Failed to clone remote stream");
+    try_join(client_to_server, server_to_client).await?;
 
-    thread::spawn(move || {
-        // client -> local
-        let mut data = [0 as u8; BUFFER_SIZE]; // using 2048 byte buffer
-        loop {
-            match cl_stream.read(&mut data) {
-                Ok(size) => {
-                    if let Err(_) = forward_tx.send((data, size)) {
-                        break;
-                    }
-                    if size == 0 {
-                        break;
-                    }
-                }
-                Err(e) => {
-                    forward_tx.send((data, 0)).unwrap();
-                    break;
-                }
-            }
-        }
-        cl_stream.shutdown(Shutdown::Read);
-    });
-
-    thread::spawn(move || {
-        // local -> remote
-        loop {
-            if let Ok((mut data, size)) = forward_rx.recv() {
-                if size == 0 {
-                    break;
-                }
-                if let Err(_) = lr_stream.write(&mut data[..size]) {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        lr_stream.shutdown(Shutdown::Write);
-        return;
-    });
-
-    thread::spawn(move || {
-        // remote -> local
-        let mut data = [0 as u8; BUFFER_SIZE];
-        loop {
-            match rl_stream.read(&mut data) {
-                Ok(size) => {
-                    if let Err(_) = backward_tx.send((data, size)) {
-                        break;
-                    }
-                    if size == 0 {
-                        break;
-                    }
-                }
-                Err(e) => {
-                    backward_tx.send((data, 0)).unwrap();
-                    break;
-                }
-            }
-        }
-        rl_stream.shutdown(Shutdown::Read);
-    });
-
-    // local -> client
-    loop {
-        if let Ok((mut data, size)) = backward_rx.recv() {
-            if size == 0 {
-                break;
-            }
-            if let Err(_) = lc_stream.write(&mut data[..size]) {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    lc_stream.shutdown(Shutdown::Write);
-    return;
+    Ok(())
 }
