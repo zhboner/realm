@@ -1,4 +1,7 @@
-on: [push]
+on: 
+  push:
+    branches:    
+          - master
 
 name: build
 
@@ -16,14 +19,14 @@ jobs:
           override: true
           components: rustfmt, clippy
 
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-
       - name: Run cargo build
         uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: realm
+          path: target/release/realm
           
