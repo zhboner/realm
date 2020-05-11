@@ -23,5 +23,7 @@ jobs:
 
       - name: Run cargo build
         uses: actions-rs/cargo@v1
-        run:
-          cargo build --release
+        with:
+          command: build
+          args: --release
+          
