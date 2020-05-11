@@ -1,0 +1,27 @@
+on: [push]
+
+name: build
+
+jobs:
+  check:
+    name: Rust project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install latest stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build --release
