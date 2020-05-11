@@ -1,20 +1,41 @@
 use std::error::Error;
-use std::net::SocketAddr;
-
+use std::net::{SocketAddr};
+use std::sync::mpsc;
+use std::thread;
 use futures::future::try_join;
 use futures::FutureExt;
 use tokio;
 use tokio::io;
 use tokio::net;
 
-pub async fn start(
-    client_socket: SocketAddr,
-    remote_socket: SocketAddr,
+use realm::Relay_config;
+use crate::resolver;
+
+
+pub async fn start_relay(config: Relay_config) {
+    let (send, recv) = mpsc::channel::<std::net::IpAddr>();
+    let remote_addr = config.remote_address.clone();
+    thread::spawn(move || resolver::dns_resolve(remote_addr, send));
+    // let ip = recv.recv().unwrap();
+    run(config, recv).await;
+}
+
+pub async fn run(
+    config: Relay_config,
+    recv: mpsc::Receiver::<std::net::IpAddr>
 ) -> Result<(), Box<dyn Error>> {
+    let client_socket: SocketAddr = format!("{}:{}", config.listening_address, config.listening_port).parse().unwrap();
     let mut listener = net::TcpListener::bind(&client_socket).await?;
+
+    let mut remote_ip = recv.recv().unwrap();
+    let mut remote_socket: SocketAddr = format!("{}:{}", remote_ip, config.remote_port).parse().unwrap();
     println!("Listening on: {}", client_socket);
 
     while let Ok((inbound, _)) = listener.accept().await {
+        if let Ok(new_ip) = recv.try_recv() {
+            remote_ip = new_ip;
+            remote_socket = format!("{}:{}", remote_ip, config.remote_port).parse().unwrap();
+        }
         let transfer = transfer(inbound, remote_socket.clone()).map(|r| {
             if let Err(_) = r {
                 return;

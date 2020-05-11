@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "0.2", features = ["full"] }
+trust-dns-resolver = "*"
 futures = "0.3"
 structopt = "0.3.14"
