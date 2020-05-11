@@ -3,7 +3,7 @@ on:
     branches:    
           - master
 
-name: build
+name: realm
 
 jobs:
   check:
