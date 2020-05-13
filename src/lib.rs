@@ -21,7 +21,7 @@ pub struct RelayConfig {
 impl Default for RelayConfig {
     fn default() -> RelayConfig {
         RelayConfig {
-            listening_address: String::from("127.0.0.1"),
+            listening_address: String::from("0.0.0.0"),
             listening_port: String::from("1080"),
             remote_address: String::from("127.0.0.1"),
             remote_port: String::from("8080"),
@@ -47,7 +47,7 @@ pub fn parse_arguments() -> RelayConfig {
 
     RelayConfig {
         listening_address: if listening_address == "" {
-            String::from("127.0.0.1")
+            String::from("0.0.0.0")
         } else {
             listening_address
         },
