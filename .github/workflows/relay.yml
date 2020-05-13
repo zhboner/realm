@@ -8,7 +8,7 @@ name: realm
 jobs:
   check:
     name: Rust project
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -16,18 +16,12 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: x86_64-unknown-linux-musl
           override: true
           components: rustfmt, clippy
 
       - name: Run cargo build
         uses: actions-rs/cargo@v1
         with:
-          command: build
-          args: --release --target x86_64-unknown-linux-musl
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: realm
-          path: target/release/realm
+          command: check
+ 
           
