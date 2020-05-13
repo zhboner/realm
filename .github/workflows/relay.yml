@@ -16,12 +16,19 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: x86_64-unknown-linux-musl
           override: true
           components: rustfmt, clippy
 
       - name: Run cargo build
         uses: actions-rs/cargo@v1
         with:
-          command: check
- 
+          use-cross: true
+          command: build
+          args: --release --target x86_64-unknown-linux-musl
+          
+      - uses: actions/upload-artifact@v2
+        with:
+          name: realm
+          path: target/release/realm 
           
