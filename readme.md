@@ -16,7 +16,7 @@ realm is a simple, high performance relay server written in rust.
 ## Usage
 This executable takes 2 arguments:
 - -l [--local] local socket address. Default address 127.0.0.1 is used when the address is omitted.
-- -r [--remote] remote socker address. Both domain and ip address are accepted. If a domain is passed, the resolver will try to resolve and update the ip address regularly, ipv4 is preferred.
+- -r [--remote] remote socket address. Both domain and ip address are accepted. If a domain is passed, the resolver will try to resolve and update the ip address regularly, ipv4 is preferred.
 
 An example to listen on port 30000 and forwarding traffic to example.com:12345 is as follows.
 ```
