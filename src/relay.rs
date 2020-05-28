@@ -1,9 +1,10 @@
 use futures::future::try_join;
 use futures::FutureExt;
 use std::error::Error;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, IpAddr};
 use std::sync::mpsc;
 use std::thread;
+use std::sync::{RwLock, Arc};
 use tokio;
 use tokio::io;
 use tokio::net;
@@ -14,15 +15,24 @@ use realm::RelayConfig;
 // Initialize DNS recolver
 // Set up channel between listener and resolver
 pub async fn start_relay(config: RelayConfig) {
-    let (send, recv) = mpsc::channel::<std::net::IpAddr>();
     let remote_addr = config.remote_address.clone();
-    thread::spawn(move || resolver::dns_resolve(remote_addr, send));
-    run(config, recv).await.unwrap();
+    let default_ip: IpAddr = String::from("0.0.0.0").parse::<IpAddr>().unwrap();
+    let remote_ip = Arc::new(RwLock::new(default_ip.clone()));
+    let resolver_ip = remote_ip.clone();
+    thread::spawn(move || resolver::dns_resolve(remote_addr, resolver_ip));
+    
+    loop {
+        if *(remote_ip.read().unwrap()) != default_ip {
+            break
+        }
+    }
+
+    run(config, remote_ip).await.unwrap();
 }
 
 pub async fn run(
     config: RelayConfig,
-    recv: mpsc::Receiver<std::net::IpAddr>,
+    remote_ip: Arc<RwLock<IpAddr>>,
 ) -> Result<(), Box<dyn Error>> {
     let client_socket: SocketAddr =
         format!("{}:{}", config.listening_address, config.listening_port)
@@ -30,29 +40,19 @@ pub async fn run(
             .unwrap();
     let mut tcp_listener = net::TcpListener::bind(&client_socket).await?;
 
-    // Receive the resolved remote ip
-    // Detect changes of ip in the TCP loop
-    // Then send changes to UDP thread
-    let mut remote_ip = recv.recv().unwrap();
-    let mut remote_socket: SocketAddr = format!("{}:{}", remote_ip, config.remote_port)
+    let mut remote_socket: SocketAddr = format!("{}:{}", remote_ip.read().unwrap(), config.remote_port)
         .parse()
         .unwrap();
 
-    // flow resolved address to UDP thread
-    let (resolver_sender, resolver_receiver) = mpsc::channel::<SocketAddr>();
-
     // Start UDP connection
-    thread::spawn(move || udp_transfer(client_socket.clone(), remote_socket.clone(), resolver_receiver));
+    let udp_remote_ip = remote_ip.clone();
+    thread::spawn(move || udp_transfer(client_socket.clone(), remote_socket.port(), udp_remote_ip));
 
     // Start TCP connection
     while let Ok((inbound, _)) = tcp_listener.accept().await {
-        if let Ok(new_ip) = recv.try_recv() {
-            remote_ip = new_ip;
-            remote_socket = format!("{}:{}", &remote_ip, config.remote_port)
-                .parse()
-                .unwrap();
-            resolver_sender.send(remote_socket.clone()).unwrap();
-        }
+        remote_socket = format!("{}:{}", &(remote_ip.read().unwrap()), config.remote_port)
+            .parse()
+            .unwrap();
         let transfer = transfer_tcp(inbound, remote_socket.clone()).map(|r| {
             if let Err(_) = r {
                 return;
@@ -66,8 +66,7 @@ pub async fn run(
 // Two thread here
 // 1. Receive packets and justify the forward destination. Then send packets to the second thread
 // 2. Send all packets instructed by the first thread
-fn udp_transfer(local_socket: SocketAddr, remote_socket: SocketAddr, resolver_receiver: mpsc::Receiver<SocketAddr>) -> Result<(), io::Error> {
-    let mut remote_socket = remote_socket;
+fn udp_transfer(local_socket: SocketAddr, remote_port: u16, remote_ip: Arc<RwLock<IpAddr>>) -> Result<(), io::Error> {
     let sender = std::net::UdpSocket::bind(&local_socket).unwrap();
     let receiver = sender.try_clone().unwrap();
     let mut sender_vec = Vec::new();
@@ -90,9 +89,11 @@ fn udp_transfer(local_socket: SocketAddr, remote_socket: SocketAddr, resolver_re
     loop {
         let mut buf = [0u8; 2048];
         let (size, from) = receiver.recv_from(&mut buf).unwrap();
-        if let Ok(new_remote_socket) = resolver_receiver.try_recv() {
-            remote_socket = new_remote_socket;
-        }
+
+        let remote_socket: SocketAddr = format!("{}:{}", remote_ip.read().unwrap(), remote_port)
+                                            .parse()
+                                            .unwrap();
+
         match from != remote_socket {
             true => {           // forward
                 sender_vec.push(from);

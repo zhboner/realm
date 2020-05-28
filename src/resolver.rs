@@ -1,6 +1,7 @@
 use std::net;
 use std::thread::sleep;
 use std::time::Duration;
+use std::sync::{RwLock, Arc};
 use trust_dns_resolver::config::*;
 use trust_dns_resolver::Resolver;
 
@@ -8,11 +9,12 @@ fn need_resolve(addr: &str) -> bool {
     addr.parse::<net::IpAddr>().is_err()
 }
 
-pub fn dns_resolve(addr: String, sender: std::sync::mpsc::Sender<net::IpAddr>) {
+pub fn dns_resolve(addr: String, ip: Arc<RwLock::<net::IpAddr>>) {
     let mut cache = "0.0.0.0".parse::<net::IpAddr>().unwrap();
 
     if !need_resolve(&addr) {
-        sender.send(addr.parse::<net::IpAddr>().unwrap()).unwrap();
+        let mut w = ip.write().unwrap();
+        *w = addr.parse::<net::IpAddr>().unwrap();
         return;
     }
 
@@ -25,14 +27,16 @@ pub fn dns_resolve(addr: String, sender: std::sync::mpsc::Sender<net::IpAddr>) {
             Some(ip_v4) => {
                 if cache != ip_v4 {
                     cache = ip_v4;
-                    sender.send(ip_v4).unwrap();
+                    let mut w = ip.write().unwrap();
+                    *w = ip_v4;
                 }
             }
             None => {
                 if let Some(ip_v6) = res.iter().find(|ip| ip.is_ipv6()) {
                     if cache != ip_v6 {
                         cache = ip_v6;
-                        sender.send(ip_v6).unwrap();
+                        let mut w = ip.write().unwrap();
+                        *w = ip_v6;
                     }
                 } else {
                     println!("Cannot resolve {}", addr);
@@ -41,6 +45,6 @@ pub fn dns_resolve(addr: String, sender: std::sync::mpsc::Sender<net::IpAddr>) {
             }
         }
 
-        sleep(Duration::from_secs(60 * 60 * 12))
+        sleep(Duration::from_secs(60));
     }
 }
