@@ -1,10 +1,10 @@
 use futures::future::try_join;
 use futures::FutureExt;
 use std::error::Error;
-use std::net::{SocketAddr, IpAddr};
+use std::net::{IpAddr, SocketAddr};
 use std::sync::mpsc;
+use std::sync::{Arc, RwLock};
 use std::thread;
-use std::sync::{RwLock, Arc};
 use tokio;
 use tokio::io;
 use tokio::net;
@@ -20,10 +20,10 @@ pub async fn start_relay(config: RelayConfig) {
     let remote_ip = Arc::new(RwLock::new(default_ip.clone()));
     let resolver_ip = remote_ip.clone();
     thread::spawn(move || resolver::dns_resolve(remote_addr, resolver_ip));
-    
+
     loop {
         if *(remote_ip.read().unwrap()) != default_ip {
-            break
+            break;
         }
     }
 
@@ -40,9 +40,10 @@ pub async fn run(
             .unwrap();
     let mut tcp_listener = net::TcpListener::bind(&client_socket).await?;
 
-    let mut remote_socket: SocketAddr = format!("{}:{}", remote_ip.read().unwrap(), config.remote_port)
-        .parse()
-        .unwrap();
+    let mut remote_socket: SocketAddr =
+        format!("{}:{}", remote_ip.read().unwrap(), config.remote_port)
+            .parse()
+            .unwrap();
 
     // Start UDP connection
     let udp_remote_ip = remote_ip.clone();
@@ -66,24 +67,26 @@ pub async fn run(
 // Two thread here
 // 1. Receive packets and justify the forward destination. Then send packets to the second thread
 // 2. Send all packets instructed by the first thread
-fn udp_transfer(local_socket: SocketAddr, remote_port: u16, remote_ip: Arc<RwLock<IpAddr>>) -> Result<(), io::Error> {
+fn udp_transfer(
+    local_socket: SocketAddr,
+    remote_port: u16,
+    remote_ip: Arc<RwLock<IpAddr>>,
+) -> Result<(), io::Error> {
     let sender = std::net::UdpSocket::bind(&local_socket).unwrap();
     let receiver = sender.try_clone().unwrap();
     let mut sender_vec = Vec::new();
     let (packet_sender, packet_receiver) = mpsc::channel::<([u8; 2048], usize, SocketAddr)>();
 
     // Start a new thread to send out packets
-    thread::spawn(move || {
-        loop {
-            if let Ok((data, size, client)) = packet_receiver.recv() {
-                if let Err(e) = sender.send_to(&data[..size], client) {
-                    println!("failed to send out UDP packet, {}", e);
-                }
+    thread::spawn(move || loop {
+        if let Ok((data, size, client)) = packet_receiver.recv() {
+            if let Err(e) = sender.send_to(&data[..size], client) {
+                println!("failed to send out UDP packet, {}", e);
             }
         }
     });
 
-    // Receive packets 
+    // Receive packets
     // Storing source ip in a FIFO queue to justify the forward destination
     // Send instruction to the above thread
     loop {
@@ -91,16 +94,22 @@ fn udp_transfer(local_socket: SocketAddr, remote_port: u16, remote_ip: Arc<RwLoc
         let (size, from) = receiver.recv_from(&mut buf).unwrap();
 
         let remote_socket: SocketAddr = format!("{}:{}", remote_ip.read().unwrap(), remote_port)
-                                            .parse()
-                                            .unwrap();
+            .parse()
+            .unwrap();
 
         match from != remote_socket {
-            true => {           // forward
+            true => {
+                // forward
                 sender_vec.push(from);
-                packet_sender.send((buf, size, remote_socket.clone())).unwrap();
+                packet_sender
+                    .send((buf, size, remote_socket.clone()))
+                    .unwrap();
             }
-            false => {          // backward
-                if sender_vec.len() < 1 {continue}
+            false => {
+                // backward
+                if sender_vec.len() < 1 {
+                    continue;
+                }
                 let client_socket = sender_vec.remove(0);
                 packet_sender.send((buf, size, client_socket)).unwrap();
             }

@@ -1,7 +1,7 @@
 use std::net;
+use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
-use std::sync::{RwLock, Arc};
 use trust_dns_resolver::config::*;
 use trust_dns_resolver::Resolver;
 
@@ -9,7 +9,7 @@ fn need_resolve(addr: &str) -> bool {
     addr.parse::<net::IpAddr>().is_err()
 }
 
-pub fn dns_resolve(addr: String, ip: Arc<RwLock::<net::IpAddr>>) {
+pub fn dns_resolve(addr: String, ip: Arc<RwLock<net::IpAddr>>) {
     let mut cache = "0.0.0.0".parse::<net::IpAddr>().unwrap();
 
     if !need_resolve(&addr) {
