@@ -81,7 +81,7 @@ fn udp_transfer(
     thread::spawn(move || loop {
         if let Ok((data, size, client)) = packet_receiver.recv() {
             if let Err(e) = sender.send_to(&data[..size], client) {
-                println!("failed to send out UDP packet, {}", e);
+                println!("failed to send UDP packet to {}, {}", client, e);
             }
         }
     });

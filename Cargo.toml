@@ -11,3 +11,5 @@ tokio = { version = "0.2", features = ["full"] }
 trust-dns-resolver = "*"
 futures = "0.3"
 structopt = "0.3.14"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
