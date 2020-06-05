@@ -1,3 +1,4 @@
+use futures::future::join_all;
 use futures::future::try_join;
 use futures::FutureExt;
 use std::error::Error;
@@ -14,31 +15,31 @@ use realm::RelayConfig;
 
 // Initialize DNS recolver
 // Set up channel between listener and resolver
-pub async fn start_relay(config: RelayConfig) {
-    let remote_addr = config.remote_address.clone();
-    let default_ip: IpAddr = String::from("0.0.0.0").parse::<IpAddr>().unwrap();
-    let remote_ip = Arc::new(RwLock::new(default_ip.clone()));
-    let resolver_ip = remote_ip.clone();
-    thread::spawn(move || resolver::dns_resolve(remote_addr, resolver_ip));
 
-    loop {
-        if *(remote_ip.read().unwrap()) != default_ip {
-            break;
-        }
+pub async fn start_relay(configs: Vec<RelayConfig>) {
+    let default_ip: IpAddr = String::from("0.0.0.0").parse::<IpAddr>().unwrap();
+    let remote_addrs: Vec<String> = configs.iter().map(|x| x.remote_address.clone()).collect();
+    let remote_ips = vec![Arc::new(RwLock::new(default_ip.clone())); remote_addrs.len()];
+    let cloned_remote_ips = remote_ips.clone();
+
+    thread::spawn(move || resolver::resolve(remote_addrs, cloned_remote_ips));
+
+    let mut iter = configs.into_iter().zip(remote_ips);
+    let mut runners = vec![];
+
+    while let Some((config, remote_ip)) = iter.next() {
+        runners.push(tokio::spawn(run(config, remote_ip)));
     }
 
-    run(config, remote_ip).await.unwrap();
+    join_all(runners).await;
 }
 
-pub async fn run(
-    config: RelayConfig,
-    remote_ip: Arc<RwLock<IpAddr>>,
-) -> Result<(), Box<dyn Error>> {
+pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
     let client_socket: SocketAddr =
         format!("{}:{}", config.listening_address, config.listening_port)
             .parse()
             .unwrap();
-    let mut tcp_listener = net::TcpListener::bind(&client_socket).await?;
+    let mut tcp_listener = net::TcpListener::bind(&client_socket).await.unwrap();
 
     let mut remote_socket: SocketAddr =
         format!("{}:{}", remote_ip.read().unwrap(), config.remote_port)
@@ -61,7 +62,6 @@ pub async fn run(
         });
         tokio::spawn(transfer);
     }
-    Ok(())
 }
 
 // Two thread here

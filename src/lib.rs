@@ -174,12 +174,12 @@ pub fn load_config(p: PathBuf) -> Vec<RelayConfig> {
 
         let rp = match remote_ports.get(i) {
             Some(rp) => rp,
-            None => &remote_ports[0]
+            None => &remote_ports[0],
         };
 
         let lp = match listening_ports.get(i) {
             Some(lp) => lp,
-            None => &listening_ports[0]
+            None => &listening_ports[0],
         };
 
         relay_configs.push(RelayConfig::new(
