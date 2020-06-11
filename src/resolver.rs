@@ -38,16 +38,27 @@ pub fn resolve(addr_list: Vec<String>, ip_list: Vec<Arc<RwLock<net::IpAddr>>>) {
     loop {
         for (i, addr) in addr_list.iter().enumerate() {
             if let Some(new_ip) = resolve_single(&resolver, addr) {
+                println!("Resolving {}", i);
                 if new_ip != cache_list[i] {
                     cache_list[i] = new_ip;
                     let mut w = ip_list[i].write().unwrap();
                     *w = new_ip;
+                    drop(w);
                     println!("Resolved {}: {}", addr, new_ip);
+                    // println!("ip_list[{}]: {}", i, *w);
+                    print_ips(&ip_list);
                 }
             } else {
                 println!("Cannot resolve address {}", addr);
             }
         }
+        
         sleep(Duration::from_secs(60));
+    }
+}
+
+pub fn print_ips(ip_list: &Vec<Arc<RwLock<std::net::IpAddr>>>) {
+    for ip in ip_list {
+        println!("{}", ip.read().unwrap());
     }
 }

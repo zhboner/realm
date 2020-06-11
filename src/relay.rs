@@ -21,15 +21,23 @@ use realm::RelayConfig;
 pub async fn start_relay(configs: Vec<RelayConfig>) {
     let default_ip: IpAddr = String::from("0.0.0.0").parse::<IpAddr>().unwrap();
     let remote_addrs: Vec<String> = configs.iter().map(|x| x.remote_address.clone()).collect();
-    let remote_ips = vec![Arc::new(RwLock::new(default_ip.clone())); remote_addrs.len()];
+
+    let mut remote_ips: Vec<Arc<RwLock<std::net::IpAddr>>> = Vec::new();
+    for _ in 0..remote_addrs.len() {
+        remote_ips.push(
+            Arc::new(RwLock::new(default_ip.clone()))
+        )
+    }
     let cloned_remote_ips = remote_ips.clone();
 
     thread::spawn(move || resolver::resolve(remote_addrs, cloned_remote_ips));
 
+    // sleep(Duration::from_secs(3));
+    resolver::print_ips(&remote_ips);
+
     let mut iter = configs.into_iter().zip(remote_ips);
     let mut runners = vec![];
 
-    sleep(Duration::from_secs(3));
     while let Some((config, remote_ip)) = iter.next() {
         runners.push(tokio::spawn(run(config, remote_ip)));
     }
@@ -143,3 +151,4 @@ async fn transfer_tcp(
 
     Ok(())
 }
+
