@@ -6,11 +6,11 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::mpsc;
 use std::sync::{Arc, RwLock};
 use std::thread;
+use std::thread::sleep;
+use std::time::Duration;
 use tokio;
 use tokio::io;
 use tokio::net;
-use std::thread::sleep;
-use std::time::Duration;
 
 use crate::resolver;
 use realm::RelayConfig;
@@ -54,11 +54,13 @@ pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
     thread::spawn(move || udp_transfer(client_socket.clone(), remote_socket.port(), udp_remote_ip));
 
     // Start TCP connection
-    println!("[success] Started {}:{} -> {}:{}", 
+    println!(
+        "[success] Started {}:{} -> {}:{}",
         config.listening_address,
-        config.listening_port, 
-        &(remote_ip.read().unwrap()), 
-        config.remote_port);
+        config.listening_port,
+        &(remote_ip.read().unwrap()),
+        config.remote_port
+    );
 
     while let Ok((inbound, _)) = tcp_listener.accept().await {
         remote_socket = format!("{}:{}", &(remote_ip.read().unwrap()), config.remote_port)
