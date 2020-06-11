@@ -9,6 +9,8 @@ use std::thread;
 use tokio;
 use tokio::io;
 use tokio::net;
+use std::thread::sleep;
+use std::time::Duration;
 
 use crate::resolver;
 use realm::RelayConfig;
@@ -27,6 +29,7 @@ pub async fn start_relay(configs: Vec<RelayConfig>) {
     let mut iter = configs.into_iter().zip(remote_ips);
     let mut runners = vec![];
 
+    sleep(Duration::from_secs(3));
     while let Some((config, remote_ip)) = iter.next() {
         runners.push(tokio::spawn(run(config, remote_ip)));
     }
@@ -51,6 +54,12 @@ pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
     thread::spawn(move || udp_transfer(client_socket.clone(), remote_socket.port(), udp_remote_ip));
 
     // Start TCP connection
+    println!("[success] Started {}:{} -> {}:{}", 
+        config.listening_address,
+        config.listening_port, 
+        &(remote_ip.read().unwrap()), 
+        config.remote_port);
+
     while let Ok((inbound, _)) = tcp_listener.accept().await {
         remote_socket = format!("{}:{}", &(remote_ip.read().unwrap()), config.remote_port)
             .parse()

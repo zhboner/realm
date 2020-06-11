@@ -1,0 +1,6 @@
+{
+    "listening_addresses": ["0.0.0.0"],
+    "listening_ports": ["11201", "11203"],
+    "remote_addresses": ["he.unifs.xyz", "hkt.unifs.xyz"],
+    "remote_ports": ["443", "80"]
+}
