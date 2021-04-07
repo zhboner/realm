@@ -15,7 +15,7 @@ fn resolve_single(resolver: &Resolver, addr: &String) -> Option<net::IpAddr> {
     }
 
     let remote_addr = format!("{}.", addr);
-    let res = resolver.lookup_ip(&remote_addr).unwrap();
+    let res = resolver.lookup_ip(remote_addr).unwrap();
 
     match res.iter().find(|ip| ip.is_ipv4()) {
         Some(ip_v4) => Some(ip_v4),

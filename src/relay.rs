@@ -46,7 +46,7 @@ pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
         format!("{}:{}", config.listening_address, config.listening_port)
             .parse()
             .unwrap();
-    let mut tcp_listener = net::TcpListener::bind(&client_socket).await.unwrap();
+    let tcp_listener = net::TcpListener::bind(&client_socket).await.unwrap();
 
     let mut remote_socket: SocketAddr =
         format!("{}:{}", remote_ip.read().unwrap(), config.remote_port)
