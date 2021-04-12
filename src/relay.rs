@@ -8,6 +8,7 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 use tokio;
 use tokio::io;
+use tokio::io::AsyncWriteExt;
 use tokio::net;
 
 use crate::resolver;
@@ -45,7 +46,7 @@ pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
         format!("{}:{}", config.listening_address, config.listening_port)
             .parse()
             .unwrap();
-    let mut tcp_listener = net::TcpListener::bind(&client_socket).await.unwrap();
+    let tcp_listener = net::TcpListener::bind(&client_socket).await.unwrap();
 
     let mut remote_socket: SocketAddr =
         format!("{}:{}", remote_ip.read().unwrap(), config.remote_port)
@@ -57,16 +58,24 @@ pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
     thread::spawn(move || udp_transfer(client_socket.clone(), remote_socket.port(), udp_remote_ip));
 
     // Start TCP connection
-    while let Ok((inbound, _)) = tcp_listener.accept().await {
-        remote_socket = format!("{}:{}", &(remote_ip.read().unwrap()), config.remote_port)
-            .parse()
-            .unwrap();
-        let transfer = transfer_tcp(inbound, remote_socket.clone()).map(|r| {
-            if let Err(_) = r {
-                return;
-            }
-        });
-        tokio::spawn(transfer);
+    loop {
+        match tcp_listener.accept().await {
+            Ok((inbound, _)) => {
+                remote_socket = format!("{}:{}", &(remote_ip.read().unwrap()), config.remote_port)
+                    .parse()
+                    .unwrap();
+                let transfer = transfer_tcp(inbound, remote_socket.clone()).map(|r| {
+                    if let Err(_) = r {
+                        return;
+                    }
+                });
+                tokio::spawn(transfer);
+            },
+            Err(e) => {
+                println!("TCP forward error {}:{}, {}", config.remote_address, config.remote_port, e);
+                break;
+            },
+        }
     }
 }
 
@@ -131,8 +140,15 @@ async fn transfer_tcp(
     let (mut ri, mut wi) = inbound.split();
     let (mut ro, mut wo) = outbound.split();
 
-    let client_to_server = io::copy(&mut ri, &mut wo);
-    let server_to_client = io::copy(&mut ro, &mut wi);
+    let client_to_server = async {
+        io::copy(&mut ri, &mut wo).await?;
+        wo.shutdown().await
+    };
+
+    let server_to_client = async {
+        io::copy(&mut ro, &mut wi).await?;
+        wi.shutdown().await
+    };
 
     try_join(client_to_server, server_to_client).await?;
 
