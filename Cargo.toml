@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.4", features = ["full"] }
+tokio = { version = "1.5", features = ["full"] }
 trust-dns-resolver = "0.20"
 futures = "0.3"
 structopt = "0.3"
