@@ -1,6 +1,7 @@
 use tokio;
 mod relay;
 mod resolver;
+mod udp;
 
 #[tokio::main]
 async fn main() {
