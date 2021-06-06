@@ -46,14 +46,14 @@ pub async fn resolve(addr_list: Vec<String>, ip_list: Vec<Arc<RwLock<net::IpAddr
                     let mut w = ip_list[i].write().unwrap();
                     *w = new_ip;
                     drop(w);
-                    println!("Resolved {}: {}", addr, new_ip);
+                    // println!("Resolved {}: {}", addr, new_ip);
                 }
             } else {
                 println!("Cannot resolve address {}", addr);
             }
         }
 
-        sleep(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(60 * 60 * 6)).await;
     }
 }
 

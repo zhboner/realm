@@ -28,7 +28,7 @@ pub async fn start_relay(configs: Vec<RelayConfig>) {
 
     tokio::spawn(resolver::resolve(remote_addrs, cloned_remote_ips));
 
-    resolver::print_ips(&remote_ips);
+    // resolver::print_ips(&remote_ips);
 
     let mut iter = configs.into_iter().zip(remote_ips);
     let mut runners = vec![];
