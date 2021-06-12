@@ -1,7 +1,7 @@
-on: 
+on:
   push:
-    branches:    
-          - master
+    branches:
+      - master
 
 name: realm
 
@@ -26,9 +26,8 @@ jobs:
           use-cross: true
           command: build
           args: --release --target x86_64-unknown-linux-musl
-          
+
       - uses: actions/upload-artifact@v2
         with:
           name: realm
           path: target/x86_64-unknown-linux-musl
-          
