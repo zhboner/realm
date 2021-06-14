@@ -8,19 +8,16 @@ use structopt::StructOpt;
 #[derive(StructOpt)]
 #[structopt(name = "realm", about = "A high efficiency proxy tool.")]
 pub struct Cli {
-    #[structopt(short = "l", long = "local")]
-    pub client: Option<String>,
-
-    #[structopt(short = "r", long = "remote")]
-    pub remote: Option<String>,
+    #[structopt(short = "L", long = "listen")]
+    pub listen: Option<Vec<String>>,
 
     #[structopt(
         short = "c",
         long = "config",
         parse(from_os_str),
         name = "Optional config file",
-        conflicts_with_all = &["client", "remote"],
-        required_unless_all = &["client", "remote"]
+        conflicts_with_all = &["listen"],
+        required_unless_all = &["listen"]
     )]
     pub config_file: Option<PathBuf>,
 }
@@ -66,41 +63,47 @@ pub fn parse_arguments() -> Vec<RelayConfig> {
     let input = Cli::from_args();
     let path = input.config_file;
     if let Some(path) = path {
-        let configs = load_config(path);
-        return configs;
+        return load_config(path);
     }
 
-    let client = match input.client {
-        Some(client) => client,
+    // parse command line arguments
+    let mut configs = vec![];
+
+    let listen = match input.listen {
+        Some(listen) => listen,
         None => panic!("No listening socket"),
     };
 
-    let remote = match input.remote {
-        Some(remote) => remote,
-        None => panic!("No listening socket"),
-    };
+    for it in listen {
+        let listen_parse: Vec<&str> = it.split("/").collect();
+        if listen_parse.len() != 2 {
+            panic!("listen config is incorrect!");
+        }
+        let client = String::from_str(listen_parse[0]).unwrap();
+        let remote = String::from_str(listen_parse[1]).unwrap();
 
-    let client_parse: Vec<&str> = client.split(":").collect();
-    if client_parse.len() != 2 {
-        panic!("client address is incorrect!");
+        let client_parse: Vec<&str> = client.split(":").collect();
+        if client_parse.len() != 2 {
+            panic!("client address is incorrect!");
+        }
+        let listening_address = String::from_str(client_parse[0]).unwrap();
+        let remote_parse: Vec<&str> = remote.split(":").collect();
+        if remote_parse.len() != 2 {
+            panic!("remote address is incorrect!");
+        }
+        configs.push(RelayConfig {
+            listening_address: if listening_address == "" {
+                String::from("0.0.0.0")
+            } else {
+                listening_address
+            },
+            listening_port: String::from_str(client_parse[1]).unwrap(),
+            remote_address: String::from_str(remote_parse[0]).unwrap(),
+            remote_port: String::from_str(remote_parse[1]).unwrap(),
+        })
     }
-    let listening_address = String::from_str(client_parse[0]).unwrap();
 
-    let remote_parse: Vec<&str> = remote.split(":").collect();
-    if remote_parse.len() != 2 {
-        panic!("remote address is incorrect!");
-    }
-
-    vec![RelayConfig {
-        listening_address: if listening_address == "" {
-            String::from("0.0.0.0")
-        } else {
-            listening_address
-        },
-        listening_port: String::from_str(client_parse[1]).unwrap(),
-        remote_address: String::from_str(remote_parse[0]).unwrap(),
-        remote_port: String::from_str(remote_parse[1]).unwrap(),
-    }]
+    configs
 }
 
 fn ports2individuals(ports: Vec<String>) -> Vec<u16> {
