@@ -1,8 +1,6 @@
 use std::net::{SocketAddr, ToSocketAddrs};
-
 use tokio::io;
-
-use crate::dns;
+use super::dns;
 
 #[derive(Clone)]
 pub enum RemoteAddr {

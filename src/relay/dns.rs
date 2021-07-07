@@ -6,7 +6,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use lazy_static::lazy_static;
 
-use crate::utils;
+use super::utils;
 
 lazy_static! {
     pub static ref DNS: TokioAsyncResolver = TokioAsyncResolver::tokio(

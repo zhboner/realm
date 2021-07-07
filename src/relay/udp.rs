@@ -8,7 +8,7 @@ use tokio::net::UdpSocket;
 use tokio::sync::oneshot;
 use tokio::time::sleep;
 
-use crate::utils::RemoteAddr;
+use super::utils::RemoteAddr;
 
 const BUFFERSIZE: usize = 2048;
 const TIMEOUT: Duration = Duration::from_secs(60 * 15);

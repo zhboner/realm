@@ -4,7 +4,7 @@ use tokio::io::{self, AsyncWriteExt};
 use tokio::net::tcp::{ReadHalf, WriteHalf};
 use tokio::net::TcpStream;
 
-use crate::utils::{self, RemoteAddr};
+use super::utils::RemoteAddr;
 
 pub async fn proxy(
     mut inbound: TcpStream,
@@ -46,8 +46,12 @@ async fn copy(r: &mut ReadHalf<'_>, w: &mut WriteHalf<'_>) -> io::Result<()> {
 
 // zero copy
 #[cfg(target_os = "linux")]
+use crate::relay::zero_copy;
+
+#[cfg(target_os = "linux")]
 async fn copy(r: &mut ReadHalf<'_>, w: &mut WriteHalf<'_>) -> io::Result<()> {
     use std::os::unix::prelude::AsRawFd;
+    use zero_copy::{Pipe, splice_n, is_wouldblock};
     // create pipe
     let pipe = Pipe::create()?;
     let (rpipe, wpipe) = (pipe.0, pipe.1);
@@ -94,53 +98,4 @@ async fn copy(r: &mut ReadHalf<'_>, w: &mut WriteHalf<'_>) -> io::Result<()> {
 
     w.shutdown().await?;
     Ok(())
-}
-
-#[cfg(target_os = "linux")]
-struct Pipe(i32, i32);
-
-#[cfg(target_os = "linux")]
-impl Drop for Pipe {
-    fn drop(&mut self) {
-        unsafe {
-            libc::close(self.0);
-            libc::close(self.1);
-        }
-    }
-}
-
-#[cfg(target_os = "linux")]
-impl Pipe {
-    fn create() -> io::Result<Self> {
-        use libc::{c_int, O_NONBLOCK};
-        let mut pipes = std::mem::MaybeUninit::<[c_int; 2]>::uninit();
-        unsafe {
-            if libc::pipe2(pipes.as_mut_ptr() as *mut c_int, O_NONBLOCK) < 0 {
-                return Err(utils::new_io_err("failed to create a pipe"));
-            }
-            Ok(Pipe(pipes.assume_init()[0], pipes.assume_init()[1]))
-        }
-    }
-}
-
-#[cfg(target_os = "linux")]
-fn splice_n(r: i32, w: i32, n: usize) -> isize {
-    use libc::{loff_t, SPLICE_F_MOVE, SPLICE_F_NONBLOCK};
-    unsafe {
-        libc::splice(
-            r,
-            0 as *mut loff_t,
-            w,
-            0 as *mut loff_t,
-            n,
-            SPLICE_F_MOVE | SPLICE_F_NONBLOCK,
-        )
-    }
-}
-
-#[cfg(target_os = "linux")]
-fn is_wouldblock() -> bool {
-    use libc::{EAGAIN, EWOULDBLOCK};
-    let errno = unsafe { *libc::__errno_location() };
-    errno == EWOULDBLOCK || errno == EAGAIN
 }

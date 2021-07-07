@@ -4,9 +4,14 @@ use futures::future::join_all;
 use tokio::io;
 use tokio::net::TcpListener;
 
-use crate::tcp;
-use crate::udp;
-use crate::utils::{Endpoint, RemoteAddr};
+mod dns;
+mod tcp;
+mod udp;
+mod utils;
+pub use utils::{Endpoint, RemoteAddr};
+
+#[cfg(target_os = "linux")]
+mod zero_copy;
 
 pub async fn run(eps: Vec<Endpoint>) {
     let mut workers = vec![];
