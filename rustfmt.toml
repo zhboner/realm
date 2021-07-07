@@ -1,0 +1,4 @@
+max_width = 80
+reorder_imports = false
+reorder_modules = false
+#fn_args_layout = "Vertical"

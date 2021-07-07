@@ -1,13 +1,11 @@
-use tokio;
-mod relay;
-mod resolver;
+mod dns;
+mod tcp;
 mod udp;
-
-#[cfg(target_os = "linux")]
-mod zero_copy;
+mod utils;
+mod relay;
 
 #[tokio::main]
 async fn main() {
-    let relay_configs = realm::parse_arguments();
-    relay::start_relay(relay_configs).await;
+    let eps = vec![utils::Endpoint::new("127.0.0.1:15000", "localhost:20000")];
+    relay::run(eps).await
 }
