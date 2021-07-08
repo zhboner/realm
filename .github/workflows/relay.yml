@@ -12,23 +12,53 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install latest stable
+      - name: Install toolchain for linux-musl
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: x86_64-unknown-linux-musl
-          override: true
-          components: rustfmt, clippy
 
-      - name: Run cargo build
+      - name: Install toolchain for linux-gnu
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+
+      - name: Install toolchain for mingw
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-gnu
+
+      - name: Build for linux-musl
         uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
           args: --release --target x86_64-unknown-linux-musl
-          
+
+      - name: Build for linux-gnu
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target x86_64-unknown-linux-gnu
+
+      - name: Build for windows
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target x86_64-pc-windows-gnu
+
+      - name: Rename outputs
+        run: |
+          mkdir -p target/bin
+          mv target/x86_64-unknown-linux-musl/release/realm target/bin/realm-x86_64-unknown-linux-musl
+          mv target/x86_64-unknown-linux-gnu/release/realm target/bin/realm-x86_64-unknown-linux-gnu
+          mv target/x86_64-pc-windows-gnu/release/realm.exe target/bin/realm-x86_64-pc-windows-gnu
       - uses: actions/upload-artifact@v2
         with:
           name: realm
-          path: target/x86_64-unknown-linux-musl
+          path: target/bin/
           
