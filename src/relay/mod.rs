@@ -8,7 +8,6 @@ mod dns;
 mod tcp;
 mod udp;
 mod types;
-
 pub use types::{Endpoint, RemoteAddr};
 pub use dns::init_resolver;
 

@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-
 use crate::relay::Endpoint;
 
 #[derive(Debug, Serialize, Deserialize)]

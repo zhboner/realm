@@ -10,6 +10,7 @@ use relay::Endpoint;
 fn main() {
     match cmd::scan() {
         CmdInput::Config(c) => start_from_config(c),
+        CmdInput::Navigate => cmd::run_navigator(),
         CmdInput::None => {}
     }
 }
