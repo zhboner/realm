@@ -3,17 +3,26 @@ use std::net::IpAddr;
 use tokio::io;
 use tokio::runtime::Runtime;
 use trust_dns_resolver::TokioAsyncResolver;
-use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
+use trust_dns_resolver::config::{ResolverConfig, ResolverOpts, LookupIpStrategy};
 use lazy_static::lazy_static;
 
-use super::utils;
+use crate::utils;
+
+static mut RESOLVE_STRATEGY: LookupIpStrategy = LookupIpStrategy::Ipv4thenIpv6;
 
 lazy_static! {
-    pub static ref DNS: TokioAsyncResolver = TokioAsyncResolver::tokio(
-        ResolverConfig::default(),
-        ResolverOpts::default()
-    )
-    .unwrap();
+    static ref DNS: TokioAsyncResolver =
+        TokioAsyncResolver::tokio(ResolverConfig::default(), {
+            let mut opts = ResolverOpts::default();
+            opts.ip_strategy = unsafe { RESOLVE_STRATEGY };
+            opts
+        })
+        .unwrap();
+}
+
+pub fn init_resolver(strategy: LookupIpStrategy) {
+    unsafe { RESOLVE_STRATEGY = strategy };
+    lazy_static::initialize(&DNS);
 }
 
 pub fn resolve_sync(addr: &str) -> io::Result<IpAddr> {

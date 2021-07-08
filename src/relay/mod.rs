@@ -7,8 +7,10 @@ use tokio::net::TcpListener;
 mod dns;
 mod tcp;
 mod udp;
-mod utils;
-pub use utils::{Endpoint, RemoteAddr};
+mod types;
+
+pub use types::{Endpoint, RemoteAddr};
+pub use dns::init_resolver;
 
 #[cfg(target_os = "linux")]
 mod zero_copy;
@@ -16,8 +18,10 @@ mod zero_copy;
 pub async fn run(eps: Vec<Endpoint>) {
     let mut workers = vec![];
     for ep in eps.into_iter() {
-        workers.push(tokio::spawn(proxy_tcp(ep.local, ep.remote.clone())));
-        workers.push(tokio::spawn(proxy_udp(ep.local, ep.remote)))
+        if ep.udp {
+            workers.push(tokio::spawn(proxy_udp(ep.local, ep.remote.clone())))
+        }
+        workers.push(tokio::spawn(proxy_tcp(ep.local, ep.remote)));
     }
     join_all(workers).await;
 }

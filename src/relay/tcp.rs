@@ -4,7 +4,7 @@ use tokio::io::{self, AsyncWriteExt};
 use tokio::net::tcp::{ReadHalf, WriteHalf};
 use tokio::net::TcpStream;
 
-use super::utils::RemoteAddr;
+use super::types::RemoteAddr;
 
 pub async fn proxy(
     mut inbound: TcpStream,

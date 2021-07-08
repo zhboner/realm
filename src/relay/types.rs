@@ -9,12 +9,9 @@ pub enum RemoteAddr {
 }
 
 pub struct Endpoint {
+    pub udp: bool,
     pub local: SocketAddr,
     pub remote: RemoteAddr,
-}
-
-pub fn new_io_err(e: &str) -> io::Error {
-    io::Error::new(io::ErrorKind::Other, e)
 }
 
 impl RemoteAddr {
@@ -39,7 +36,7 @@ impl RemoteAddr {
 }
 
 impl Endpoint {
-    pub fn new(local: &str, remote: &str) -> Self {
+    pub fn new(local: &str, remote: &str, udp: bool) -> Self {
         let local = local
             .to_socket_addrs()
             .expect("invalid local address")
@@ -55,6 +52,6 @@ impl Endpoint {
             let _ = dns::resolve_sync(&addr).unwrap();
             RemoteAddr::DomainName(addr, port)
         };
-        Endpoint { local, remote }
+        Endpoint { local, remote, udp }
     }
 }

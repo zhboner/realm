@@ -1,6 +1,6 @@
 use std::ops::Drop;
 use tokio::io;
-use super::utils;
+use crate::utils;
 
 pub struct Pipe(pub i32, pub i32);
 
