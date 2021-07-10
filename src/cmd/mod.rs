@@ -31,7 +31,7 @@ pub fn scan() -> CmdInput {
     if let Some(config) = matches.value_of("config") {
         return CmdInput::Config(config.to_string());
     }
-    if let Some(_) = matches.subcommand_matches("nav") {
+    if matches.subcommand_matches("nav").is_some() {
         return CmdInput::Navigate;
     }
     CmdInput::None

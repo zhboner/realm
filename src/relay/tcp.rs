@@ -10,7 +10,8 @@ pub async fn proxy(
     mut inbound: TcpStream,
     remote: RemoteAddr,
 ) -> io::Result<()> {
-    let mut outbound = TcpStream::connect(remote.to_sockaddr().await?).await?;
+    let mut outbound =
+        TcpStream::connect(remote.into_sockaddr().await?).await?;
     inbound.set_nodelay(true)?;
     outbound.set_nodelay(true)?;
     let (mut ri, mut wi) = inbound.split();

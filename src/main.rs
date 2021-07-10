@@ -21,7 +21,7 @@ fn start_from_config(c: String) {
     let eps: Vec<Endpoint> = config
         .endpoints
         .into_iter()
-        .map(|epc| epc.to_endpoint())
+        .map(|epc| epc.into_endpoint())
         .collect();
     run_relay(eps);
 }

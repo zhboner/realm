@@ -11,13 +11,14 @@ use crate::utils;
 static mut RESOLVE_STRATEGY: LookupIpStrategy = LookupIpStrategy::Ipv4thenIpv6;
 
 lazy_static! {
-    static ref DNS: TokioAsyncResolver =
-        TokioAsyncResolver::tokio(ResolverConfig::default(), {
-            let mut opts = ResolverOpts::default();
-            opts.ip_strategy = unsafe { RESOLVE_STRATEGY };
-            opts
-        })
-        .unwrap();
+    static ref DNS: TokioAsyncResolver = TokioAsyncResolver::tokio(
+        ResolverConfig::default(),
+        ResolverOpts {
+            ip_strategy: unsafe { RESOLVE_STRATEGY },
+            ..Default::default()
+        }
+    )
+    .unwrap();
 }
 
 pub fn init_resolver(strategy: LookupIpStrategy) {

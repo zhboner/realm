@@ -31,9 +31,9 @@ pub fn splice_n(r: i32, w: i32, n: usize) -> isize {
     unsafe {
         libc::splice(
             r,
-            0 as *mut loff_t,
+            std::ptr::null_mut::<loff_t>(),
             w,
-            0 as *mut loff_t,
+            std::ptr::null_mut::<loff_t>(),
             n,
             SPLICE_F_MOVE | SPLICE_F_NONBLOCK,
         )

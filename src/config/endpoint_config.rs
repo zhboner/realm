@@ -9,7 +9,7 @@ pub struct EndpointConfig {
 }
 
 impl EndpointConfig {
-    pub fn to_endpoint(self) -> Endpoint {
+    pub fn into_endpoint(self) -> Endpoint {
         Endpoint::new(&self.local, &self.remote, self.udp)
     }
 }
