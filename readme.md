@@ -27,9 +27,9 @@ realm -c config.json
 			"remote": "1.1.1.1:443",
 			"udp": false
 		}
-        {
-		    "local": "0.0.0.0:10000",
-		    "remote": "www.google.com:443",
+        	{
+			"local": "0.0.0.0:10000",
+			"remote": "www.google.com:443",
 			"udp": true
 		}
 	]
