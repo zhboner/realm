@@ -20,7 +20,7 @@ realm -c config.json
 >example.json
 ```json
 {
-	"dns_mode": "Ipv4Only",
+	"dns_mode": "ipv4_only",
 	"endpoints": [
 		{
 			"local": "0.0.0.0:5000",
@@ -37,5 +37,5 @@ realm -c config.json
 ```
 >dns_mode
 ```
-Ipv4Only|Ipv6Only|Ipv4AndIpv6|Ipv4thenIpv6|Ipv6thenIpv4
+ipv4_only|ipv6_only|ipv4_and_ipv6|ipv4_then_ipv6|ipv6_then_ipv4
 ```

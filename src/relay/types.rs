@@ -42,8 +42,8 @@ impl Endpoint {
             .expect("invalid local address")
             .next()
             .unwrap();
-        let remote = if let Ok(mut sockaddr) = remote.to_socket_addrs() {
-            RemoteAddr::SocketAddr(sockaddr.next().unwrap())
+        let remote = if let Ok(sockaddr) = remote.parse::<SocketAddr>() {
+            RemoteAddr::SocketAddr(sockaddr)
         } else {
             let mut iter = remote.splitn(2, ':');
             let addr = iter.next().unwrap().to_string();
@@ -52,6 +52,6 @@ impl Endpoint {
             let _ = dns::resolve_sync(&addr).unwrap();
             RemoteAddr::DomainName(addr, port)
         };
-        Endpoint { local, remote, udp }
+        Endpoint { udp, local, remote }
     }
 }
