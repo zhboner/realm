@@ -8,7 +8,7 @@ use tokio::net::UdpSocket;
 use tokio::sync::oneshot;
 use tokio::time::sleep;
 
-const BUFFERSIZE: usize = 2048;
+const BUFFERSIZE: usize = 0x4000;
 const TIMEOUT: Duration = Duration::from_secs(60 * 15);
 
 pub async fn transfer_udp(

@@ -53,7 +53,7 @@ pub async fn resolve(addr_list: Vec<String>, ip_list: Vec<Arc<RwLock<net::IpAddr
             }
         }
 
-        sleep(Duration::from_secs(60 * 60 * 6)).await;
+        sleep(Duration::from_secs(60)).await;
     }
 }
 

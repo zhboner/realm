@@ -6,12 +6,15 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, RwLock};
 use tokio;
 use tokio::io;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncWriteExt, AsyncReadExt};
 use tokio::net;
+
 
 use crate::resolver;
 use crate::udp;
 use realm::RelayConfig;
+use tokio::net::tcp::{ReadHalf, WriteHalf};
+use std::fs::read;
 
 // Initialize DNS recolver
 // Set up channel between listener and resolver
@@ -64,6 +67,7 @@ pub async fn run(config: RelayConfig, remote_ip: Arc<RwLock<IpAddr>>) {
     loop {
         match tcp_listener.accept().await {
             Ok((inbound, _)) => {
+                inbound.set_nodelay(true).unwrap();
                 remote_socket = format!("{}:{}", &(remote_ip.read().unwrap()), config.remote_port)
                     .parse()
                     .unwrap();
@@ -90,20 +94,38 @@ async fn transfer_tcp(
     remote_socket: SocketAddr,
 ) -> Result<(), Box<dyn Error>> {
     let mut outbound = net::TcpStream::connect(remote_socket).await?;
+    outbound.set_nodelay(true).unwrap();
     let (mut ri, mut wi) = inbound.split();
     let (mut ro, mut wo) = outbound.split();
 
     let client_to_server = async {
-        io::copy(&mut ri, &mut wo).await?;
+        // io::copy(&mut ri, &mut wo).await?;
+        copy_data(&mut ri, &mut wo).await?;
         wo.shutdown().await
     };
 
     let server_to_client = async {
-        io::copy(&mut ro, &mut wi).await?;
+        // io::copy(&mut ro, &mut wi).await?;
+        copy_data(&mut ro, &mut wi).await?;
         wi.shutdown().await
     };
 
     try_join(client_to_server, server_to_client).await?;
 
+    Ok(())
+}
+
+async fn copy_data(reader: &mut ReadHalf<'_>, writer: &mut WriteHalf<'_>) -> Result<(), std::io::Error> {
+    let mut buf = vec![0u8; 0x4000];
+    let mut n: usize;
+
+    loop {
+        n = reader.read(&mut buf).await?;
+        if n == 0 {
+            break;
+        }
+        writer.write_all(&buf[..n]).await?;
+    }
+    writer.flush().await?;
     Ok(())
 }
