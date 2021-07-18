@@ -6,7 +6,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 const PIPE_BUF_SIZE: usize = 0x10000;
 
-pub struct Pipe(i32, i32);
+struct Pipe(i32, i32);
 
 impl Drop for Pipe {
     fn drop(&mut self) {
@@ -18,7 +18,7 @@ impl Drop for Pipe {
 }
 
 impl Pipe {
-    pub fn create() -> io::Result<Self> {
+    fn create() -> io::Result<Self> {
         use libc::{c_int, O_NONBLOCK};
         let mut pipes = std::mem::MaybeUninit::<[c_int; 2]>::uninit();
         unsafe {
@@ -34,7 +34,7 @@ impl Pipe {
 }
 
 #[inline]
-pub fn splice_n(r: i32, w: i32, n: usize) -> isize {
+fn splice_n(r: i32, w: i32, n: usize) -> isize {
     use libc::{loff_t, SPLICE_F_MOVE, SPLICE_F_NONBLOCK};
     unsafe {
         libc::splice(
@@ -49,7 +49,7 @@ pub fn splice_n(r: i32, w: i32, n: usize) -> isize {
 }
 
 #[inline]
-pub fn is_wouldblock() -> bool {
+fn is_wouldblock() -> bool {
     use libc::{EAGAIN, EWOULDBLOCK};
     let errno = unsafe { *libc::__errno_location() };
     errno == EWOULDBLOCK || errno == EAGAIN
@@ -74,27 +74,31 @@ where
     'LOOP: loop {
         // read until the socket buffer is empty
         // or the pipe is filled
+        // clear readiness (EPOLLIN)
         r.read(&mut [0u8; 0]).await?;
         while n < PIPE_BUF_SIZE {
             match splice_n(rfd, wpipe, PIPE_BUF_SIZE - n) {
                 x if x > 0 => n += x as usize,
+                // read EOF
+                // after this the read() syscall always returns 0
                 x if x == 0 => {
                     done = true;
                     break;
                 }
+                // error occurs
                 x if x < 0 && is_wouldblock() => break,
                 _ => break 'LOOP,
             }
         }
         // write until the pipe is empty
         while n > 0 {
+            // clear readiness (EPOLLOUT)
             w.write(&[0u8; 0]).await?;
             match splice_n(rpipe, wfd, n) {
                 x if x > 0 => n -= x as usize,
-                x if x < 0 && is_wouldblock() => {
-                    // clear readiness (EPOLLOUT)
-                    w.write(&[0u8; 0]).await?;
-                }
+                // continue to write
+                x if x < 0 && is_wouldblock() => {},
+                // error occurs
                 _ => break 'LOOP,
             }
         }
@@ -102,8 +106,6 @@ where
         if done {
             break;
         }
-        // clear readiness (EPOLLIN)
-        r.read(&mut [0u8; 0]).await?;
     }
 
     Ok(())
