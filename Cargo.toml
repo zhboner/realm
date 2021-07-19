@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libc = "0.2"
 tokio = { version = "1.8.1", features = ["full"] }
 trust-dns-resolver = "0.20"
 futures = "0.3"

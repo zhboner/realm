@@ -93,6 +93,9 @@ async fn transfer_tcp(
     mut inbound: net::TcpStream,
     remote_socket: SocketAddr,
 ) -> Result<(), Box<dyn Error>> {
+    #[cfg(target_os = "linux")]
+    use crate::zero_copy::zero_copy as copy_data;
+
     let mut outbound = net::TcpStream::connect(remote_socket).await?;
     outbound.set_nodelay(true).unwrap();
     let (mut ri, mut wi) = inbound.split();
@@ -115,6 +118,7 @@ async fn transfer_tcp(
     Ok(())
 }
 
+#[cfg(not(target_os = "linux"))]
 async fn copy_data(reader: &mut ReadHalf<'_>, writer: &mut WriteHalf<'_>) -> Result<(), std::io::Error> {
     let mut buf = vec![0u8; 0x4000];
     let mut n: usize;
