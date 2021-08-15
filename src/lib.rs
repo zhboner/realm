@@ -80,13 +80,17 @@ pub fn parse_arguments() -> Vec<RelayConfig> {
         None => panic!("No listening socket"),
     };
 
-    let client_parse: Vec<&str> = client.split(":").collect();
+    let client_parse: Vec<&str> = client.rsplitn(2,":")
+        .collect::<Vec<&str>>()
+        .into_iter().rev().collect();
     if client_parse.len() != 2 {
         panic!("client address is incorrect!");
     }
     let listening_address = String::from_str(client_parse[0]).unwrap();
 
-    let remote_parse: Vec<&str> = remote.split(":").collect();
+    let remote_parse: Vec<&str> = remote.rsplitn(2,":")
+        .collect::<Vec<&str>>()
+        .into_iter().rev().collect();
     if remote_parse.len() != 2 {
         panic!("remote address is incorrect!");
     }
