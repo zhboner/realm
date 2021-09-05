@@ -1,63 +1,101 @@
 use std::time::Duration;
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
-use tokio::io;
+use std::io;
 use tokio::net::UdpSocket;
-use tokio::sync::oneshot;
-use tokio::time::sleep;
+use tokio::time::timeout;
 
 use super::types::RemoteAddr;
 
-type Record = HashMap<SocketAddr, (Arc<UdpSocket>, oneshot::Sender<()>)>;
-const BUFFERSIZE: usize = 2048;
-const TIMEOUT: Duration = Duration::from_secs(60 * 15);
+// client <--> allocated socket
+type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
+const BUFFERSIZE: usize = 0x1000;
+const TIMEOUT: Duration = Duration::from_secs(20);
 
 pub async fn proxy(local: SocketAddr, remote: RemoteAddr) -> io::Result<()> {
-    // records (client_addr, alloc_socket)
-    let mut record: Record = HashMap::new();
-
-    let local_socket = Arc::new(UdpSocket::bind(&local).await.unwrap());
+    let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
+    let local_sock = Arc::new(UdpSocket::bind(&local).await.unwrap());
     let mut buf = vec![0u8; BUFFERSIZE];
+
     loop {
-        tokio::select! {
-            _ = async {
-                let (n, client_addr) = local_socket.recv_from(&mut buf).await?;
-                let (alloc_socket, _) = record.entry(client_addr).or_insert(
-                    {
-                        // pick a random port
-                        let alloc_socket = Arc::new(UdpSocket::bind("0.0.0.0:0").await.unwrap());
-                        let (emit, cancel) = oneshot::channel::<()>();
-                        tokio::spawn(send_back(
-                            client_addr, local_socket.clone(), alloc_socket.clone(), cancel
-                        ));
-                        (alloc_socket, emit)
-                    }
-                );
-                let remote_addr = remote.to_sockaddr().await?;
-                alloc_socket.send_to(&buf[..n], &remote_addr).await?;
-                Ok::<_, io::Error>(())
-            } => {}
-            _ = async { sleep(TIMEOUT).await } => record.clear()
-        }
+        let (n, client_addr) = local_sock.recv_from(&mut buf).await?;
+
+        let remote_addr = remote.to_sockaddr().await?;
+
+        // the socket associated with a unique client
+        let alloc_sock = match get_socket(&sock_map, &client_addr) {
+            Some(x) => x,
+            None => {
+                alloc_new_socket(
+                    &sock_map,
+                    client_addr,
+                    &remote_addr,
+                    local_sock.clone(),
+                )
+                .await
+            }
+        };
+
+        alloc_sock.send_to(&buf[..n], &remote_addr).await?;
     }
 }
 
 async fn send_back(
+    sock_map: SockMap,
     client_addr: SocketAddr,
-    local_socket: Arc<UdpSocket>,
-    alloc_socket: Arc<UdpSocket>,
-    cancel: oneshot::Receiver<()>,
-) -> io::Result<()> {
+    local_sock: Arc<UdpSocket>,
+    alloc_sock: Arc<UdpSocket>,
+) {
     let mut buf = vec![0u8; BUFFERSIZE];
-    tokio::select! {
-        ret = async {
-            loop {
-                let (n, _) = alloc_socket.recv_from(&mut buf).await?;
-                local_socket.send_to(&buf[..n], &client_addr).await?;
-            }
-        } => { ret }
-       _ = cancel => Ok(())
+
+    while let Ok(Ok((n, _))) =
+        timeout(TIMEOUT, alloc_sock.recv_from(&mut buf)).await
+    {
+        if local_sock.send_to(&buf[..n], &client_addr).await.is_err() {
+            break;
+        }
     }
+
+    sock_map.write().unwrap().remove(&client_addr);
+}
+
+#[inline]
+fn get_socket(
+    sock_map: &SockMap,
+    client_addr: &SocketAddr,
+) -> Option<Arc<UdpSocket>> {
+    let alloc_sock = sock_map.read().unwrap();
+    alloc_sock.get(client_addr).cloned()
+    // drop the lock
+}
+
+async fn alloc_new_socket(
+    sock_map: &SockMap,
+    client_addr: SocketAddr,
+    remote_addr: &SocketAddr,
+    local_sock: Arc<UdpSocket>,
+) -> Arc<UdpSocket> {
+    // pick a random port
+    let alloc_sock = Arc::new(if remote_addr.is_ipv4() {
+        UdpSocket::bind("0.0.0.0:0").await.unwrap()
+    } else {
+        UdpSocket::bind("[::]:0").await.unwrap()
+    });
+
+    // new send back task
+    tokio::spawn(send_back(
+        sock_map.clone(),
+        client_addr,
+        local_sock,
+        alloc_sock.clone(),
+    ));
+
+    sock_map
+        .write()
+        .unwrap()
+        .insert(client_addr, alloc_sock.clone());
+    alloc_sock
+    // drop the lock
 }
