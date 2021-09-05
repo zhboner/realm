@@ -3,9 +3,9 @@ use std::fs;
 use serde::{Serialize, Deserialize};
 
 mod dns_mode;
-mod endpoint_config;
+mod endpoint;
 pub use dns_mode::DnsMode;
-pub use endpoint_config::EndpointConfig;
+pub use endpoint::EndpointConfig;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalConfig {
