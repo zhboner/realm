@@ -21,13 +21,15 @@ pub fn scan() -> CmdInput {
                 .short("c")
                 .long("config")
                 .help("use config file")
+                .value_name("path")
                 .takes_value(true),
         )
         .arg(
             Arg::with_name("local")
                 .short("l")
-                .long("local")
+                .long("listen")
                 .help("listen address")
+                .value_name("addr")
                 .takes_value(true),
         )
         .arg(
@@ -35,6 +37,7 @@ pub fn scan() -> CmdInput {
                 .short("r")
                 .long("remote")
                 .help("remote address")
+                .value_name("addr")
                 .takes_value(true),
         )
         .arg(

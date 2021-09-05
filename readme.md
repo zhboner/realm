@@ -14,10 +14,35 @@ realm is a simple, high performance relay server written in rust.
 - Low resources cost.
 
 ## Usage
-```bash
+```shell
+Realm 1.x
+A high efficiency proxy tool
+
+USAGE:
+    realm [FLAGS] [OPTIONS] [SUBCOMMAND]
+
+FLAGS:
+    -h, --help       Prints help information
+    -u, --udp        enable udp
+    -V, --version    Prints version information
+
+OPTIONS:
+    -c, --config <path>    use config file
+    -l, --listen <addr>    listen address
+    -r, --remote <addr>    remote address
+
+SUBCOMMANDS
+```
+
+Start from command line arguments:
+```shell
+realm -l 127.0.0.1:5000 -r 1.1.1.1:443 --udp
+```
+
+Use a config file:
+```shell
 realm -c config.json
 ```
->example.json
 ```json
 {
 	"dns_mode": "ipv4_only",
@@ -35,7 +60,7 @@ realm -c config.json
 	]
 }
 ```
->dns_mode
+dns_mode:
 ```
 ipv4_only|ipv6_only|ipv4_and_ipv6|ipv4_then_ipv6|ipv6_then_ipv4
 ```
