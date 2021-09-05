@@ -17,7 +17,7 @@ fn main() {
 
 fn start_from_config(c: String) {
     let config = GlobalConfig::from_config_file(&c);
-    relay::init_resolver(config.dns_mode.to_strategy());
+    relay::init_resolver(config.dns_mode.into());
     let eps: Vec<Endpoint> = config
         .endpoints
         .into_iter()
