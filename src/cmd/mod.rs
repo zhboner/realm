@@ -14,7 +14,7 @@ pub enum CmdInput {
 
 pub fn scan() -> CmdInput {
     let matches = App::new("Realm")
-        .version("1.3-custom")
+        .version(super::VERSION)
         .about("A high efficiency proxy tool")
         .arg(
             Arg::with_name("config")

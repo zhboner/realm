@@ -7,6 +7,8 @@ use cmd::CmdInput;
 use config::GlobalConfig;
 use relay::Endpoint;
 
+const VERSION: &str = "1.4.0-rc1";
+
 fn main() {
     match cmd::scan() {
         CmdInput::Config(c) => start_from_config(c),
