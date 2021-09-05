@@ -45,9 +45,9 @@ impl Endpoint {
         let remote = if let Ok(sockaddr) = remote.parse::<SocketAddr>() {
             RemoteAddr::SocketAddr(sockaddr)
         } else {
-            let mut iter = remote.splitn(2, ':');
-            let addr = iter.next().unwrap().to_string();
+            let mut iter = remote.rsplitn(2, ':');
             let port = iter.next().unwrap().parse::<u16>().unwrap();
+            let addr = iter.next().unwrap().to_string();
             // test addr
             let _ = dns::resolve_sync(&addr).unwrap();
             RemoteAddr::DomainName(addr, port)
