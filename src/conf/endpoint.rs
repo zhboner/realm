@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::relay::Endpoint;
+use crate::utils::Endpoint;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConfig {

@@ -1,11 +1,11 @@
 mod cmd;
-mod relay;
+mod conf;
 mod utils;
-mod config;
+mod relay;
 
 use cmd::CmdInput;
-use config::GlobalConfig;
-use relay::Endpoint;
+use conf::GlobalConfig;
+use utils::Endpoint;
 
 const VERSION: &str = "1.4.0-rc1";
 
@@ -24,7 +24,7 @@ fn start_from_cmd(c: Endpoint) {
 
 fn start_from_config(c: String) {
     let config = GlobalConfig::from_config_file(&c);
-    relay::init_resolver(config.dns_mode.into());
+    utils::init_resolver(config.dns_mode.into());
     let eps: Vec<Endpoint> = config
         .endpoints
         .into_iter()

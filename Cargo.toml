@@ -9,12 +9,13 @@ edition = "2018"
 [dependencies]
 libc = "0.2"
 futures = "0.3"
+cfg-if = "1"
 
 clap = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
+tokio = { version = "1.12", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
 trust-dns-resolver = "0.20"
 
 lazy_static = "1"

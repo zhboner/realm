@@ -1,5 +1,5 @@
-use tokio::io;
+mod dns;
+mod types;
 
-pub fn new_io_err(e: &str) -> io::Error {
-    io::Error::new(io::ErrorKind::Other, e)
-}
+pub use dns::*;
+pub use types::*;

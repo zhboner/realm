@@ -1,5 +1,5 @@
+use std::io::Result;
 use std::net::{SocketAddr, ToSocketAddrs};
-use tokio::io;
 use super::dns;
 
 #[derive(Clone)]
@@ -15,7 +15,7 @@ pub struct Endpoint {
 }
 
 impl RemoteAddr {
-    pub async fn into_sockaddr(self) -> io::Result<SocketAddr> {
+    pub async fn into_sockaddr(self) -> Result<SocketAddr> {
         match self {
             Self::SocketAddr(sockaddr) => Ok(sockaddr),
             Self::DomainName(addr, port) => {
@@ -24,7 +24,7 @@ impl RemoteAddr {
             }
         }
     }
-    pub async fn to_sockaddr(&self) -> io::Result<SocketAddr> {
+    pub async fn to_sockaddr(&self) -> Result<SocketAddr> {
         match self {
             Self::SocketAddr(sockaddr) => Ok(*sockaddr),
             Self::DomainName(addr, port) => {

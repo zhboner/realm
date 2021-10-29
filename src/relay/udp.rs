@@ -1,20 +1,20 @@
+use std::io::Result;
 use std::time::Duration;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
-use std::io;
 use tokio::net::UdpSocket;
 use tokio::time::timeout;
 
-use super::types::RemoteAddr;
+use crate::utils::RemoteAddr;
 
 // client <--> allocated socket
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
 const BUFFERSIZE: usize = 0x1000;
 const TIMEOUT: Duration = Duration::from_secs(20);
 
-pub async fn proxy(local: SocketAddr, remote: RemoteAddr) -> io::Result<()> {
+pub async fn proxy(local: SocketAddr, remote: RemoteAddr) -> Result<()> {
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let local_sock = Arc::new(UdpSocket::bind(&local).await.unwrap());
     let mut buf = vec![0u8; BUFFERSIZE];
