@@ -33,7 +33,7 @@ lto = true
 opt-level = 0
 
 [features]
-default = []
+default = ["udp", "tfo", "zero-copy"]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = ["libc"]
