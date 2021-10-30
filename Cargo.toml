@@ -17,6 +17,7 @@ serde_json = "1"
 
 tokio = { version = "1.12", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
 trust-dns-resolver = "0.20"
+tokio-tfo = "0.1.4"
 
 lazy_static = "1"
 

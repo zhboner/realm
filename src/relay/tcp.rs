@@ -1,12 +1,21 @@
 use std::io::{Result, Error, ErrorKind};
 use futures::try_join;
 
-use tokio::net::tcp::{ReadHalf, WriteHalf};
-use tokio::net::TcpStream;
-
 use crate::utils::RemoteAddr;
 
 use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(all(feature = "tfo", not(target_os = "linux")))] {
+        use tfo::TcpStream;
+        use tfo::{ReadHalf, WriteHalf};
+        pub use tfo::TcpListener;
+    } else {
+        use tokio::net::TcpStream;
+        use tokio::net::tcp::{ReadHalf, WriteHalf};
+        pub use tokio::net::TcpListener;
+    }
+}
 
 cfg_if! {
     if #[cfg(target_os = "linux")] {
@@ -172,4 +181,148 @@ mod zero_copy {
             Err(Error::new(ErrorKind::ConnectionReset, "connection reset"))
         }
     }
+}
+
+mod tfo {
+    use std::io::Result;
+    use std::net::SocketAddr;
+    use std::pin::Pin;
+    use std::task::{Poll, Context};
+
+    use tokio_tfo::{TfoStream, TfoListener};
+    use tokio::io::{AsyncRead, AsyncWrite};
+    use tokio::io::ReadBuf;
+
+    pub struct TcpListener(TfoListener);
+
+    pub struct TcpStream(TfoStream);
+    pub struct ReadHalf<'a>(&'a TcpStream);
+    pub struct WriteHalf<'a>(&'a TcpStream);
+
+    #[allow(clippy::mut_from_ref)]
+    #[inline]
+    unsafe fn const_cast<T>(x: &T) -> &mut T {
+        let const_ptr = x as *const T;
+        let mut_ptr = const_ptr as *mut T;
+        &mut *mut_ptr
+    }
+
+    impl TcpListener {
+        pub async fn bind(addr: SocketAddr) -> Result<TcpListener> {
+            TfoListener::bind(addr).await.map(|x| TcpListener(x))
+        }
+
+        pub async fn accept(&self) -> Result<(TcpStream, SocketAddr)> {
+            self.0.accept().await.map(|(x, addr)| (TcpStream(x), addr))
+        }
+    }
+
+    impl TcpStream {
+        pub async fn connect(addr: SocketAddr) -> Result<TcpStream> {
+            TfoStream::connect(addr).await.map(|x| TcpStream(x))
+        }
+
+        pub fn set_nodelay(&self, nodelay: bool) -> Result<()> {
+            self.0.set_nodelay(nodelay)
+        }
+
+        pub fn split<'a>(&'a mut self) -> (ReadHalf<'a>, WriteHalf<'a>) {
+            (ReadHalf(&*self), WriteHalf(&*self))
+        }
+    }
+
+    impl AsyncRead for TcpStream {
+        fn poll_read(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+            buf: &mut ReadBuf<'_>,
+        ) -> Poll<std::io::Result<()>> {
+            Pin::new(&mut self.get_mut().0).poll_read(cx, buf)
+        }
+    }
+
+    impl AsyncWrite for TcpStream {
+        fn poll_write(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+            buf: &[u8],
+        ) -> Poll<Result<usize>> {
+            Pin::new(&mut self.get_mut().0).poll_write(cx, buf)
+        }
+
+        fn poll_flush(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Result<()>> {
+            Pin::new(&mut self.get_mut().0).poll_flush(cx)
+        }
+
+        fn poll_shutdown(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Result<()>> {
+            Pin::new(&mut self.get_mut().0).poll_shutdown(cx)
+        }
+    }
+
+    impl<'a> AsyncRead for ReadHalf<'a> {
+        fn poll_read(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+            buf: &mut ReadBuf<'_>,
+        ) -> Poll<std::io::Result<()>> {
+            Pin::new(unsafe { const_cast(self.0) }).poll_read(cx, buf)
+        }
+    }
+
+    impl<'a> AsyncWrite for WriteHalf<'a> {
+        fn poll_write(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+            buf: &[u8],
+        ) -> Poll<Result<usize>> {
+            Pin::new(unsafe { const_cast(self.0) }).poll_write(cx, buf)
+        }
+
+        fn poll_flush(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Result<()>> {
+            Pin::new(unsafe { const_cast(self.0) }).poll_flush(cx)
+        }
+
+        fn poll_shutdown(
+            self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Result<()>> {
+            Pin::new(unsafe { const_cast(self.0) }).poll_shutdown(cx)
+        }
+    }
+
+    impl<'a> AsRef<TcpStream> for ReadHalf<'a> {
+        fn as_ref(&self) -> &TcpStream {
+            self.0
+        }
+    }
+
+    impl<'a> AsRef<TcpStream> for WriteHalf<'a> {
+        fn as_ref(&self) -> &TcpStream {
+            self.0
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    mod linux_ext {
+        use super::*;
+        use std::os::unix::io::AsRawFd;
+        use std::os::unix::prelude::RawFd;
+        impl AsRawFd for TcpStream {
+            fn as_raw_fd(&self) -> RawFd {
+                self.0.as_raw_fd()
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    use linux_ext::*;
 }
