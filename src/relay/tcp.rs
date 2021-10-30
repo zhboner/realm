@@ -13,7 +13,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(target_os = "linux")] {
+    if #[cfg(all(target_os = "linux", feature = "zero-copy"))] {
         use zero_copy::copy;
         const BUFFER_SIZE: usize = 0x10000;
     } else {
@@ -39,7 +39,7 @@ pub async fn proxy(mut inbound: TcpStream, remote: RemoteAddr) -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
 mod normal_copy {
     use super::*;
     pub async fn copy(mut r: ReadHalf<'_>, mut w: WriteHalf<'_>) -> Result<()> {
@@ -59,7 +59,7 @@ mod normal_copy {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", feature = "zero-copy"))]
 mod zero_copy {
     use super::*;
     use std::ops::Drop;

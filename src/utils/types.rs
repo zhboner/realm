@@ -24,6 +24,7 @@ impl RemoteAddr {
             }
         }
     }
+    #[allow(unused)]
     pub async fn to_sockaddr(&self) -> Result<SocketAddr> {
         match self {
             Self::SocketAddr(sockaddr) => Ok(*sockaddr),

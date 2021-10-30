@@ -7,9 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libc = "0.2"
-futures = "0.3"
 cfg-if = "1"
+futures = "0.3"
 
 clap = "2"
 serde = { version = "1", features = ["derive"] }
@@ -17,9 +16,14 @@ serde_json = "1"
 
 tokio = { version = "1.12", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
 trust-dns-resolver = "0.20"
-tokio-tfo = { path = "tokio-tfo", version = "0.1.4", optional = true }
 
 lazy_static = "1"
+
+# tfo
+tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.4", optional = true }
+
+# zero-copy
+libc = { version = "0.2", optional = true }
 
 [profile.release]
 opt-level = 3
@@ -29,5 +33,7 @@ lto = true
 opt-level = 0
 
 [features]
-default = ["tfo"]
+default = []
+udp = []
 tfo = ["tokio-tfo"]
+zero-copy = ["libc"]

@@ -3,6 +3,7 @@ use crate::utils::Endpoint;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConfig {
+    #[serde(default)]
     udp: bool,
     local: String,
     remote: String,
