@@ -17,7 +17,7 @@ serde_json = "1"
 
 tokio = { version = "1.12", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
 trust-dns-resolver = "0.20"
-tokio-tfo = { version = "0.1.4", optional = true }
+tokio-tfo = { path = "tokio-tfo", version = "0.1.4", optional = true }
 
 lazy_static = "1"
 
@@ -29,5 +29,5 @@ lto = true
 opt-level = 0
 
 [features]
-default = []
+default = ["tfo"]
 tfo = ["tokio-tfo"]
