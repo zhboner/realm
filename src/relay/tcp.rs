@@ -183,6 +183,7 @@ mod zero_copy {
     }
 }
 
+#[cfg(feature = "tfo")]
 mod tfo {
     use std::io::Result;
     use std::net::SocketAddr;
