@@ -6,7 +6,7 @@ use crate::utils::RemoteAddr;
 use cfg_if::cfg_if;
 
 cfg_if! {
-    if #[cfg(all(feature = "tfo", not(target_os = "linux")))] {
+    if #[cfg(feature = "tfo")] {
         use tfo::TcpStream;
         use tfo::{ReadHalf, WriteHalf};
         pub use tfo::TcpListener;
@@ -193,6 +193,7 @@ mod tfo {
     use tokio_tfo::{TfoStream, TfoListener};
     use tokio::io::{AsyncRead, AsyncWrite};
     use tokio::io::ReadBuf;
+    use tokio::io::Interest;
 
     pub struct TcpListener(TfoListener);
 
@@ -223,12 +224,28 @@ mod tfo {
             TfoStream::connect(addr).await.map(|x| TcpStream(x))
         }
 
+        pub async fn readable(&self) -> Result<()> {
+            self.0.inner().readable().await
+        }
+
+        pub async fn writable(&self) -> Result<()> {
+            self.0.inner().writable().await
+        }
+
         pub fn set_nodelay(&self, nodelay: bool) -> Result<()> {
             self.0.set_nodelay(nodelay)
         }
 
         pub fn split<'a>(&'a mut self) -> (ReadHalf<'a>, WriteHalf<'a>) {
             (ReadHalf(&*self), WriteHalf(&*self))
+        }
+
+        pub fn try_io<R>(
+            &self,
+            interest: Interest,
+            f: impl FnOnce() -> Result<R>,
+        ) -> Result<R> {
+            self.0.inner().try_io(interest, f)
         }
     }
 
@@ -323,7 +340,4 @@ mod tfo {
             }
         }
     }
-
-    #[cfg(target_os = "linux")]
-    use linux_ext::*;
 }
