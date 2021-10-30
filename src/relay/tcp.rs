@@ -1,8 +1,3 @@
-use std::io::{Result, Error, ErrorKind};
-use futures::try_join;
-
-use crate::utils::RemoteAddr;
-
 use cfg_if::cfg_if;
 
 cfg_if! {
@@ -26,6 +21,10 @@ cfg_if! {
         const BUFFER_SIZE: usize = 0x4000;
     }
 }
+
+use std::io::Result;
+use futures::try_join;
+use crate::utils::RemoteAddr;
 
 pub async fn proxy(mut inbound: TcpStream, remote: RemoteAddr) -> Result<()> {
     let mut outbound =
@@ -64,6 +63,7 @@ mod normal_copy {
 mod zero_copy {
     use super::*;
     use std::ops::Drop;
+    use std::io::{Error, ErrorKind};
     use tokio::io::Interest;
 
     struct Pipe(pub i32, pub i32);
@@ -211,7 +211,7 @@ mod tfo {
 
     impl TcpListener {
         pub async fn bind(addr: SocketAddr) -> Result<TcpListener> {
-            TfoListener::bind(addr).await.map(|x| TcpListener(x))
+            TfoListener::bind(addr).await.map(TcpListener)
         }
 
         pub async fn accept(&self) -> Result<(TcpStream, SocketAddr)> {
@@ -221,13 +221,15 @@ mod tfo {
 
     impl TcpStream {
         pub async fn connect(addr: SocketAddr) -> Result<TcpStream> {
-            TfoStream::connect(addr).await.map(|x| TcpStream(x))
+            TfoStream::connect(addr).await.map(TcpStream)
         }
 
+        #[allow(unused)]
         pub async fn readable(&self) -> Result<()> {
             self.0.inner().readable().await
         }
 
+        #[allow(unused)]
         pub async fn writable(&self) -> Result<()> {
             self.0.inner().writable().await
         }
@@ -236,10 +238,11 @@ mod tfo {
             self.0.set_nodelay(nodelay)
         }
 
-        pub fn split<'a>(&'a mut self) -> (ReadHalf<'a>, WriteHalf<'a>) {
+        pub fn split(&mut self) -> (ReadHalf, WriteHalf) {
             (ReadHalf(&*self), WriteHalf(&*self))
         }
 
+        #[allow(unused)]
         pub fn try_io<R>(
             &self,
             interest: Interest,
