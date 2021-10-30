@@ -30,8 +30,6 @@ OPTIONS:
     -c, --config <path>    use config file
     -l, --listen <addr>    listen address
     -r, --remote <addr>    remote address
-
-SUBCOMMANDS
 ```
 
 Start from command line arguments:
@@ -63,4 +61,18 @@ realm -c config.json
 dns_mode:
 ```
 ipv4_only|ipv6_only|ipv4_and_ipv6|ipv4_then_ipv6|ipv6_then_ipv4
+```
+
+## Custom Build
+Available Options:
+- udp
+- tfo
+- zero-copy
+
+```shell
+# simple tcp
+cargo build --release --no-default-features
+
+# enable other options
+cargo build --release --no-default-features --features udp, tfo, zero-copy
 ```
