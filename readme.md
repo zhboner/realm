@@ -13,6 +13,20 @@ realm is a simple, high performance relay server written in rust.
 - Concurrency. Bidirectional concurrent traffic leads to high performance.
 - Low resources cost.
 
+## Custom Build
+Available Options:
+- udp *(enabled)*
+- tfo *(disabled)*
+- zero-copy *(enabled on linux)*
+
+```shell
+# simple tcp
+cargo build --release --no-default-features
+
+# enable other options
+cargo build --release --no-default-features --features udp, tfo, zero-copy
+```
+
 ## Usage
 ```shell
 Realm 1.x
@@ -47,10 +61,9 @@ realm -c config.json
 	"endpoints": [
 		{
 			"local": "0.0.0.0:5000",
-			"remote": "1.1.1.1:443",
-			"udp": false
-		}
-        	{
+			"remote": "1.1.1.1:443"
+		},
+        {
 			"local": "0.0.0.0:10000",
 			"remote": "www.google.com:443",
 			"udp": true
@@ -59,20 +72,8 @@ realm -c config.json
 }
 ```
 dns_mode:
-```
-ipv4_only|ipv6_only|ipv4_and_ipv6|ipv4_then_ipv6|ipv6_then_ipv4
-```
-
-## Custom Build
-Available Options:
-- udp
-- tfo
-- zero-copy
-
-```shell
-# simple tcp
-cargo build --release --no-default-features
-
-# enable other options
-cargo build --release --no-default-features --features udp, tfo, zero-copy
-```
+- ipv4_only
+- ipv6_only
+- ipv4_then_ipv6 *(default)*
+- ipv6_then_ipv4
+- ipv4_and_ipv6
