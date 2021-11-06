@@ -17,7 +17,8 @@ pub struct FullConfig {
 impl FullConfig {
     pub fn from_config_file(file: &str) -> Self {
         let config = fs::read_to_string(file)
-            .expect(&format!("unable to open {}", file));
-        serde_json::from_str(&config).expect("failed to parse config file")
+            .unwrap_or_else(|_| panic!("unable to open {}", file));
+        serde_json::from_str(&config)
+            .unwrap_or_else(|_| panic!("unable to open {}", file))
     }
 }

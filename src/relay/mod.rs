@@ -26,7 +26,7 @@ async fn proxy_tcp(ep: Endpoint) -> Result<()> {
     } = ep;
     let lis = TcpListener::bind(local)
         .await
-        .expect(&format!("unable to bind {}", &local));
+        .unwrap_or_else(|_| panic!("unable to bind {}", &local));
     while let Ok((stream, _)) = lis.accept().await {
         tokio::spawn(tcp::proxy(stream, remote.clone(), through));
     }
