@@ -44,6 +44,13 @@ pub async fn proxy(
             #[cfg(unix)]
             socket.set_reuseport(true)?;
             socket.bind(x)?;
+
+            #[cfg(feature = "tfo")]
+            {
+                TcpStream::connect_with_socket(socket, remote).await?
+            }
+
+            #[cfg(not(feature = "tfo"))]
             socket.connect(remote).await?
         }
         None => TcpStream::connect(remote).await?,
@@ -213,6 +220,7 @@ mod tfo {
     use tokio::io::{AsyncRead, AsyncWrite};
     use tokio::io::ReadBuf;
     use tokio::io::Interest;
+    use tokio::net::TcpSocket;
 
     pub struct TcpListener(TfoListener);
 
@@ -243,6 +251,14 @@ mod tfo {
             TfoStream::connect(addr).await.map(TcpStream)
         }
 
+        pub async fn connect_with_socket(
+            socket: TcpSocket,
+            addr: SocketAddr,
+        ) -> Result<TcpStream> {
+            TfoStream::connect_with_socket(socket, addr)
+                .await
+                .map(TcpStream)
+        }
         #[allow(unused)]
         pub async fn readable(&self) -> Result<()> {
             self.0.inner().readable().await
