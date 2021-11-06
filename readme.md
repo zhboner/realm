@@ -41,20 +41,27 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -c, --config <path>    use config file
-    -l, --listen <addr>    listen address
-    -r, --remote <addr>    remote address
+    -c, --config <path>     use config file
+    -l, --listen <addr>     listen address
+    -r, --remote <addr>     remote address
+    -x, --through <addr>    send through
 ```
 
 Start from command line arguments:
 ```shell
+# enable udp
 realm -l 127.0.0.1:5000 -r 1.1.1.1:443 --udp
+
+# specify outbound ip
+realm -l 127.0.0.1:5000 -r 1.1.1.1:443 --through 127.0.0.1
 ```
 
 Use a config file:
 ```shell
 realm -c config.json
 ```
+
+Example:
 ```json
 {
 	"dns_mode": "ipv4_only",
@@ -67,6 +74,11 @@ realm -c config.json
 			"local": "0.0.0.0:10000",
 			"remote": "www.google.com:443",
 			"udp": true
+		},
+		{
+			"local": "0.0.0.0:15000",
+			"remote": "www.microsoft.com:443",
+			"through": "127.0.0.1"
 		}
 	]
 }
@@ -77,3 +89,9 @@ dns_mode:
 - ipv4_then_ipv6 *(default)*
 - ipv6_then_ipv4
 - ipv4_and_ipv6
+
+endpoint objects:
+- local *(listen address)*
+- remote *(remote address)*
+- through *(send through specified ip or address, this is optional)*
+- udp *(true|false, default=false)*
