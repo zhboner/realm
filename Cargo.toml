@@ -14,13 +14,13 @@ clap = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-tokio = { version = "1.12", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
 trust-dns-resolver = "0.20"
 
 lazy_static = "1"
 
 # tfo
-tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.4", optional = true }
+tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.6", optional = true }
 
 # zero-copy
 libc = { version = "0.2", optional = true }
