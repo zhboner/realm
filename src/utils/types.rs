@@ -9,15 +9,11 @@ pub enum RemoteAddr {
 }
 
 #[derive(Clone)]
-pub struct Remote {
-    pub addr: RemoteAddr,
-    pub through: Option<SocketAddr>,
-}
-
 pub struct Endpoint {
     pub udp: bool,
     pub local: SocketAddr,
-    pub remote: Remote,
+    pub remote: RemoteAddr,
+    pub through: Option<SocketAddr>,
 }
 
 impl RemoteAddr {
@@ -74,10 +70,8 @@ impl Endpoint {
         Endpoint {
             udp,
             local,
-            remote: Remote {
-                addr: remote,
-                through,
-            },
+            remote,
+            through,
         }
     }
 }

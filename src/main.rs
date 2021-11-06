@@ -4,7 +4,7 @@ mod utils;
 mod relay;
 
 use cmd::CmdInput;
-use conf::GlobalConfig;
+use conf::FullConfig;
 use utils::Endpoint;
 
 const VERSION: &str = "1.5.0-rc2";
@@ -23,7 +23,7 @@ fn start_from_cmd(c: Endpoint) {
 }
 
 fn start_from_config(c: String) {
-    let config = GlobalConfig::from_config_file(&c);
+    let config = FullConfig::from_config_file(&c);
     utils::init_resolver(config.dns_mode.into());
     let eps: Vec<Endpoint> = config
         .endpoints

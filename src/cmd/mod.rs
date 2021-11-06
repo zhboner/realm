@@ -44,7 +44,7 @@ pub fn scan() -> CmdInput {
             Arg::with_name("through")
                 .short("x")
                 .long("through")
-                .help("send through")
+                .help("send through ip or address")
                 .value_name("addr")
                 .takes_value(true),
         )
