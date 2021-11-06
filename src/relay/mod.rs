@@ -4,7 +4,7 @@ use futures::future::join_all;
 
 mod tcp;
 use tcp::TcpListener;
-use crate::utils::{Endpoint, RemoteAddr};
+use crate::utils::{Endpoint, Remote};
 
 pub async fn run(eps: Vec<Endpoint>) {
     let mut workers = vec![];
@@ -18,10 +18,10 @@ pub async fn run(eps: Vec<Endpoint>) {
     join_all(workers).await;
 }
 
-async fn proxy_tcp(local: SocketAddr, remote: RemoteAddr) -> Result<()> {
+async fn proxy_tcp(local: SocketAddr, remote: Remote) -> Result<()> {
     let lis = TcpListener::bind(local).await.expect("unable to bind");
     while let Ok((stream, _)) = lis.accept().await {
-        tokio::spawn(tcp::proxy(stream, remote.clone()));
+        tokio::spawn(tcp::proxy(stream, remote.addr.clone(), remote.through));
     }
     Ok(())
 }
@@ -30,6 +30,6 @@ async fn proxy_tcp(local: SocketAddr, remote: RemoteAddr) -> Result<()> {
 mod udp;
 
 #[cfg(feature = "udp")]
-async fn proxy_udp(local: SocketAddr, remote: RemoteAddr) -> Result<()> {
-    udp::proxy(local, remote).await
+async fn proxy_udp(local: SocketAddr, remote: Remote) -> Result<()> {
+    udp::proxy(local, remote.addr.clone(), remote.through).await
 }

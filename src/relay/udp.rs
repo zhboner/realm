@@ -8,13 +8,18 @@ use tokio::net::UdpSocket;
 use tokio::time::timeout;
 
 use crate::utils::RemoteAddr;
+use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
 
 // client <--> allocated socket
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
 const BUFFERSIZE: usize = 0x1000;
 const TIMEOUT: Duration = Duration::from_secs(20);
 
-pub async fn proxy(local: SocketAddr, remote: RemoteAddr) -> Result<()> {
+pub async fn proxy(
+    local: SocketAddr,
+    remote: RemoteAddr,
+    through: Option<SocketAddr>,
+) -> Result<()> {
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let local_sock = Arc::new(UdpSocket::bind(&local).await.unwrap());
     let mut buf = vec![0u8; BUFFERSIZE];
@@ -32,6 +37,7 @@ pub async fn proxy(local: SocketAddr, remote: RemoteAddr) -> Result<()> {
                     &sock_map,
                     client_addr,
                     &remote_addr,
+                    &through,
                     local_sock.clone(),
                 )
                 .await
@@ -75,15 +81,21 @@ async fn alloc_new_socket(
     sock_map: &SockMap,
     client_addr: SocketAddr,
     remote_addr: &SocketAddr,
+    send_through: &Option<SocketAddr>,
     local_sock: Arc<UdpSocket>,
 ) -> Arc<UdpSocket> {
     // pick a random port
-    let alloc_sock = Arc::new(if remote_addr.is_ipv4() {
-        UdpSocket::bind("0.0.0.0:0").await.unwrap()
-    } else {
-        UdpSocket::bind("[::]:0").await.unwrap()
+    let alloc_sock = Arc::new(match send_through {
+        Some(x) => UdpSocket::bind(x).await.unwrap(),
+        None => match remote_addr {
+            SocketAddr::V4(_) => {
+                UdpSocket::bind(new_sockaddr_v4()).await.unwrap()
+            }
+            SocketAddr::V6(_) => {
+                UdpSocket::bind(new_sockaddr_v6()).await.unwrap()
+            }
+        },
     });
-
     // new send back task
     tokio::spawn(send_back(
         sock_map.clone(),

@@ -7,10 +7,12 @@ pub struct EndpointConfig {
     udp: bool,
     local: String,
     remote: String,
+    #[serde(default)]
+    through: String,
 }
 
 impl EndpointConfig {
-    pub fn into_endpoint(self) -> Endpoint {
-        Endpoint::new(&self.local, &self.remote, self.udp)
+    pub fn build(&self) -> Endpoint {
+        Endpoint::new(&self.local, &self.remote, &self.through, self.udp)
     }
 }

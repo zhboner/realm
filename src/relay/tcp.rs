@@ -23,12 +23,31 @@ cfg_if! {
 }
 
 use std::io::Result;
+use std::net::SocketAddr;
 use futures::try_join;
+use tokio::net::TcpSocket;
 use crate::utils::RemoteAddr;
 
-pub async fn proxy(mut inbound: TcpStream, remote: RemoteAddr) -> Result<()> {
-    let mut outbound =
-        TcpStream::connect(remote.into_sockaddr().await?).await?;
+pub async fn proxy(
+    mut inbound: TcpStream,
+    remote: RemoteAddr,
+    through: Option<SocketAddr>,
+) -> Result<()> {
+    let remote = remote.into_sockaddr().await?;
+    let mut outbound = match through {
+        Some(x) => {
+            let socket = match x {
+                SocketAddr::V4(_) => TcpSocket::new_v4()?,
+                SocketAddr::V6(_) => TcpSocket::new_v6()?,
+            };
+            socket.set_reuseaddr(true)?;
+            #[cfg(unix)]
+            socket.set_reuseport(true)?;
+            socket.bind(x)?;
+            socket.connect(remote).await?
+        }
+        None => TcpStream::connect(remote).await?,
+    };
     inbound.set_nodelay(true)?;
     outbound.set_nodelay(true)?;
     let (ri, wi) = inbound.split();

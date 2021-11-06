@@ -1,5 +1,5 @@
 use std::io::Result;
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use super::dns;
 
 #[derive(Clone)]
@@ -8,10 +8,16 @@ pub enum RemoteAddr {
     DomainName(String, u16),
 }
 
+#[derive(Clone)]
+pub struct Remote {
+    pub addr: RemoteAddr,
+    pub through: Option<SocketAddr>,
+}
+
 pub struct Endpoint {
     pub udp: bool,
     pub local: SocketAddr,
-    pub remote: RemoteAddr,
+    pub remote: Remote,
 }
 
 impl RemoteAddr {
@@ -37,12 +43,15 @@ impl RemoteAddr {
 }
 
 impl Endpoint {
-    pub fn new(local: &str, remote: &str, udp: bool) -> Self {
+    pub fn new(local: &str, remote: &str, through: &str, udp: bool) -> Self {
+        // check local addr
         let local = local
             .to_socket_addrs()
             .expect("invalid local address")
             .next()
             .unwrap();
+
+        // check remote addr
         let remote = if let Ok(sockaddr) = remote.parse::<SocketAddr>() {
             RemoteAddr::SocketAddr(sockaddr)
         } else {
@@ -53,6 +62,22 @@ impl Endpoint {
             let _ = dns::resolve_sync(&addr).unwrap();
             RemoteAddr::DomainName(addr, port)
         };
-        Endpoint { udp, local, remote }
+
+        // check bind addr
+        let through = match through.to_socket_addrs() {
+            Ok(mut x) => Some(x.next().unwrap()),
+            Err(_) => through
+                .parse::<IpAddr>()
+                .map_or(None, |ip| Some(SocketAddr::new(ip, 0))),
+        };
+
+        Endpoint {
+            udp,
+            local,
+            remote: Remote {
+                addr: remote,
+                through,
+            },
+        }
     }
 }

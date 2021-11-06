@@ -41,6 +41,14 @@ pub fn scan() -> CmdInput {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("through")
+                .short("x")
+                .long("through")
+                .help("send through")
+                .value_name("addr")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("udp")
                 .short("u")
                 .long("udp")
@@ -64,6 +72,7 @@ pub fn scan() -> CmdInput {
         return CmdInput::Endpoint(Endpoint::new(
             local,
             remote,
+            matches.value_of("through").unwrap_or(""),
             matches.is_present("udp"),
         ));
     }
