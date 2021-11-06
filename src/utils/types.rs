@@ -62,9 +62,13 @@ impl Endpoint {
         // check bind addr
         let through = match through.to_socket_addrs() {
             Ok(mut x) => Some(x.next().unwrap()),
-            Err(_) => through
-                .parse::<IpAddr>()
-                .map_or(None, |ip| Some(SocketAddr::new(ip, 0))),
+            Err(_) => {
+                let mut ipstr = String::from(through);
+                ipstr.retain(|c| c != '[' && c != ']');
+                ipstr
+                    .parse::<IpAddr>()
+                    .map_or(None, |ip| Some(SocketAddr::new(ip, 0)))
+            }
         };
 
         Endpoint {
