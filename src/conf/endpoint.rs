@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use crate::utils::Endpoint;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EndpointConfig {
+pub struct EndpointConf {
     #[serde(default)]
     udp: bool,
     local: String,
@@ -11,7 +11,7 @@ pub struct EndpointConfig {
     through: String,
 }
 
-impl EndpointConfig {
+impl EndpointConf {
     pub fn build(&self) -> Endpoint {
         Endpoint::new(&self.local, &self.remote, &self.through, self.udp)
     }

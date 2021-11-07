@@ -1,6 +1,7 @@
 use std::io::Result;
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
-use super::dns;
+
+use crate::dns;
 
 #[derive(Clone)]
 pub enum RemoteAddr {
@@ -21,8 +22,15 @@ impl RemoteAddr {
         match self {
             Self::SocketAddr(sockaddr) => Ok(sockaddr),
             Self::DomainName(addr, port) => {
-                let ip = dns::resolve_async(&addr).await?;
-                Ok(SocketAddr::new(ip, port))
+                #[cfg(feature = "trust-dns")]
+                {
+                    dns::resolve(&addr, port).await
+                }
+
+                #[cfg(not(feature = "trust-dns"))]
+                {
+                    dns::resolve(&addr, port)
+                }
             }
         }
     }
@@ -31,8 +39,15 @@ impl RemoteAddr {
         match self {
             Self::SocketAddr(sockaddr) => Ok(*sockaddr),
             Self::DomainName(addr, port) => {
-                let ip = dns::resolve_async(addr).await?;
-                Ok(SocketAddr::new(ip, *port))
+                #[cfg(feature = "trust-dns")]
+                {
+                    dns::resolve(addr, *port).await
+                }
+
+                #[cfg(not(feature = "trust-dns"))]
+                {
+                    dns::resolve(addr, *port)
+                }
             }
         }
     }
@@ -55,7 +70,7 @@ impl Endpoint {
             let port = iter.next().unwrap().parse::<u16>().unwrap();
             let addr = iter.next().unwrap().to_string();
             // test addr
-            let _ = dns::resolve_sync(&addr).unwrap();
+            let _ = dns::resolve_sync(&addr, 0).unwrap();
             RemoteAddr::DomainName(addr, port)
         };
 

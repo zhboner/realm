@@ -1,7 +1,5 @@
-mod dns;
 mod types;
 
-pub use dns::*;
 pub use types::*;
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
