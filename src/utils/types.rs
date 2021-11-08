@@ -9,12 +9,19 @@ pub enum RemoteAddr {
     DomainName(String, u16),
 }
 
+#[derive(Clone, Copy)]
+pub struct ConnectOpts {
+    pub fast_open: bool,
+    pub zero_copy: bool,
+    pub send_through: Option<SocketAddr>,
+}
+
 #[derive(Clone)]
 pub struct Endpoint {
     pub udp: bool,
     pub local: SocketAddr,
     pub remote: RemoteAddr,
-    pub through: Option<SocketAddr>,
+    pub conn_opts: ConnectOpts,
 }
 
 impl RemoteAddr {
@@ -54,7 +61,14 @@ impl RemoteAddr {
 }
 
 impl Endpoint {
-    pub fn new(local: &str, remote: &str, through: &str, udp: bool) -> Self {
+    pub fn new(
+        local: &str,
+        remote: &str,
+        through: &str,
+        udp: bool,
+        fast_open: bool,
+        zero_copy: bool,
+    ) -> Self {
         // check local addr
         let local = local
             .to_socket_addrs()
@@ -90,7 +104,11 @@ impl Endpoint {
             udp,
             local,
             remote,
-            through,
+            conn_opts: ConnectOpts {
+                fast_open,
+                zero_copy,
+                send_through: through,
+            },
         }
     }
 }

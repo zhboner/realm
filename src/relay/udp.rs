@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use tokio::net::UdpSocket;
 use tokio::time::timeout;
 
-use crate::utils::RemoteAddr;
+use crate::utils::{RemoteAddr, ConnectOpts};
 use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
 
 // client <--> allocated socket
@@ -18,8 +18,9 @@ const TIMEOUT: Duration = Duration::from_secs(20);
 pub async fn proxy(
     local: SocketAddr,
     remote: RemoteAddr,
-    through: Option<SocketAddr>,
+    conn_opts: ConnectOpts,
 ) -> Result<()> {
+    let ConnectOpts { send_through, .. } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let local_sock = Arc::new(UdpSocket::bind(&local).await.unwrap());
     let mut buf = vec![0u8; BUFFERSIZE];
@@ -37,7 +38,7 @@ pub async fn proxy(
                     &sock_map,
                     client_addr,
                     &remote_addr,
-                    &through,
+                    &send_through,
                     local_sock.clone(),
                 )
                 .await

@@ -14,10 +14,8 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", feature = "zero-copy"))] {
-        use zero_copy::copy;
         const BUFFER_SIZE: usize = 0x10000;
     } else {
-        use normal_copy::copy;
         const BUFFER_SIZE: usize = 0x4000;
     }
 }
@@ -26,15 +24,22 @@ use std::io::Result;
 use std::net::SocketAddr;
 use futures::try_join;
 use tokio::net::TcpSocket;
-use crate::utils::RemoteAddr;
+use tokio::io::{AsyncRead, AsyncWrite};
+
+use crate::utils::{RemoteAddr, ConnectOpts};
 
 pub async fn proxy(
     mut inbound: TcpStream,
     remote: RemoteAddr,
-    through: Option<SocketAddr>,
+    conn_opts: ConnectOpts,
 ) -> Result<()> {
+    let ConnectOpts {
+        fast_open,
+        zero_copy,
+        send_through,
+    } = conn_opts;
     let remote = remote.into_sockaddr().await?;
-    let mut outbound = match through {
+    let mut outbound = match send_through {
         Some(x) => {
             let socket = match x {
                 SocketAddr::V4(_) => TcpSocket::new_v4()?,
@@ -60,15 +65,32 @@ pub async fn proxy(
     let (ri, wi) = inbound.split();
     let (ro, wo) = outbound.split();
 
-    let _ = try_join!(copy(ri, wo), copy(ro, wi));
+    #[cfg(all(target_os = "linux", feature = "zero-copy"))]
+    if zero_copy {
+        use zero_copy::copy;
+        let _ = try_join!(copy(ri, wo), copy(ro, wi));
+    } else {
+        use normal_copy::copy;
+        let _ = try_join!(copy(ri, wo), copy(ro, wi));
+    }
+
+    #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
+    {
+        use normal_copy::copy;
+        let _ = try_join!(copy(ri, wo), copy(ro, wi));
+    }
 
     Ok(())
 }
 
-#[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
 mod normal_copy {
     use super::*;
-    pub async fn copy(mut r: ReadHalf<'_>, mut w: WriteHalf<'_>) -> Result<()> {
+    #[allow(unused)]
+    pub async fn copy<R, W>(mut r: R, mut w: W) -> Result<()>
+    where
+        R: AsyncRead + Unpin,
+        W: AsyncWrite + Unpin,
+    {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let mut buf = vec![0u8; BUFFER_SIZE];
         let mut n: usize;

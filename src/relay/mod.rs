@@ -21,14 +21,14 @@ async fn proxy_tcp(ep: Endpoint) -> Result<()> {
     let Endpoint {
         local,
         remote,
-        through,
+        conn_opts,
         ..
     } = ep;
     let lis = TcpListener::bind(local)
         .await
         .unwrap_or_else(|_| panic!("unable to bind {}", &local));
     while let Ok((stream, _)) = lis.accept().await {
-        tokio::spawn(tcp::proxy(stream, remote.clone(), through));
+        tokio::spawn(tcp::proxy(stream, remote.clone(), conn_opts));
     }
     Ok(())
 }
@@ -41,8 +41,8 @@ async fn proxy_udp(ep: Endpoint) -> Result<()> {
     let Endpoint {
         local,
         remote,
-        through,
+        conn_opts,
         ..
     } = ep;
-    udp::proxy(local, remote.clone(), through).await
+    udp::proxy(local, remote.clone(), conn_opts).await
 }

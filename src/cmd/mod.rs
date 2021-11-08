@@ -54,6 +54,18 @@ pub fn scan() -> CmdInput {
                 .long("udp")
                 .help("enable udp"),
         )
+        .arg(
+            Arg::with_name("fast_open")
+                .short("f")
+                .long("tfo")
+                .help("enable tfo"),
+        )
+        .arg(
+            Arg::with_name("zero_copy")
+                .short("z")
+                .long("zero-copy")
+                .help("enable tcp zero-copy"),
+        )
         .subcommand(
             SubCommand::with_name("nav")
                 .about("An Interactive configuration editor")
@@ -74,6 +86,8 @@ pub fn scan() -> CmdInput {
             remote,
             matches.value_of("through").unwrap_or(""),
             matches.is_present("udp"),
+            matches.is_present("fast_open"),
+            matches.is_present("zero_copy"),
         ));
     }
 
