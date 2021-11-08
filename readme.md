@@ -41,8 +41,8 @@ FLAGS:
     -f, --tfo          enable tfo
     -u, --udp          enable udp
     -z, --zero-copy    enable tcp zero-copy
-	-h, --help         Prints help information
-	-V, --version      Prints version information
+    -h, --help         Prints help information
+    -V, --version      Prints version information
 
 OPTIONS:
     -c, --config  <path>    use config file
