@@ -6,7 +6,6 @@ cfg_if! {
         pub use tfo::TcpListener;
     } else {
         use tokio::net::TcpStream;
-        use tokio::net::tcp::{ReadHalf, WriteHalf};
         pub use tokio::net::TcpListener;
     }
 }
@@ -27,6 +26,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::utils::{RemoteAddr, ConnectOpts};
 
+#[allow(unused_variables)]
 pub async fn proxy(
     mut inbound: TcpStream,
     remote: RemoteAddr,
@@ -50,8 +50,10 @@ pub async fn proxy(
             socket.bind(x)?;
 
             #[cfg(feature = "tfo")]
-            {
+            if fast_open {
                 TcpStream::connect_with_socket(socket, remote).await?
+            } else {
+                socket.connect(remote).await?.into()
             }
 
             #[cfg(not(feature = "tfo"))]
@@ -272,6 +274,7 @@ mod tfo {
                 .await
                 .map(TcpStream)
         }
+
         #[allow(unused)]
         pub async fn readable(&self) -> Result<()> {
             self.0.inner().readable().await
@@ -297,6 +300,18 @@ mod tfo {
             f: impl FnOnce() -> Result<R>,
         ) -> Result<R> {
             self.0.inner().try_io(interest, f)
+        }
+    }
+
+    impl From<TfoStream> for TcpStream {
+        fn from(x: TfoStream) -> Self {
+            TcpStream(x)
+        }
+    }
+
+    impl From<tokio::net::TcpStream> for TcpStream {
+        fn from(x: tokio::net::TcpStream) -> Self {
+            TcpStream(x.into())
         }
     }
 

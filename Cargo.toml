@@ -33,7 +33,7 @@ lto = true
 opt-level = 0
 
 [features]
-default = ["udp", "tfo", "zero-copy", "trust-dns"]
+default = ["udp", "zero-copy", "trust-dns"]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = ["libc"]

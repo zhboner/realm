@@ -8,7 +8,7 @@ use cmd::CmdInput;
 use conf::FullConf;
 use utils::Endpoint;
 
-const VERSION: &str = "1.5.0-rc2";
+const VERSION: &str = "1.5.0-rc3";
 
 fn main() {
     match cmd::scan() {
