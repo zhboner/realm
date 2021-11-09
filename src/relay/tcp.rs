@@ -99,7 +99,7 @@ where {
             if n == 0 {
                 break;
             }
-            w.write(&buf[..n]).await?;
+            w.write_all(&buf[..n]).await?;
             w.flush().await?;
         }
         w.shutdown().await?;
