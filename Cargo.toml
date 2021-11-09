@@ -25,6 +25,9 @@ tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main",
 # zero-copy
 libc = { version = "0.2", optional = true }
 
+[target.'cfg(unix)'.dependencies]
+daemonize = "0.4"
+
 [profile.release]
 opt-level = 3
 lto = true

@@ -66,6 +66,12 @@ pub fn scan() -> CmdInput {
                 .long("zero-copy")
                 .help("enable tcp zero-copy"),
         )
+        .arg(
+            Arg::with_name("daemon")
+                .short("d")
+                .long("daemon")
+                .help("daemonize"),
+        )
         .subcommand(
             SubCommand::with_name("nav")
                 .about("An Interactive configuration editor")
@@ -73,6 +79,11 @@ pub fn scan() -> CmdInput {
                 .author("zephyr <i@zephyr.moe>"),
         )
         .get_matches();
+
+    #[cfg(unix)]
+    if matches.is_present("daemon") {
+        crate::utils::daemonize();
+    }
 
     if let Some(config) = matches.value_of("config") {
         return CmdInput::Config(config.to_string());
