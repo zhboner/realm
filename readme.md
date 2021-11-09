@@ -38,6 +38,7 @@ USAGE:
     realm [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
+    -d, --daemon       daemonize
     -f, --tfo          enable tfo
     -u, --udp          enable udp
     -z, --zero-copy    enable tcp zero-copy
