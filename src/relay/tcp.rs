@@ -7,6 +7,7 @@ cfg_if! {
         pub use tfo::TcpListener;
     } else {
         use tokio::net::TcpStream;
+        use tokio::net::tcp::{ReadHalf,WriteHalf};
         pub use tokio::net::TcpListener;
     }
 }
@@ -23,7 +24,6 @@ use std::io::Result;
 use std::net::SocketAddr;
 use futures::try_join;
 use tokio::net::TcpSocket;
-use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::utils::{RemoteAddr, ConnectOpts};
 
@@ -87,12 +87,10 @@ pub async fn proxy(
 
 mod normal_copy {
     use super::*;
+
     #[allow(unused)]
-    pub async fn copy<R, W>(mut r: R, mut w: W) -> Result<()>
-    where
-        R: AsyncRead + Unpin,
-        W: AsyncWrite + Unpin,
-    {
+    pub async fn copy(mut r: ReadHalf<'_>, mut w: WriteHalf<'_>) -> Result<()>
+where {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let mut buf = vec![0u8; BUFFER_SIZE];
         let mut n: usize;
