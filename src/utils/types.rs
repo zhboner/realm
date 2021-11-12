@@ -3,6 +3,8 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 use crate::dns;
 
+pub const TIMEOUT: usize = 15;
+
 #[derive(Clone)]
 pub enum RemoteAddr {
     SocketAddr(SocketAddr),
@@ -13,6 +15,7 @@ pub enum RemoteAddr {
 pub struct ConnectOpts {
     pub fast_open: bool,
     pub zero_copy: bool,
+    pub timeout: usize,
     pub send_through: Option<SocketAddr>,
 }
 
@@ -68,6 +71,7 @@ impl Endpoint {
         udp: bool,
         fast_open: bool,
         zero_copy: bool,
+        timeout: usize,
     ) -> Self {
         // check local addr
         let local = local
@@ -107,6 +111,7 @@ impl Endpoint {
             conn_opts: ConnectOpts {
                 fast_open,
                 zero_copy,
+                timeout,
                 send_through: through,
             },
         }

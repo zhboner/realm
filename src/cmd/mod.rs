@@ -1,6 +1,7 @@
 use clap::{Arg, App, SubCommand};
 
 use super::Endpoint;
+use crate::utils::TIMEOUT;
 
 mod nav;
 pub use nav::run_navigator;
@@ -38,6 +39,14 @@ pub fn scan() -> CmdInput {
                 .long("remote")
                 .help("remote address")
                 .value_name("addr")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("timeout")
+                .short("t")
+                .long("timeout")
+                .help("set timeout value")
+                .value_name("second")
                 .takes_value(true),
         )
         .arg(
@@ -99,6 +108,9 @@ pub fn scan() -> CmdInput {
             matches.is_present("udp"),
             matches.is_present("fast_open"),
             matches.is_present("zero_copy"),
+            matches
+                .value_of("timeout")
+                .map_or(TIMEOUT, |t| t.parse::<usize>().unwrap_or(TIMEOUT)),
         ));
     }
 

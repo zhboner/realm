@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
 use tokio::net::UdpSocket;
-use tokio::time::timeout;
+use tokio::time::timeout as timeoutfut;
 
 use crate::utils::{RemoteAddr, ConnectOpts};
 use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
@@ -13,16 +13,20 @@ use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
 // client <--> allocated socket
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
 const BUFFERSIZE: usize = 0x1000;
-const TIMEOUT: Duration = Duration::from_secs(20);
 
 pub async fn proxy(
     local: SocketAddr,
     remote: RemoteAddr,
     conn_opts: ConnectOpts,
 ) -> Result<()> {
-    let ConnectOpts { send_through, .. } = conn_opts;
+    let ConnectOpts {
+        send_through,
+        timeout,
+        ..
+    } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let local_sock = Arc::new(UdpSocket::bind(&local).await.unwrap());
+    let timeout = Duration::from_secs(timeout as u64);
     let mut buf = vec![0u8; BUFFERSIZE];
 
     loop {
@@ -40,6 +44,7 @@ pub async fn proxy(
                     &remote_addr,
                     &send_through,
                     local_sock.clone(),
+                    timeout,
                 )
                 .await
             }
@@ -54,11 +59,12 @@ async fn send_back(
     client_addr: SocketAddr,
     local_sock: Arc<UdpSocket>,
     alloc_sock: Arc<UdpSocket>,
+    timeout: Duration,
 ) {
     let mut buf = vec![0u8; BUFFERSIZE];
 
     while let Ok(Ok((n, _))) =
-        timeout(TIMEOUT, alloc_sock.recv_from(&mut buf)).await
+        timeoutfut(timeout, alloc_sock.recv_from(&mut buf)).await
     {
         if local_sock.send_to(&buf[..n], &client_addr).await.is_err() {
             break;
@@ -84,6 +90,7 @@ async fn alloc_new_socket(
     remote_addr: &SocketAddr,
     send_through: &Option<SocketAddr>,
     local_sock: Arc<UdpSocket>,
+    timeout: Duration,
 ) -> Arc<UdpSocket> {
     // pick a random port
     let alloc_sock = Arc::new(match send_through {
@@ -103,6 +110,7 @@ async fn alloc_new_socket(
         client_addr,
         local_sock,
         alloc_sock.clone(),
+        timeout,
     ));
 
     sock_map

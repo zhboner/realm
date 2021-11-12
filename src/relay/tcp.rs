@@ -22,8 +22,11 @@ cfg_if! {
 
 use std::io::Result;
 use std::net::SocketAddr;
+use std::time::Duration;
 use futures::try_join;
+
 use tokio::net::TcpSocket;
+use tokio::time::timeout as timeoutfut;
 
 use crate::utils::{RemoteAddr, ConnectOpts};
 
@@ -34,11 +37,15 @@ pub async fn proxy(
     conn_opts: ConnectOpts,
 ) -> Result<()> {
     let ConnectOpts {
+        timeout,
         fast_open,
         zero_copy,
         send_through,
     } = conn_opts;
+
     let remote = remote.into_sockaddr().await?;
+    let timeout = Duration::from_secs(timeout as u64);
+
     let mut outbound = match send_through {
         Some(x) => {
             let socket = match x {
@@ -62,18 +69,20 @@ pub async fn proxy(
         }
         None => TcpStream::connect(remote).await?,
     };
+
     inbound.set_nodelay(true)?;
     outbound.set_nodelay(true)?;
+
     let (ri, wi) = inbound.split();
     let (ro, wo) = outbound.split();
 
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     if zero_copy {
         use zero_copy::copy;
-        let _ = try_join!(copy(ri, wo), copy(ro, wi));
+        let _ = try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout));
     } else {
         use normal_copy::copy;
-        let _ = try_join!(copy(ri, wo), copy(ro, wi));
+        let _ = try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout));
     }
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
@@ -89,13 +98,18 @@ mod normal_copy {
     use super::*;
 
     #[allow(unused)]
-    pub async fn copy(mut r: ReadHalf<'_>, mut w: WriteHalf<'_>) -> Result<()>
+    pub async fn copy(
+        mut r: ReadHalf<'_>,
+        mut w: WriteHalf<'_>,
+        timeout: Duration,
+    ) -> Result<()>
 where {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
         let mut buf = vec![0u8; BUFFER_SIZE];
         let mut n: usize;
         loop {
-            n = r.read(&mut buf).await?;
+            n = timeoutfut(timeout, r.read(&mut buf)).await??;
             if n == 0 {
                 break;
             }
@@ -171,7 +185,11 @@ mod zero_copy {
         });
     }
 
-    pub async fn copy(r: ReadHalf<'_>, mut w: WriteHalf<'_>) -> Result<()> {
+    pub async fn copy(
+        r: ReadHalf<'_>,
+        mut w: WriteHalf<'_>,
+        timeout: Duration,
+    ) -> Result<()> {
         use std::os::unix::io::AsRawFd;
         use tokio::io::AsyncWriteExt;
         // init pipe
@@ -190,7 +208,7 @@ mod zero_copy {
         'LOOP: loop {
             // read until the socket buffer is empty
             // or the pipe is filled
-            rx.readable().await?;
+            timeoutfut(timeout, rx.readable()).await??;
             while n < BUFFER_SIZE {
                 match splice_n(rfd, wpipe, BUFFER_SIZE - n) {
                     x if x > 0 => n += x as usize,

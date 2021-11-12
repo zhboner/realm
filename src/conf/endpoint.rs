@@ -12,12 +12,19 @@ pub struct EndpointConf {
     #[serde(default)]
     zero_copy: bool,
 
+    #[serde(default = "df_timeout")]
+    timeout: usize,
+
     local: String,
 
     remote: String,
 
     #[serde(default)]
     through: String,
+}
+
+const fn df_timeout() -> usize {
+    crate::utils::TIMEOUT
 }
 
 impl EndpointConf {
@@ -29,6 +36,7 @@ impl EndpointConf {
             self.udp,
             self.fast_open,
             self.zero_copy,
+            self.timeout,
         )
     }
 }
