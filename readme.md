@@ -50,6 +50,7 @@ OPTIONS:
     -l, --listen  <addr>    listen address
     -r, --remote  <addr>    remote address
     -x, --through <addr>    send through specific ip or address
+    -t, --timeout <second>  set timeout value
 ```
 
 start from command line arguments:
@@ -87,12 +88,14 @@ realm -c config.json
 			"remote": "www.google.com:443",
 			"udp": true,
 			"fast_open": true,
-			"zero_copy": true
+			"zero_copy": true,
+			"timeout": 60
 		},
 		{
 			"local": "0.0.0.0:15000",
 			"remote": "www.microsoft.com:443",
-			"through": "127.0.0.1"
+			"through": "127.0.0.1",
+			"timeout": 120
 		}
 	]
 }</code>
@@ -127,3 +130,4 @@ On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.c
 - udp *(true|false, default=false)*
 - zero_copy *(true|false, default=false)*
 - fast_open *(true|false, default=false)*
+- timeout *(tcp/udp timeout(sec), default=15)*
