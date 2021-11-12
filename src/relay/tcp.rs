@@ -173,9 +173,12 @@ mod zero_copy {
 
     #[inline]
     fn is_wouldblock() -> bool {
-        use libc::{EAGAIN, EWOULDBLOCK};
-        let errno = unsafe { *libc::__errno_location() };
-        errno == EWOULDBLOCK || errno == EAGAIN
+        use libc::{EWOULDBLOCK, EAGAIN};
+        let err = Error::last_os_error().raw_os_error();
+        match err {
+            Some(e) => e == EWOULDBLOCK || e == EAGAIN,
+            None => false,
+        }
     }
 
     #[inline]
