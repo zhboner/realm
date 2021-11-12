@@ -88,7 +88,7 @@ pub async fn proxy(
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
     {
         use normal_copy::copy;
-        let _ = try_join!(copy(ri, wo), copy(ro, wi));
+        let _ = try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout));
     }
 
     Ok(())
