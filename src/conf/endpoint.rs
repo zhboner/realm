@@ -12,8 +12,11 @@ pub struct EndpointConf {
     #[serde(default)]
     zero_copy: bool,
 
-    #[serde(default = "df_timeout")]
-    timeout: usize,
+    #[serde(default = "tcp_timeout")]
+    tcp_timeout: usize,
+
+    #[serde(default = "udp_timeout")]
+    udp_timeout: usize,
 
     local: String,
 
@@ -23,8 +26,12 @@ pub struct EndpointConf {
     through: String,
 }
 
-const fn df_timeout() -> usize {
-    crate::utils::TIMEOUT
+const fn tcp_timeout() -> usize {
+    crate::utils::TCP_TIMEOUT
+}
+
+const fn udp_timeout() -> usize {
+    crate::utils::UDP_TIMEOUT
 }
 
 impl EndpointConf {
@@ -36,7 +43,8 @@ impl EndpointConf {
             self.udp,
             self.fast_open,
             self.zero_copy,
-            self.timeout,
+            self.tcp_timeout,
+            self.udp_timeout,
         )
     }
 }

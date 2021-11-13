@@ -1,7 +1,8 @@
 use clap::{Arg, App, SubCommand};
 
 use super::Endpoint;
-use crate::utils::TIMEOUT;
+use crate::utils::TCP_TIMEOUT;
+use crate::utils::UDP_TIMEOUT;
 
 mod nav;
 pub use nav::run_navigator;
@@ -42,10 +43,16 @@ pub fn scan() -> CmdInput {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("timeout")
-                .short("t")
-                .long("timeout")
-                .help("set timeout value")
+            Arg::with_name("tcp_timeout")
+                .long("tcp-timeout")
+                .help("set timeout value for tcp")
+                .value_name("second")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("udp_timeout")
+                .long("udp-timeout")
+                .help("set timeout value for udp")
                 .value_name("second")
                 .takes_value(true),
         )
@@ -101,6 +108,12 @@ pub fn scan() -> CmdInput {
     if let (Some(local), Some(remote)) =
         (matches.value_of("local"), matches.value_of("remote"))
     {
+        let tcp_timeout = matches
+            .value_of("tcp_timeout")
+            .map_or(TCP_TIMEOUT, |t| t.parse::<usize>().unwrap_or(TCP_TIMEOUT));
+        let udp_timeout = matches
+            .value_of("udp_timeout")
+            .map_or(UDP_TIMEOUT, |t| t.parse::<usize>().unwrap_or(UDP_TIMEOUT));
         return CmdInput::Endpoint(Endpoint::new(
             local,
             remote,
@@ -108,9 +121,8 @@ pub fn scan() -> CmdInput {
             matches.is_present("udp"),
             matches.is_present("fast_open"),
             matches.is_present("zero_copy"),
-            matches
-                .value_of("timeout")
-                .map_or(TIMEOUT, |t| t.parse::<usize>().unwrap_or(TIMEOUT)),
+            tcp_timeout,
+            udp_timeout,
         ));
     }
 

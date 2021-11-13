@@ -21,7 +21,7 @@ pub async fn proxy(
 ) -> Result<()> {
     let ConnectOpts {
         send_through,
-        timeout,
+        udp_timeout: timeout,
         ..
     } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));

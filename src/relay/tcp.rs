@@ -37,10 +37,11 @@ pub async fn proxy(
     conn_opts: ConnectOpts,
 ) -> Result<()> {
     let ConnectOpts {
-        timeout,
+        tcp_timeout: timeout,
         fast_open,
         zero_copy,
         send_through,
+        ..
     } = conn_opts;
 
     let remote = remote.into_sockaddr().await?;

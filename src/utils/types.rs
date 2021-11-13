@@ -3,7 +3,8 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 use crate::dns;
 
-pub const TIMEOUT: usize = 15;
+pub const TCP_TIMEOUT: usize = 300;
+pub const UDP_TIMEOUT: usize = 30;
 
 #[derive(Clone)]
 pub enum RemoteAddr {
@@ -15,7 +16,8 @@ pub enum RemoteAddr {
 pub struct ConnectOpts {
     pub fast_open: bool,
     pub zero_copy: bool,
-    pub timeout: usize,
+    pub tcp_timeout: usize,
+    pub udp_timeout: usize,
     pub send_through: Option<SocketAddr>,
 }
 
@@ -64,6 +66,7 @@ impl RemoteAddr {
 }
 
 impl Endpoint {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         local: &str,
         remote: &str,
@@ -71,7 +74,8 @@ impl Endpoint {
         udp: bool,
         fast_open: bool,
         zero_copy: bool,
-        timeout: usize,
+        tcp_timeout: usize,
+        udp_timeout: usize,
     ) -> Self {
         // check local addr
         let local = local
@@ -111,7 +115,8 @@ impl Endpoint {
             conn_opts: ConnectOpts {
                 fast_open,
                 zero_copy,
-                timeout,
+                tcp_timeout,
+                udp_timeout,
                 send_through: through,
             },
         }
