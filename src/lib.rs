@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::{read_to_string, File};
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -24,6 +24,8 @@ pub struct Cli {
     )]
     pub config_file: Option<PathBuf>,
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Debug)]
 
 pub struct RelayConfig {
     pub listening_address: String,
@@ -62,12 +64,61 @@ pub struct ConfigFile {
     pub remote_ports: Vec<String>,
 }
 
+/// Another config file
+/// # Example
+/// ```json
+/// {
+///     "relays": [
+///         {
+///             "listen": "127.0.0.1:1080",
+///             "remote": "127.0.0.1:8080"
+///         },
+///         {
+///             "listen": "127.0.0.1:2080",
+///             "remote": "127.0.0.1:8080"
+///         }
+///     ]
+/// }
+/// ```
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AnotherConfigFile {
+    pub relays: Vec<Relay>,
+}
+impl AnotherConfigFile {
+    fn to_relay_config(&self) -> Vec<RelayConfig> {
+        let mut relay_configs = Vec::new();
+        for relay in &self.relays {
+            relay_configs.push(relay.into_relayconfig());
+        }
+        relay_configs
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Relay {
+    pub listen: String,
+    pub remote: String,
+}
+
+impl Relay {
+    fn into_relayconfig(&self) -> RelayConfig {
+        let (listening_address, listening_port) =
+            self.listen.split_once(":").expect("Invalid local address");
+        let (remote_address, remote_port) =
+            self.remote.split_once(":").expect("Invalid remote address");
+        RelayConfig::new(
+            listening_address.to_string(),
+            listening_port.to_string(),
+            remote_address.to_string(),
+            remote_port.to_string(),
+        )
+    }
+}
 pub fn parse_arguments() -> Vec<RelayConfig> {
     let input = Cli::from_args();
     let path = input.config_file;
     if let Some(path) = path {
-        let configs = load_config(path);
-        return configs;
+        return load_config(path);
     }
 
     let client = match input.client {
@@ -80,17 +131,23 @@ pub fn parse_arguments() -> Vec<RelayConfig> {
         None => panic!("No listening socket"),
     };
 
-    let client_parse: Vec<&str> = client.rsplitn(2,":")
+    let client_parse: Vec<&str> = client
+        .rsplitn(2, ":")
         .collect::<Vec<&str>>()
-        .into_iter().rev().collect();
+        .into_iter()
+        .rev()
+        .collect();
     if client_parse.len() != 2 {
         panic!("client address is incorrect!");
     }
     let listening_address = String::from_str(client_parse[0]).unwrap();
 
-    let remote_parse: Vec<&str> = remote.rsplitn(2,":")
+    let remote_parse: Vec<&str> = remote
+        .rsplitn(2, ":")
         .collect::<Vec<&str>>()
-        .into_iter().rev().collect();
+        .into_iter()
+        .rev()
+        .collect();
     if remote_parse.len() != 2 {
         panic!("remote address is incorrect!");
     }
@@ -137,14 +194,22 @@ pub fn load_config(p: PathBuf) -> Vec<RelayConfig> {
     // let path = Path::new(&p);
     // let display = p.display();
 
-    let f = match File::open(&p) {
-        Err(e) => panic!("Could not open file {}: {}", p.display(), e),
-        Ok(f) => f,
+    let config_file_string = read_to_string(&p).unwrap();
+    let config = serde_json::from_str::<ConfigFile>(config_file_string.clone().as_str());
+    let config = match config {
+        Err(_e) => {
+            println!("AnotherConfigFile format may help you.");
+            let config = serde_json::from_str::<AnotherConfigFile>(config_file_string.as_str());
+            match config {
+                Err(e) => panic!("Could not parse config file {}: {}", p.display(), e),
+                Ok(config) => {
+                    println!("{} contains {:#?}", p.display(), config.to_relay_config());
+                    return config.to_relay_config();
+                }
+            }
+        }
+        Ok(config) => config,
     };
-
-    let reader = BufReader::new(f);
-    let config: ConfigFile = serde_json::from_reader(reader).unwrap();
-
     let listening_ports = ports2individuals(config.listening_ports);
     let remote_ports = ports2individuals(config.remote_ports);
 
@@ -194,4 +259,13 @@ pub fn load_config(p: PathBuf) -> Vec<RelayConfig> {
         ))
     }
     relay_configs
+}
+pub fn load_config_alternate(p: PathBuf) -> Vec<RelayConfig> {
+    let f = match File::open(&p) {
+        Err(e) => panic!("Could not open config file {}: {}", p.display(), e),
+        Ok(f) => f,
+    };
+    let reader = BufReader::new(f);
+    let config: AnotherConfigFile = serde_json::from_reader(reader).unwrap();
+    config.to_relay_config()
 }
