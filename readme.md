@@ -77,7 +77,7 @@ realm -c config.json
 	"dns_mode": {
 		"mode": "ipv4_only",
 		"protocol": "tcp+udp",
-		"nameservers": ["8.8.8.8", "8.8.4.4"]
+		"nameservers": ["8.8.8.8:53", "8.8.4.4:53"]
 	},
 	"endpoints": [
 		{
