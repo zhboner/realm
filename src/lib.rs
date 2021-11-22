@@ -65,13 +65,14 @@ pub struct ConfigFile {
 }
 
 /// Another config file
+/// This config file does not support port range.
 /// # Example
 /// ```json
 /// {
 ///     "relays": [
 ///         {
-///             "listen": "127.0.0.1:1080",
-///             "remote": "127.0.0.1:8080"
+///             "listen": "127.0.0.1:1080",//listening address must have address and port
+///             "remote": "127.0.0.1:8080"//remote address must have address and port
 ///         },
 ///         {
 ///             "listen": "127.0.0.1:2080",
@@ -86,11 +87,11 @@ pub struct AnotherConfigFile {
 }
 impl AnotherConfigFile {
     fn to_relay_config(&self) -> Vec<RelayConfig> {
-        let mut relay_configs = Vec::new();
-        for relay in &self.relays {
-            relay_configs.push(relay.into_relayconfig());
-        }
-        relay_configs
+        return self
+            .relays
+            .iter()
+            .map(|relay| relay.into_relayconfig())
+            .collect::<Vec<RelayConfig>>();
     }
 }
 
@@ -102,10 +103,14 @@ pub struct Relay {
 
 impl Relay {
     fn into_relayconfig(&self) -> RelayConfig {
-        let (listening_address, listening_port) =
-            self.listen.split_once(":").expect("Invalid local address");
-        let (remote_address, remote_port) =
-            self.remote.split_once(":").expect("Invalid remote address");
+        let (listening_address, listening_port) = self
+            .listen
+            .rsplit_once(":")
+            .expect("Invalid listen address");
+        let (remote_address, remote_port) = self
+            .remote
+            .rsplit_once(":")
+            .expect("Invalid remote address");
         RelayConfig::new(
             listening_address.to_string(),
             listening_port.to_string(),
