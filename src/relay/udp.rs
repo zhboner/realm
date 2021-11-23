@@ -4,6 +4,8 @@ use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
+use log::error;
+
 use tokio::net::UdpSocket;
 use tokio::time::timeout as timeoutfut;
 
@@ -25,16 +27,28 @@ pub async fn proxy(
         ..
     } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
-    let local_sock = Arc::new(UdpSocket::bind(&local).await.unwrap());
+    let local_sock = Arc::new(UdpSocket::bind(&local).await?);
     let timeout = Duration::from_secs(timeout as u64);
     let mut buf = vec![0u8; BUFFERSIZE];
 
     loop {
-        let (n, client_addr) = local_sock.recv_from(&mut buf).await?;
+        let (n, client_addr) = match local_sock.recv_from(&mut buf).await {
+            Ok(x) => x,
+            Err(ref e) => {
+                error!("failed to recv udp packet: {}", e);
+                continue;
+            }
+        };
 
-        let remote_addr = remote.to_sockaddr().await?;
+        let remote_addr = match remote.to_sockaddr().await {
+            Ok(x) => x,
+            Err(ref e) => {
+                error!("failed to resolve remote addr: {}", e);
+                continue;
+            }
+        };
 
-        // the socket associated with a unique client
+        // the old/new socket associated with a unique client
         let alloc_sock = match get_socket(&sock_map, &client_addr) {
             Some(x) => x,
             None => {
@@ -50,8 +64,12 @@ pub async fn proxy(
             }
         };
 
-        alloc_sock.send_to(&buf[..n], &remote_addr).await?;
+        if let Err(ref e) = alloc_sock.send_to(&buf[..n], &remote_addr).await {
+            error!("failed to send udp packet: {}", e);
+        }
     }
+
+    // Err(Error::new(ErrorKind::Other, "unknown error"))
 }
 
 async fn send_back(

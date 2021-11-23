@@ -78,21 +78,22 @@ pub async fn proxy(
     let (ro, wo) = outbound.split();
 
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
-    if zero_copy {
+    let res = if zero_copy {
         use zero_copy::copy;
-        let _ = try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout));
+        try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout))
     } else {
         use normal_copy::copy;
-        let _ = try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout));
-    }
+        try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout))
+    };
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
-    {
+    let res = {
         use normal_copy::copy;
-        let _ = try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout));
-    }
+        try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout))
+    };
 
-    Ok(())
+    // ignore read/write n bytes
+    res.map(|_| ())
 }
 
 mod normal_copy {
@@ -148,7 +149,7 @@ mod zero_copy {
                 if libc::pipe2(pipes.as_mut_ptr() as *mut c_int, O_NONBLOCK) < 0
                 {
                     return Err(Error::new(
-                        ErrorKind::Unsupported,
+                        ErrorKind::Other,
                         "failed to create a pipe",
                     ));
                 }
@@ -209,7 +210,7 @@ mod zero_copy {
         let mut n: usize = 0;
         let mut done = false;
 
-        'LOOP: loop {
+        let res = 'LOOP: loop {
             // read until the socket buffer is empty
             // or the pipe is filled
             timeoutfut(timeout, rx.readable()).await??;
@@ -224,7 +225,12 @@ mod zero_copy {
                         clear_readiness(rx, Interest::READABLE);
                         break;
                     }
-                    _ => break 'LOOP,
+                    _ => {
+                        break 'LOOP Err(Error::new(
+                            ErrorKind::Other,
+                            "failed to splice from tcp connection",
+                        ))
+                    }
                 }
             }
             // write until the pipe is empty
@@ -233,23 +239,26 @@ mod zero_copy {
                 match splice_n(rpipe, wfd, n) {
                     x if x > 0 => n -= x as usize,
                     x if x < 0 && is_wouldblock() => {
-                        clear_readiness(wx, Interest::WRITABLE)
+                        clear_readiness(wx, Interest::WRITABLE);
                     }
-                    _ => break 'LOOP,
+                    _ => {
+                        break 'LOOP Err(Error::new(
+                            ErrorKind::Other,
+                            "failed to splice to tcp connection",
+                        ))
+                    }
                 }
             }
             // complete
             if done {
-                break;
+                break Ok(());
             }
-        }
+        };
 
         if done {
             w.shutdown().await?;
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::ConnectionReset, "connection reset"))
-        }
+        };
+        res
     }
 }
 

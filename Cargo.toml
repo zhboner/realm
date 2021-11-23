@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 cfg-if = "1"
 futures = "0.3"
+log = "0.4"
 
 clap = "2"
 serde = { version = "1", features = ["derive"] }

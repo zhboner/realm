@@ -1,4 +1,4 @@
-use std::io::Result;
+use log::error;
 use futures::future::join_all;
 
 mod tcp;
@@ -17,34 +17,45 @@ pub async fn run(eps: Vec<Endpoint>) {
     join_all(workers).await;
 }
 
-async fn proxy_tcp(ep: Endpoint) -> Result<()> {
+async fn proxy_tcp(ep: Endpoint) {
     let Endpoint {
         local,
         remote,
         opts,
         ..
     } = ep;
+
     let lis = TcpListener::bind(local)
         .await
         .unwrap_or_else(|_| panic!("unable to bind {}", &local));
-    while let Ok((stream, _)) = lis.accept().await {
+
+    loop {
+        let (stream, _) = match lis.accept().await {
+            Ok(x) => x,
+            Err(ref e) => {
+                error!("failed to accept tcp connection: {}", e);
+                continue;
+            }
+        };
         tokio::spawn(tcp::proxy(stream, remote.clone(), opts));
     }
-    Ok(())
 }
 
 #[cfg(feature = "udp")]
 mod udp;
 
 #[cfg(feature = "udp")]
-async fn proxy_udp(ep: Endpoint) -> Result<()> {
+async fn proxy_udp(ep: Endpoint) {
     let Endpoint {
         local,
         remote,
         opts,
         ..
     } = ep;
-    udp::proxy(local, remote, opts).await
+
+    if let Err(ref e) = udp::proxy(local, remote, opts).await {
+        panic!("udp forward exit: {}", e);
+    }
 }
 
 fn compute_workers(workers: &[Endpoint]) -> usize {

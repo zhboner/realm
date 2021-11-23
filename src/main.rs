@@ -31,8 +31,16 @@ fn start_from_conf(conf: String) {
         setup_dns(dns);
     }
 
-    let eps: Vec<Endpoint> =
-        conf.endpoints.into_iter().map(|epc| epc.build()).collect();
+    let eps: Vec<Endpoint> = conf
+        .endpoints
+        .into_iter()
+        .map(|epc| {
+            let ep = epc.build();
+            println!("inited: {}", &ep);
+            ep
+        })
+        .collect();
+
     run_relay(eps);
 }
 
