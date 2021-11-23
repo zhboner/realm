@@ -44,7 +44,7 @@ async fn proxy_udp(ep: Endpoint) -> Result<()> {
         opts,
         ..
     } = ep;
-    udp::proxy(local, remote.clone(), opts).await
+    udp::proxy(local, remote, opts).await
 }
 
 fn compute_workers(workers: &[Endpoint]) -> usize {
