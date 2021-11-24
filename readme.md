@@ -31,27 +31,26 @@ cargo build --release --no-default-features --features udp, tfo, zero-copy, trus
 
 ## Usage
 ```shell
-Realm 1.x
-A high efficiency proxy tool
+Realm 1.5.0-rc5
+
+A high efficiency relay tool
 
 USAGE:
-    realm [FLAGS] [OPTIONS] [SUBCOMMAND]
+    realm [FLAGS] [OPTIONS]
 
 FLAGS:
-    -d, --daemon       daemonize
-    -f, --tfo          enable tfo
-    -u, --udp          enable udp
-    -z, --zero-copy    enable tcp zero-copy
-    -h, --help         Prints help information
-    -V, --version      Prints version information
+    -u, --udp       enable udp forward
+    -f, --tfo       enable tcp fast open
+    -z, --splice    enable tcp zero copy
+    -d, --daemon    run as a unix daemon
 
 OPTIONS:
-    -c, --config  <path>    use config file
-    -l, --listen  <addr>    listen address
-    -r, --remote  <addr>    remote address
-    -x, --through <addr>    send through specific ip or address
-    --tcp-timeout <second>  set timeout value
-    --udp-timeout <second>  set timeout value
+    -c, --config <path>           use config file
+    -l, --listen <addr>           listen address
+    -r, --remote <addr>           remote address
+    -x, --through <addr>          send through ip or address
+        --tcp-timeout <second>    set timeout value for tcp
+        --udp-timeout <second>    set timeout value for udp
 ```
 
 start from command line arguments:

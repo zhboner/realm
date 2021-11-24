@@ -1,4 +1,4 @@
-use clap::{Arg, App, ArgMatches, AppSettings};
+use clap::{App, Arg, ArgMatches, AppSettings};
 
 use super::Endpoint;
 use crate::utils::TCP_TIMEOUT;
@@ -12,79 +12,81 @@ pub enum CmdInput {
 
 pub fn scan() -> CmdInput {
     let matches = App::new("Realm")
-        .setting(AppSettings::ArgRequiredElseHelp)
+        .about("A high efficiency relay tool")
         .version(super::VERSION)
-        .about("A high efficiency proxy tool")
-        .arg(
-            Arg::with_name("config")
-                .short("c")
-                .long("config")
-                .help("use config file")
-                .value_name("path")
-                .takes_value(true),
+        .license("MIT")
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::DisableVersionFlag)
+        .setting(
+            AppSettings::DisableHelpFlag | AppSettings::DisableHelpSubcommand,
         )
-        .arg(
-            Arg::with_name("local")
-                .short("l")
-                .long("listen")
-                .help("listen address")
-                .value_name("addr")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("remote")
-                .short("r")
-                .long("remote")
-                .help("remote address")
-                .value_name("addr")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("tcp_timeout")
-                .long("tcp-timeout")
-                .help("set timeout value for tcp")
-                .value_name("second")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("udp_timeout")
-                .long("udp-timeout")
-                .help("set timeout value for udp")
-                .value_name("second")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("through")
-                .short("x")
-                .long("through")
-                .help("send through ip or address")
-                .value_name("addr")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("udp")
-                .short("u")
+        .override_usage("realm [FLAGS] [OPTIONS]")
+        .help_heading("FLAGS")
+        .args(&[
+            Arg::new("udp")
+                .short('u')
                 .long("udp")
-                .help("enable udp"),
-        )
-        .arg(
-            Arg::with_name("fast_open")
-                .short("f")
+                .about("enable udp forward")
+                .display_order(0),
+            Arg::new("fast_open")
+                .short('f')
                 .long("tfo")
-                .help("enable tfo"),
-        )
-        .arg(
-            Arg::with_name("zero_copy")
-                .short("z")
-                .long("zero-copy")
-                .help("enable tcp zero-copy"),
-        )
-        .arg(
-            Arg::with_name("daemon")
-                .short("d")
+                .about("enable tcp fast open")
+                .display_order(1),
+            Arg::new("zero_copy")
+                .short('z')
+                .long("splice")
+                .about("enable tcp zero copy")
+                .display_order(2),
+            Arg::new("daemon")
+                .short('d')
                 .long("daemon")
-                .help("daemonize"),
-        )
+                .about("run as a unix daemon")
+                .display_order(3),
+        ])
+        .help_heading("OPTIONS")
+        .args(&[
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .about("use config file")
+                .value_name("path")
+                .takes_value(true)
+                .display_order(0),
+            Arg::new("local")
+                .short('l')
+                .long("listen")
+                .about("listen address")
+                .value_name("addr")
+                .takes_value(true)
+                .display_order(1),
+            Arg::new("remote")
+                .short('r')
+                .long("remote")
+                .about("remote address")
+                .value_name("addr")
+                .takes_value(true)
+                .display_order(2),
+            Arg::new("through")
+                .short('x')
+                .long("through")
+                .about("send through ip or address")
+                .value_name("addr")
+                .takes_value(true)
+                .display_order(3),
+            Arg::new("tcp_timeout")
+                .long("tcp-timeout")
+                .about("set timeout value for tcp")
+                .value_name("second")
+                .takes_value(true)
+                .display_order(4),
+            Arg::new("udp_timeout")
+                .long("udp-timeout")
+                .about("set timeout value for udp")
+                .value_name("second")
+                .takes_value(true)
+                .display_order(5),
+        ])
         .get_matches();
 
     parse_matches(matches)
