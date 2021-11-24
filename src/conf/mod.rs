@@ -2,16 +2,22 @@ use std::fs;
 
 use serde::{Serialize, Deserialize};
 
-mod endpoint;
-pub use endpoint::EndpointConf;
+mod log;
+pub use self::log::LogConf;
 
 #[cfg(feature = "trust-dns")]
 mod dns;
 #[cfg(feature = "trust-dns")]
 pub use dns::CompatibeDnsConf;
 
+mod endpoint;
+pub use endpoint::EndpointConf;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FullConf {
+    #[serde(default)]
+    pub log: LogConf,
+
     #[cfg(feature = "trust-dns")]
     #[serde(default, rename = "dns_mode")]
     pub dns: CompatibeDnsConf,

@@ -26,6 +26,11 @@ tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main",
 # zero-copy
 libc = { version = "0.2", optional = true }
 
+#logger
+chrono = "0.4"
+fern = "0.6"
+env_logger = { version = "0.9", optional = true }
+
 [target.'cfg(unix)'.dependencies]
 daemonize = "0.4"
 
@@ -42,3 +47,7 @@ udp = []
 tfo = ["tokio-tfo"]
 zero-copy = ["libc"]
 trust-dns = ["trust-dns-resolver"]
+x-debug = ["env_logger"]
+
+[dev-dependencies]
+env_logger = "0.9"

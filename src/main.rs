@@ -36,12 +36,36 @@ fn start_from_conf(conf: String) {
         .into_iter()
         .map(|epc| {
             let ep = epc.build();
-            println!("inited: {}", &ep);
+            log::info!("inited: {}", &ep);
             ep
         })
         .collect();
 
     run_relay(eps);
+}
+
+fn setup_logger(conf: conf::LogConf) {
+    #[cfg(feature = "x-debug")]
+    env_logger::init();
+
+    #[cfg(not(feature = "x-debug"))]
+    {
+        let (level, output) = conf.into();
+        fern::Dispatch::new()
+            .format(|out, message, record| {
+                out.finish(format_args!(
+                    "{}[{}][{}] {}",
+                    chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                    record.target(),
+                    record.level(),
+                    message
+                ))
+            })
+            .level(level)
+            .chain(output)
+            .apply()
+            .unwrap_or_else(|ref e| panic!("failed to setup logger: {}", e))
+    }
 }
 
 #[cfg(feature = "trust-dns")]
