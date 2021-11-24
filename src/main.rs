@@ -12,25 +12,18 @@ const VERSION: &str = "1.5.0-rc5";
 
 fn main() {
     match cmd::scan() {
-        CmdInput::Endpoint(ep) => start_from_cmd(ep),
+        CmdInput::Endpoint(ep) => execute(vec![ep]),
         CmdInput::Config(conf) => start_from_conf(conf),
-        CmdInput::Navigate => cmd::run_navigator(),
         CmdInput::None => {}
     }
 }
 
-fn start_from_cmd(ep: Endpoint) {
-    execute(vec![ep])
-}
-
 fn start_from_conf(conf: String) {
-    let conf = FullConf::from_config_file(&conf);
-
     let FullConf {
         log: log_conf,
         dns: dns_conf,
         endpoints: eps_conf,
-    } = conf;
+    } = FullConf::from_config_file(&conf);
 
     setup_log(log_conf);
     setup_dns(dns_conf);

@@ -1,21 +1,18 @@
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, App, ArgMatches, AppSettings};
 
 use super::Endpoint;
 use crate::utils::TCP_TIMEOUT;
 use crate::utils::UDP_TIMEOUT;
 
-mod nav;
-pub use nav::run_navigator;
-
 pub enum CmdInput {
     Config(String),
     Endpoint(Endpoint),
-    Navigate,
     None,
 }
 
 pub fn scan() -> CmdInput {
     let matches = App::new("Realm")
+        .setting(AppSettings::ArgRequiredElseHelp)
         .version(super::VERSION)
         .about("A high efficiency proxy tool")
         .arg(
@@ -88,14 +85,12 @@ pub fn scan() -> CmdInput {
                 .long("daemon")
                 .help("daemonize"),
         )
-        .subcommand(
-            SubCommand::with_name("nav")
-                .about("An Interactive configuration editor")
-                .version("0.1.0")
-                .author("zephyr <i@zephyr.moe>"),
-        )
         .get_matches();
 
+    parse_matches(matches)
+}
+
+fn parse_matches(matches: ArgMatches) -> CmdInput {
     #[cfg(unix)]
     if matches.is_present("daemon") {
         crate::utils::daemonize();
@@ -124,10 +119,6 @@ pub fn scan() -> CmdInput {
             tcp_timeout,
             udp_timeout,
         ));
-    }
-
-    if matches.subcommand_matches("nav").is_some() {
-        return CmdInput::Navigate;
     }
 
     CmdInput::None
