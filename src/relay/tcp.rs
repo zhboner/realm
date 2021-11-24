@@ -33,6 +33,7 @@ use tokio::time::timeout as timeoutfut;
 
 use crate::utils::{RemoteAddr, ConnectOpts};
 
+#[derive(Clone, Copy)]
 pub enum TcpDirection {
     Forward,
     Reverse,

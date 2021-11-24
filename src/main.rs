@@ -67,7 +67,7 @@ fn setup_log(conf: conf::LogConf) {
             .level(level)
             .chain(output)
             .apply()
-            .unwrap_or_else(|ref e| panic!("failed to setup logger: {}", e))
+            .unwrap_or_else(|e| panic!("failed to setup logger: {}", &e))
     }
 }
 

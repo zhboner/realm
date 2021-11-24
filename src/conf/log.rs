@@ -57,7 +57,7 @@ impl From<LogConf> for (LevelFilter, fern::Output) {
     fn from(conf: LogConf) -> Self {
         use std::io;
         use std::fs::OpenOptions;
-        let LogConf { level, ref output } = conf;
+        let LogConf { level, output } = conf;
         let output: fern::Output = match output.as_str() {
             "stdout" => io::stdout().into(),
             "stderr" => io::stderr().into(),
@@ -66,9 +66,7 @@ impl From<LogConf> for (LevelFilter, fern::Output) {
                 .create(true)
                 .append(true)
                 .open(output)
-                .unwrap_or_else(|ref e| {
-                    panic!("failed to open {}: {}", output, e)
-                })
+                .unwrap_or_else(|e| panic!("failed to open {}: {}", output, &e))
                 .into(),
         };
         (level.into(), output)

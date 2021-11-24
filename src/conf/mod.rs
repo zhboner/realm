@@ -25,8 +25,8 @@ pub struct FullConf {
 impl FullConf {
     pub fn from_config_file(file: &str) -> Self {
         let config = fs::read_to_string(file)
-            .unwrap_or_else(|ref e| panic!("unable to open {}: {}", file, e));
+            .unwrap_or_else(|e| panic!("unable to open {}: {}", file, &e));
         serde_json::from_str(&config)
-            .unwrap_or_else(|ref e| panic!("unable to parse {}: {}", file, e))
+            .unwrap_or_else(|e| panic!("unable to parse {}: {}", file, &e))
     }
 }
