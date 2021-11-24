@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use log::LevelFilter;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LogLevel {
     Off,
     Error,
