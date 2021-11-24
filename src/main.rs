@@ -20,19 +20,22 @@ fn main() {
 }
 
 fn start_from_cmd(ep: Endpoint) {
-    run_relay(vec![ep])
+    execute(vec![ep])
 }
 
 fn start_from_conf(conf: String) {
     let conf = FullConf::from_config_file(&conf);
-    #[cfg(feature = "trust-dns")]
-    {
-        let FullConf { dns, .. } = conf;
-        setup_dns(dns);
-    }
 
-    let eps: Vec<Endpoint> = conf
-        .endpoints
+    let FullConf {
+        log: log_conf,
+        dns: dns_conf,
+        endpoints: eps_conf,
+    } = conf;
+
+    setup_log(log_conf);
+    setup_dns(dns_conf);
+
+    let eps: Vec<Endpoint> = eps_conf
         .into_iter()
         .map(|epc| {
             let ep = epc.build();
@@ -41,10 +44,10 @@ fn start_from_conf(conf: String) {
         })
         .collect();
 
-    run_relay(eps);
+    execute(eps);
 }
 
-fn setup_logger(conf: conf::LogConf) {
+fn setup_log(conf: conf::LogConf) {
     #[cfg(feature = "x-debug")]
     env_logger::init();
 
@@ -68,21 +71,23 @@ fn setup_logger(conf: conf::LogConf) {
     }
 }
 
-#[cfg(feature = "trust-dns")]
 fn setup_dns(dns: conf::CompatibeDnsConf) {
-    use conf::CompatibeDnsConf::*;
-    match dns {
-        Dns(conf) => {
-            let (conf, opts) = conf.into();
-            dns::configure(Some(conf), Some(opts));
+    #[cfg(feature = "trust-dns")]
+    {
+        use conf::CompatibeDnsConf::*;
+        match dns {
+            Dns(conf) => {
+                let (conf, opts) = conf.into();
+                dns::configure(Some(conf), Some(opts));
+            }
+            DnsMode(mode) => dns::configure(Option::None, Some(mode.into())),
+            None => (),
         }
-        DnsMode(mode) => dns::configure(Option::None, Some(mode.into())),
-        None => (),
+        dns::build();
     }
-    dns::build();
 }
 
-fn run_relay(eps: Vec<Endpoint>) {
+fn execute(eps: Vec<Endpoint>) {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
