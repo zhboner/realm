@@ -10,7 +10,7 @@
 realm is a simple, high performance relay server written in rust.
 
 ## Features
-- Zero configuration. Setup and run in one command.
+- ~~Zero configuration.~~ Setup and run in one command.
 - Concurrency. Bidirectional concurrent traffic leads to high performance.
 - Low resources cost.
 
@@ -74,6 +74,10 @@ realm -c config.json
 <summary>Example</summary>
 <pre>
 <code>{
+	"log": {
+		"level": "warn",
+		"output": "/var/log/realm.log"
+	},
 	"dns_mode": {
 		"mode": "ipv4_only",
 		"protocol": "tcp+udp",
@@ -101,33 +105,53 @@ realm -c config.json
 </pre>
 </details>
 
-### dns
+## global: [log, dns, endpoints]
+Note: must provide `endpoint.local` and `endpoint.remote`
+
+---
+### log: [level, output]
+
+#### log.level
+- off
+- error
+- info *(default)*
+- debug
+- trace
+
+#### log.output
+- stdout *(default)*
+- stderr
+- path, e.g. (`/var/log/realm.log`)
+
+---
+### dns: [mode, protocol, nameservers]
 this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lookup priority with `"dns_mode": "ipv4_only"`, which is equal to `"dns_mode": {"mode": "ipv4_only"}`
 
-#### mode
+#### dns.mode
 - ipv4_only
 - ipv6_only
 - ipv4_then_ipv6 *(default)*
 - ipv6_then_ipv4
 - ipv4_and_ipv6
 
-#### protocol
+#### dns.protocol
 - tcp
 - udp
 - tcp+udp *(default)*
 
-#### nameservers
+#### dns.nameservers
 format: ["server1", "server2" ...]
 
 default:
 On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`). Otherwise use google's public dns as default upstream resolver(`8.8.8.8`, `8.8.4.4` and `2001:4860:4860::8888`, `2001:4860:4860::8844`).
 
+---
 ### endpoint objects
-- local *(listen address)*
-- remote *(remote address)*
-- through *(send through specified ip or address, this is optional)*
-- udp *(true|false, default=false)*
-- zero_copy *(true|false, default=false)*
-- fast_open *(true|false, default=false)*
-- tcp_timeout *(tcp timeout(sec), default=300)*
-- udp_timeout *(udp timeout(sec), default=30)*
+- local:       listen address
+- remote:      remote address
+- through:     send through specified ip or address, this is optional
+- udp:         true|false, default=false
+- zero_copy:   true|false, default=false
+- fast_open:   true|false, default=false
+- tcp_timeout: tcp timeout(sec), default=300
+- udp_timeout: udp timeout(sec), default=30
