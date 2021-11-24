@@ -71,6 +71,7 @@ fn setup_log(conf: conf::LogConf) {
     }
 }
 
+#[allow(unused_variables)]
 fn setup_dns(dns: conf::CompatibeDnsConf) {
     #[cfg(feature = "trust-dns")]
     {

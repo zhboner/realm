@@ -5,9 +5,7 @@ use serde::{Serialize, Deserialize};
 mod log;
 pub use self::log::LogConf;
 
-#[cfg(feature = "trust-dns")]
 mod dns;
-#[cfg(feature = "trust-dns")]
 pub use dns::CompatibeDnsConf;
 
 mod endpoint;
@@ -18,7 +16,6 @@ pub struct FullConf {
     #[serde(default)]
     pub log: LogConf,
 
-    #[cfg(feature = "trust-dns")]
     #[serde(default, rename = "dns_mode")]
     pub dns: CompatibeDnsConf,
 

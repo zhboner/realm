@@ -1,10 +1,14 @@
+use cfg_if::cfg_if;
 use serde::{Serialize, Deserialize};
 
-use std::net::ToSocketAddrs;
-
-use trust_dns_resolver as resolver;
-use resolver::config::{LookupIpStrategy, NameServerConfig, Protocol};
-use resolver::config::{ResolverConfig, ResolverOpts};
+cfg_if! {
+    if #[cfg(feature = "trust-dns")] {
+        use std::net::ToSocketAddrs;
+        use trust_dns_resolver as resolver;
+        use resolver::config::{LookupIpStrategy, NameServerConfig, Protocol};
+        use resolver::config::{ResolverConfig, ResolverOpts};
+    }
+}
 
 // dns mode
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,6 +27,7 @@ impl Default for DnsMode {
     }
 }
 
+#[cfg(feature = "trust-dns")]
 impl From<DnsMode> for ResolverOpts {
     fn from(mode: DnsMode) -> Self {
         let ip_strategy = match mode {
@@ -49,6 +54,7 @@ pub struct DnsConf {
     pub nameservers: Vec<String>,
 }
 
+#[cfg(feature = "trust-dns")]
 fn read_protocol(net: &str) -> Vec<Protocol> {
     match net.to_ascii_lowercase().as_str() {
         "tcp" => vec![Protocol::Tcp],
@@ -57,6 +63,7 @@ fn read_protocol(net: &str) -> Vec<Protocol> {
     }
 }
 
+#[cfg(feature = "trust-dns")]
 impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
     fn from(config: DnsConf) -> Self {
         if config.nameservers.is_empty() {
