@@ -25,7 +25,7 @@ async fn proxy_tcp(ep: Endpoint) {
         ..
     } = ep;
 
-    let lis = TcpListener::bind(&local)
+    let lis = TcpListener::bind(local)
         .await
         .unwrap_or_else(|e| panic!("unable to bind {}: {}", &local, &e));
 
