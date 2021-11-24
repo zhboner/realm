@@ -1,4 +1,4 @@
-use log::error;
+use log::{info, error};
 use futures::future::join_all;
 
 mod tcp;
@@ -25,18 +25,21 @@ async fn proxy_tcp(ep: Endpoint) {
         ..
     } = ep;
 
-    let lis = TcpListener::bind(local)
+    let lis = TcpListener::bind(&local)
         .await
-        .unwrap_or_else(|_| panic!("unable to bind {}", &local));
+        .unwrap_or_else(|e| panic!("unable to bind {}: {}", &local, &e));
 
     loop {
-        let (stream, _) = match lis.accept().await {
+        let (stream, addr) = match lis.accept().await {
             Ok(x) => x,
-            Err(ref e) => {
-                error!("failed to accept tcp connection: {}", e);
+            Err(e) => {
+                error!("failed to accept tcp connection: {}", &e);
                 continue;
             }
         };
+
+        info!("new tcp connection from client {}", &addr);
+
         tokio::spawn(tcp::proxy(stream, remote.clone(), opts));
     }
 }
@@ -53,8 +56,8 @@ async fn proxy_udp(ep: Endpoint) {
         ..
     } = ep;
 
-    if let Err(ref e) = udp::proxy(local, remote, opts).await {
-        panic!("udp forward exit: {}", e);
+    if let Err(e) = udp::proxy(local, remote, opts).await {
+        panic!("udp forward exit: {}", &e);
     }
 }
 

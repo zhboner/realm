@@ -21,14 +21,32 @@ cfg_if! {
 }
 
 use std::io::Result;
+use std::fmt::{Display, Formatter};
 use std::net::SocketAddr;
 use std::time::Duration;
 use futures::try_join;
+
+use log::{debug, info};
 
 use tokio::net::TcpSocket;
 use tokio::time::timeout as timeoutfut;
 
 use crate::utils::{RemoteAddr, ConnectOpts};
+
+pub enum TcpDirection {
+    Forward,
+    Reverse,
+}
+
+impl Display for TcpDirection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use TcpDirection::*;
+        match self {
+            Forward => write!(f, "forward"),
+            Reverse => write!(f, "reverse"),
+        }
+    }
+}
 
 #[allow(unused_variables)]
 pub async fn proxy(
@@ -71,26 +89,41 @@ pub async fn proxy(
         None => TcpStream::connect(remote).await?,
     };
 
+    info!("new tcp connection to remote {}", &remote);
+
     inbound.set_nodelay(true)?;
     outbound.set_nodelay(true)?;
 
     let (ri, wi) = inbound.split();
     let (ro, wo) = outbound.split();
 
+    use TcpDirection::{Forward, Reverse};
+
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     let res = if zero_copy {
         use zero_copy::copy;
-        try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout))
+        try_join!(
+            copy(ri, wo, timeout, Forward),
+            copy(ro, wi, timeout, Reverse)
+        )
     } else {
         use normal_copy::copy;
-        try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout))
+        try_join!(
+            copy(ri, wo, timeout, Forward),
+            copy(ro, wi, timeout, Reverse)
+        )
     };
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
     let res = {
         use normal_copy::copy;
-        try_join!(copy(ri, wo, timeout), copy(ro, wi, timeout))
+        try_join!(
+            copy(ri, wo, timeout, Forward),
+            copy(ro, wi, timeout, Reverse)
+        )
     };
+
+    info!("tcp forward compelete or abort, close these 2 connection");
 
     // ignore read/write n bytes
     res.map(|_| ())
@@ -104,6 +137,7 @@ mod normal_copy {
         mut r: ReadHalf<'_>,
         mut w: WriteHalf<'_>,
         timeout: Duration,
+        direction: TcpDirection,
     ) -> Result<()>
 where {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -119,6 +153,9 @@ where {
             w.flush().await?;
         }
         w.shutdown().await?;
+
+        debug!("tcp forward half-complete, direction: {}", direction);
+
         Ok(())
     }
 }
@@ -194,6 +231,7 @@ mod zero_copy {
         r: ReadHalf<'_>,
         mut w: WriteHalf<'_>,
         timeout: Duration,
+        direction: TcpDirection,
     ) -> Result<()> {
         use std::os::unix::io::AsRawFd;
         use tokio::io::AsyncWriteExt;
@@ -257,6 +295,7 @@ mod zero_copy {
 
         if done {
             w.shutdown().await?;
+            debug!("tcp forward half-complete, direction: {}", direction);
         };
         res
     }

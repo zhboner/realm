@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
-use log::error;
+use log::{debug, info, error};
 
 use tokio::net::UdpSocket;
 use tokio::time::timeout as timeoutfut;
@@ -34,16 +34,18 @@ pub async fn proxy(
     loop {
         let (n, client_addr) = match local_sock.recv_from(&mut buf).await {
             Ok(x) => x,
-            Err(ref e) => {
-                error!("failed to recv udp packet: {}", e);
+            Err(e) => {
+                error!("failed to recv udp packet from client: {}", &e);
                 continue;
             }
         };
 
+        debug!("recv udp packet from {}", &client_addr);
+
         let remote_addr = match remote.to_sockaddr().await {
             Ok(x) => x,
-            Err(ref e) => {
-                error!("failed to resolve remote addr: {}", e);
+            Err(e) => {
+                error!("failed to resolve remote addr: {}", &e);
                 continue;
             }
         };
@@ -52,6 +54,7 @@ pub async fn proxy(
         let alloc_sock = match get_socket(&sock_map, &client_addr) {
             Some(x) => x,
             None => {
+                info!("new udp association for client {}", &client_addr);
                 alloc_new_socket(
                     &sock_map,
                     client_addr,
@@ -64,8 +67,8 @@ pub async fn proxy(
             }
         };
 
-        if let Err(ref e) = alloc_sock.send_to(&buf[..n], &remote_addr).await {
-            error!("failed to send udp packet: {}", e);
+        if let Err(e) = alloc_sock.send_to(&buf[..n], &remote_addr).await {
+            error!("failed to send udp packet to remote: {}", &e);
         }
     }
 
@@ -81,15 +84,34 @@ async fn send_back(
 ) {
     let mut buf = vec![0u8; BUFFERSIZE];
 
-    while let Ok(Ok((n, _))) =
-        timeoutfut(timeout, alloc_sock.recv_from(&mut buf)).await
-    {
-        if local_sock.send_to(&buf[..n], &client_addr).await.is_err() {
-            break;
+    loop {
+        let res =
+            match timeoutfut(timeout, alloc_sock.recv_from(&mut buf)).await {
+                Ok(x) => x,
+                Err(_) => {
+                    info!("udp association for {} timeout", &client_addr);
+                    break;
+                }
+            };
+
+        let (n, remote_addr) = match res {
+            Ok(x) => x,
+            Err(e) => {
+                error!("failed to recv udp packet from remote: {}", &e);
+                continue;
+            }
+        };
+
+        debug!("recv udp packet from remote: {}", &remote_addr);
+
+        if let Err(e) = local_sock.send_to(&buf[..n], &client_addr).await {
+            error!("failed to send udp packet back to client: {}", &e);
+            continue;
         }
     }
 
     sock_map.write().unwrap().remove(&client_addr);
+    info!("remove udp association for {}", &client_addr);
 }
 
 #[inline]
