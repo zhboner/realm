@@ -37,6 +37,7 @@ daemonize = "0.4"
 [profile.release]
 opt-level = 3
 lto = true
+panic = "abort"
 
 [profile.dev]
 opt-level = 0
