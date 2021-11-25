@@ -20,6 +20,8 @@ available Options:
 - trust-dns *(enabled)*
 - zero-copy *(enabled on linux)*
 - tfo *(disabled)*
+- mi-malloc *(enabled)*
+- jemalloc
 
 ```shell
 # simple tcp

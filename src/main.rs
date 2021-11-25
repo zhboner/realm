@@ -4,11 +4,28 @@ mod conf;
 mod utils;
 mod relay;
 
+use cfg_if::cfg_if;
 use cmd::CmdInput;
 use conf::FullConf;
 use utils::Endpoint;
 
 const VERSION: &str = "1.5.0-rc5";
+
+cfg_if! {
+    if #[cfg(all(feature = "mi-malloc"))] {
+        use mimalloc::MiMalloc;
+        #[global_allocator]
+        static GLOBAL: MiMalloc = MiMalloc;
+    }
+}
+
+cfg_if! {
+    if #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))] {
+        use jemallocator::Jemalloc;
+        #[global_allocator]
+        static GLOBAL: Jemalloc = Jemalloc;
+    }
+}
 
 fn main() {
     match cmd::scan() {

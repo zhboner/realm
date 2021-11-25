@@ -26,11 +26,18 @@ tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main",
 # zero-copy
 libc = { version = "0.2", optional = true }
 
-#logger
+# logger
 chrono = "0.4"
 fern = "0.6"
 env_logger = { version = "0.9", optional = true }
 
+# malloc
+mimalloc = { version = "0.1", optional = true }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = {version = "0.3", optional = true }
+
+# deamon
 [target.'cfg(unix)'.dependencies]
 daemonize = "0.4"
 
@@ -43,11 +50,13 @@ panic = "abort"
 opt-level = 0
 
 [features]
-default = ["udp", "zero-copy", "trust-dns"]
+default = ["udp", "zero-copy", "trust-dns", "mi-malloc"]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = ["libc"]
 trust-dns = ["trust-dns-resolver"]
+jemalloc = ["jemallocator"]
+mi-malloc = ["mimalloc"]
 x-debug = ["env_logger"]
 
 [dev-dependencies]
