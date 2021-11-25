@@ -16,11 +16,7 @@ cfg_if! {
         use mimalloc::MiMalloc;
         #[global_allocator]
         static GLOBAL: MiMalloc = MiMalloc;
-    }
-}
-
-cfg_if! {
-    if #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))] {
+    } else if #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))] {
         use jemallocator::Jemalloc;
         #[global_allocator]
         static GLOBAL: Jemalloc = Jemalloc;
