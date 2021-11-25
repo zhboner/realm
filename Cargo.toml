@@ -50,7 +50,7 @@ panic = "abort"
 opt-level = 0
 
 [features]
-default = ["udp", "zero-copy", "trust-dns", "mi-malloc"]
+default = ["udp", "zero-copy", "trust-dns"]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = ["libc"]

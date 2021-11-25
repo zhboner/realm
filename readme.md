@@ -16,12 +16,14 @@ realm is a simple, high performance relay server written in rust.
 
 ## Custom Build
 available Options:
-- udp *(enabled)*
-- trust-dns *(enabled)*
+- udp *(enabled by default)*
+- trust-dns *(enabled by default)*
 - zero-copy *(enabled on linux)*
-- tfo *(disabled)*
-- mi-malloc *(enabled)*
+- tfo
+- mi-malloc
 - jemalloc
+
+see also: `Cargo.toml`
 
 ```shell
 # simple tcp
