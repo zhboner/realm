@@ -1,6 +1,8 @@
 mod types;
-
 pub use types::*;
+
+mod consts;
+pub use consts::*;
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 

@@ -9,12 +9,13 @@ use log::{debug, info, error};
 use tokio::net::UdpSocket;
 use tokio::time::timeout as timeoutfut;
 
+use crate::utils::DEFAULT_BUF_SIZE;
 use crate::utils::{RemoteAddr, ConnectOpts};
 use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
 
 // client <--> allocated socket
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
-const BUFFERSIZE: usize = 0x1000;
+const BUF_SIZE: usize = DEFAULT_BUF_SIZE;
 
 pub async fn proxy(
     local: SocketAddr,
@@ -29,7 +30,7 @@ pub async fn proxy(
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let local_sock = Arc::new(UdpSocket::bind(&local).await?);
     let timeout = Duration::from_secs(timeout as u64);
-    let mut buf = vec![0u8; BUFFERSIZE];
+    let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
         let (n, client_addr) = match local_sock.recv_from(&mut buf).await {
@@ -82,7 +83,7 @@ async fn send_back(
     alloc_sock: Arc<UdpSocket>,
     timeout: Duration,
 ) {
-    let mut buf = vec![0u8; BUFFERSIZE];
+    let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
         let res =

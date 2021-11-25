@@ -14,9 +14,9 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", feature = "zero-copy"))] {
-        const BUFFER_SIZE: usize = 0x10000;
+        const BUF_SIZE: usize = crate::utils::DEFAULT_PIPE_CAP;
     } else {
-        const BUFFER_SIZE: usize = 0x4000;
+        const BUF_SIZE: usize = crate::utils::DEFAULT_BUF_SIZE;
     }
 }
 
@@ -143,7 +143,7 @@ mod normal_copy {
 where {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-        let mut buf = vec![0u8; BUFFER_SIZE];
+        let mut buf = vec![0u8; BUF_SIZE];
         let mut n: usize;
         loop {
             n = timeoutfut(timeout, r.read(&mut buf)).await??;
@@ -253,8 +253,8 @@ mod zero_copy {
             // read until the socket buffer is empty
             // or the pipe is filled
             timeoutfut(timeout, rx.readable()).await??;
-            while n < BUFFER_SIZE {
-                match splice_n(rfd, wpipe, BUFFER_SIZE - n) {
+            while n < BUF_SIZE {
+                match splice_n(rfd, wpipe, BUF_SIZE - n) {
                     x if x > 0 => n += x as usize,
                     x if x == 0 => {
                         done = true;
