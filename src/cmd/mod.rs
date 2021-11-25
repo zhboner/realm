@@ -1,6 +1,8 @@
 use clap::{App, Arg, ArgMatches, AppSettings};
 
 use super::Endpoint;
+use super::VERSION;
+use crate::utils::FEATURES;
 use crate::utils::TCP_TIMEOUT;
 use crate::utils::UDP_TIMEOUT;
 
@@ -13,7 +15,7 @@ pub enum CmdInput {
 pub fn scan() -> CmdInput {
     let matches = App::new("Realm")
         .about("A high efficiency relay tool")
-        .version(super::VERSION)
+        .version(format!("{} {}", VERSION, FEATURES).as_str())
         .license("MIT")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DisableVersionFlag)

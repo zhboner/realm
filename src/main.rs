@@ -9,7 +9,7 @@ use cmd::CmdInput;
 use conf::FullConf;
 use utils::Endpoint;
 
-const VERSION: &str = "1.5.0-rc5";
+const VERSION: &str = "1.5.0-rc6";
 
 cfg_if! {
     if #[cfg(all(feature = "mi-malloc"))] {
