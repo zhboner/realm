@@ -13,8 +13,8 @@ use lazy_static::lazy_static;
 
 #[derive(Clone)]
 pub struct DnsConf {
-    conf: ResolverConfig,
-    opts: ResolverOpts,
+    pub conf: ResolverConfig,
+    pub opts: ResolverOpts,
 }
 
 impl Default for DnsConf {

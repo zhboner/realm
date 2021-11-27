@@ -49,8 +49,11 @@ impl From<DnsMode> for ResolverOpts {
 pub struct DnsConf {
     #[serde(default)]
     pub mode: DnsMode,
+
     #[serde(default)]
     pub protocol: String,
+
+    #[serde(default)]
     pub nameservers: Vec<String>,
 }
 
@@ -66,14 +69,28 @@ fn read_protocol(net: &str) -> Vec<Protocol> {
 #[cfg(feature = "trust-dns")]
 impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
     fn from(config: DnsConf) -> Self {
-        if config.nameservers.is_empty() {
-            panic!("no nameserver provided");
-        }
         let opts = config.mode.into();
-        let mut conf = ResolverConfig::new();
+
         let protocols = read_protocol(&config.protocol);
-        for addr in config.nameservers {
-            let socket_addr = addr.to_socket_addrs().unwrap().next().unwrap();
+
+        let nameservers = if config.nameservers.is_empty() {
+            use crate::dns::DnsConf as XdnsConf;
+            let XdnsConf { conf, .. } = XdnsConf::default();
+            let mut addrs: Vec<std::net::SocketAddr> =
+                conf.name_servers().iter().map(|x| x.socket_addr).collect();
+            addrs.dedup();
+            addrs
+        } else {
+            config
+                .nameservers
+                .iter()
+                .map(|x| x.to_socket_addrs().unwrap().next().unwrap())
+                .collect()
+        };
+
+        let mut conf = ResolverConfig::new();
+
+        for socket_addr in nameservers {
             for protocol in protocols.clone() {
                 conf.add_name_server(NameServerConfig {
                     socket_addr,
