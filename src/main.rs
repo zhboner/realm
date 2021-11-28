@@ -55,7 +55,7 @@ fn start_from_conf(conf: FullConf) {
         .into_iter()
         .map(|epc| {
             let ep = epc.build();
-            log::info!("inited: {}", &ep);
+            println!("inited: {}", &ep);
             ep
         })
         .collect();
@@ -64,6 +64,8 @@ fn start_from_conf(conf: FullConf) {
 }
 
 fn setup_log(conf: conf::LogConf) {
+    println!("log: {}", &conf);
+
     #[cfg(feature = "x-debug")]
     env_logger::init();
 
@@ -89,6 +91,8 @@ fn setup_log(conf: conf::LogConf) {
 
 #[allow(unused_variables)]
 fn setup_dns(dns: conf::CompatibleDnsConf) {
+    println!("dns: {}", &dns);
+
     #[cfg(feature = "trust-dns")]
     {
         use conf::CompatibleDnsConf::*;

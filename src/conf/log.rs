@@ -1,3 +1,4 @@
+use std::fmt::{Formatter, Display};
 use serde::{Serialize, Deserialize};
 use log::LevelFilter;
 
@@ -47,6 +48,21 @@ impl Default for LogLevel {
     }
 }
 
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use LogLevel::*;
+        let s = match self {
+            Off => "off",
+            Error => "error",
+            Warn => "warn",
+            Info => "info",
+            Debug => "debug",
+            Trace => "trace",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogConf {
     #[serde(default)]
@@ -85,5 +101,11 @@ impl From<LogConf> for (LevelFilter, fern::Output) {
                 .into(),
         };
         (level.into(), output)
+    }
+}
+
+impl Display for LogConf {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "level={}, output={}", self.level, &self.output)
     }
 }
