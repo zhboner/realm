@@ -43,7 +43,7 @@ impl From<LogLevel> for LevelFilter {
 
 impl Default for LogLevel {
     fn default() -> Self {
-        LogLevel::Info
+        LogLevel::Off
     }
 }
 

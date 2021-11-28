@@ -32,7 +32,7 @@ fn main() {
         }
         CmdInput::Config(conf, opts) => {
             let mut conf = FullConf::from_config_file(&conf);
-            conf.resolve_dns_conf().apply_global_opts(opts);
+            conf.apply_global_opts(opts);
             conf
         }
         CmdInput::None => std::process::exit(0),

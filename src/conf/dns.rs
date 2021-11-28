@@ -23,7 +23,7 @@ pub enum DnsMode {
 
 impl Default for DnsMode {
     fn default() -> Self {
-        Self::Ipv4ThenIpv6
+        Self::Ipv4AndIpv6
     }
 }
 

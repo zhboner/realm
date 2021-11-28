@@ -58,7 +58,11 @@ impl FullConf {
     }
 
     // move CompatibleDnsConf::DnsMode into CompatibleDnsConf::DnsConf
-    pub fn resolve_dns_conf(&mut self) -> &mut Self {
+    pub fn move_dns_conf(&mut self) -> &mut Self {
+        if let CompatibleDnsConf::None = self.dns {
+            let conf = DnsConf::default();
+            self.dns = CompatibleDnsConf::DnsConf(conf);
+        }
         if let CompatibleDnsConf::DnsMode(mode) = self.dns {
             let conf = DnsConf {
                 mode,
@@ -77,6 +81,11 @@ impl FullConf {
             dns_protocol,
             dns_servers,
         } = opts;
+
+        if dns_mode.is_some() || dns_protocol.is_some() || dns_servers.is_some()
+        {
+            self.move_dns_conf();
+        }
 
         macro_rules! reset {
             ($res: expr, $field: ident) => {
