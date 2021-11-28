@@ -81,9 +81,34 @@ realm -c config.json
 ```
 
 ## Configuration
+TOML Example
+```toml
+[log]
+level = "warn"
+output = "/var/log/realm.log"
+
+[dns_mode]
+mode = "ipv4_only"
+protocol = "tcp_and_udp"
+nameservers = ["8.8.8.8:53", "8.8.4.4:53"]
+
+[[endpoints]]
+local = "0.0.0.0:5000"
+remote = "1.1.1.1:443"
+
+[[endpoints]]
+udp = true
+fast_open = true
+zero_copy = false
+tcp_timeout = 300
+udp_timeout = 30
+local = "0.0.0.0:10000"
+remote = "www.google.com:443"
+through = "0.0.0.0"
+```
 
 <details>
-<summary>Example</summary>
+<summary>JSON Example</summary>
 <pre>
 <code>{
 	"log": {
@@ -92,7 +117,7 @@ realm -c config.json
 	},
 	"dns_mode": {
 		"mode": "ipv4_only",
-		"protocol": "tcp+udp",
+		"protocol": "tcp_and_udp",
 		"nameservers": ["8.8.8.8:53", "8.8.4.4:53"]
 	},
 	"endpoints": [
@@ -101,16 +126,14 @@ realm -c config.json
 			"remote": "1.1.1.1:443"
 		},
 		{
-			"local": "0.0.0.0:10000",
-			"remote": "www.google.com:443",
 			"udp": true,
 			"fast_open": true,
-			"zero_copy": true
-		},
-		{
-			"local": "0.0.0.0:15000",
-			"remote": "www.microsoft.com:443",
-			"through": "127.0.0.1"
+			"zero_copy": true,
+			"tcp_timeout": 300,
+			"udp_timeout": 30,
+			"local": "0.0.0.0:10000",
+			"remote": "www.google.com:443",
+			"through": "0.0.0.0"
 		}
 	]
 }</code>
@@ -149,7 +172,7 @@ this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lo
 #### dns.protocol
 - tcp
 - udp
-- tcp+udp *(default)*
+- tcp_and_udp *(default)*
 
 #### dns.nameservers
 format: ["server1", "server2" ...]

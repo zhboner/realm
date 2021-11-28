@@ -745,6 +745,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-tfo",
+ "toml",
  "trust-dns-resolver",
 ]
 
@@ -982,6 +983,15 @@ dependencies = [
  "socket2 0.4.2",
  "tokio",
  "winapi",
+]
+
+[[package]]
+name = "toml"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a31142970826733df8241ef35dc040ef98c679ab14d7c3e54d827099b3acecaa"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

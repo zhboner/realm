@@ -48,8 +48,18 @@ impl FullConf {
     pub fn from_config_file(file: &str) -> Self {
         let config = fs::read_to_string(file)
             .unwrap_or_else(|e| panic!("unable to open {}: {}", file, &e));
-        serde_json::from_str(&config)
-            .unwrap_or_else(|e| panic!("unable to parse {}: {}", file, &e))
+        let toml_err = match toml::from_str(&config) {
+            Ok(x) => return x,
+            Err(e) => e,
+        };
+        let json_err = match serde_json::from_str(&config) {
+            Ok(x) => return x,
+            Err(e) => e,
+        };
+        panic!(
+            "parse {0} as toml: {1}; parse {0} as json: {2}",
+            file, &toml_err, &json_err
+        );
     }
 
     pub fn add_endpoint(&mut self, endpoint: EndpointConf) -> &mut Self {
