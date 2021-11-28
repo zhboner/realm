@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use log::LevelFilter;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum LogLevel {
     Off,
@@ -10,6 +10,21 @@ pub enum LogLevel {
     Info,
     Debug,
     Trace,
+}
+
+impl From<String> for LogLevel {
+    fn from(x: String) -> Self {
+        use LogLevel::*;
+        match x.to_ascii_lowercase().as_str() {
+            "off" => Off,
+            "error" => Error,
+            "warn" => Warn,
+            "info" => Info,
+            "debug" => Debug,
+            "trace" => Trace,
+            _ => Self::default(),
+        }
+    }
 }
 
 impl From<LogLevel> for LevelFilter {

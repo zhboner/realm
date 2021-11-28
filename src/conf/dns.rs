@@ -11,7 +11,7 @@ cfg_if! {
 }
 
 // dns mode
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum DnsMode {
     Ipv4Only,
@@ -24,6 +24,20 @@ pub enum DnsMode {
 impl Default for DnsMode {
     fn default() -> Self {
         Self::Ipv4ThenIpv6
+    }
+}
+
+impl From<String> for DnsMode {
+    fn from(s: String) -> Self {
+        use DnsMode::*;
+        match s.to_ascii_lowercase().as_str() {
+            "ipv4_only" => Ipv4Only,
+            "ipv6_only" => Ipv6Only,
+            "ipv4_and_ipv6" => Ipv4AndIpv6,
+            "ipv4_then_ipv6" => Ipv4ThenIpv6,
+            "ipv6_then_ipv4" => Ipv6ThenIpv4,
+            _ => Self::default(),
+        }
     }
 }
 
@@ -44,36 +58,71 @@ impl From<DnsMode> for ResolverOpts {
     }
 }
 
+// dns protocol
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum DnsProtocol {
+    Tcp,
+    Udp,
+    TcpAndUdp,
+}
+
+impl Default for DnsProtocol {
+    fn default() -> Self {
+        Self::TcpAndUdp
+    }
+}
+
+impl From<String> for DnsProtocol {
+    fn from(s: String) -> Self {
+        use DnsProtocol::*;
+        match s.to_ascii_lowercase().as_str() {
+            "tcp" => Tcp,
+            "udp" => Udp,
+            _ => TcpAndUdp,
+        }
+    }
+}
+
+#[cfg(feature = "trust-dns")]
+impl From<DnsProtocol> for Vec<Protocol> {
+    fn from(x: DnsProtocol) -> Self {
+        use DnsProtocol::*;
+        match x {
+            Tcp => vec![Protocol::Tcp],
+            Udp => vec![Protocol::Udp],
+            TcpAndUdp => vec![Protocol::Tcp, Protocol::Udp],
+        }
+    }
+}
+
 // dns config
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct DnsConf {
     #[serde(default)]
     pub mode: DnsMode,
 
     #[serde(default)]
-    pub protocol: String,
+    pub protocol: DnsProtocol,
 
     #[serde(default)]
     pub nameservers: Vec<String>,
 }
 
 #[cfg(feature = "trust-dns")]
-fn read_protocol(net: &str) -> Vec<Protocol> {
-    match net.to_ascii_lowercase().as_str() {
-        "tcp" => vec![Protocol::Tcp],
-        "udp" => vec![Protocol::Udp],
-        _ => vec![Protocol::Tcp, Protocol::Udp],
-    }
-}
-
-#[cfg(feature = "trust-dns")]
 impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
-    fn from(config: DnsConf) -> Self {
-        let opts = config.mode.into();
+    fn from(conf: DnsConf) -> Self {
+        let DnsConf {
+            mode,
+            protocol,
+            nameservers,
+        } = conf;
 
-        let protocols = read_protocol(&config.protocol);
+        let opts = mode.into();
 
-        let nameservers = if config.nameservers.is_empty() {
+        let protocols: Vec<Protocol> = protocol.into();
+
+        let nameservers = if nameservers.is_empty() {
             use crate::dns::DnsConf as XdnsConf;
             let XdnsConf { conf, .. } = XdnsConf::default();
             let mut addrs: Vec<std::net::SocketAddr> =
@@ -81,8 +130,7 @@ impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
             addrs.dedup();
             addrs
         } else {
-            config
-                .nameservers
+            nameservers
                 .iter()
                 .map(|x| x.to_socket_addrs().unwrap().next().unwrap())
                 .collect()
@@ -107,14 +155,32 @@ impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
 // compatible dns config
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged, rename_all = "snake_case")]
-pub enum CompatibeDnsConf {
-    Dns(DnsConf),
+pub enum CompatibleDnsConf {
+    DnsConf(DnsConf),
     DnsMode(DnsMode),
     None,
 }
 
-impl Default for CompatibeDnsConf {
+impl Default for CompatibleDnsConf {
     fn default() -> Self {
         Self::None
+    }
+}
+
+impl AsRef<DnsConf> for CompatibleDnsConf {
+    fn as_ref(&self) -> &DnsConf {
+        match self {
+            CompatibleDnsConf::DnsConf(x) => x,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl AsMut<DnsConf> for CompatibleDnsConf {
+    fn as_mut(&mut self) -> &mut DnsConf {
+        match self {
+            CompatibleDnsConf::DnsConf(x) => x,
+            _ => unreachable!(),
+        }
     }
 }

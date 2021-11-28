@@ -4,26 +4,26 @@ use crate::utils::Endpoint;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConf {
     #[serde(default)]
-    udp: bool,
+    pub udp: bool,
 
     #[serde(default)]
-    fast_open: bool,
+    pub fast_open: bool,
 
     #[serde(default)]
-    zero_copy: bool,
+    pub zero_copy: bool,
 
     #[serde(default = "tcp_timeout")]
-    tcp_timeout: usize,
+    pub tcp_timeout: usize,
 
     #[serde(default = "udp_timeout")]
-    udp_timeout: usize,
+    pub udp_timeout: usize,
 
-    local: String,
+    pub local: String,
 
-    remote: String,
+    pub remote: String,
 
     #[serde(default)]
-    through: String,
+    pub through: String,
 }
 
 const fn tcp_timeout() -> usize {

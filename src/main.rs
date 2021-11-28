@@ -24,19 +24,29 @@ cfg_if! {
 }
 
 fn main() {
-    match cmd::scan() {
-        CmdInput::Endpoint(ep) => execute(vec![ep]),
-        CmdInput::Config(conf) => start_from_conf(conf),
-        CmdInput::None => {}
-    }
+    let conf = match cmd::scan() {
+        CmdInput::Endpoint(ep, opts) => {
+            let mut conf = FullConf::default();
+            conf.add_endpoint(ep).apply_global_opts(opts);
+            conf
+        }
+        CmdInput::Config(conf, opts) => {
+            let mut conf = FullConf::from_config_file(&conf);
+            conf.resolve_dns_conf().apply_global_opts(opts);
+            conf
+        }
+        CmdInput::None => std::process::exit(0),
+    };
+
+    start_from_conf(conf);
 }
 
-fn start_from_conf(conf: String) {
+fn start_from_conf(conf: FullConf) {
     let FullConf {
         log: log_conf,
         dns: dns_conf,
         endpoints: eps_conf,
-    } = FullConf::from_config_file(&conf);
+    } = conf;
 
     setup_log(log_conf);
     setup_dns(dns_conf);
@@ -78,12 +88,12 @@ fn setup_log(conf: conf::LogConf) {
 }
 
 #[allow(unused_variables)]
-fn setup_dns(dns: conf::CompatibeDnsConf) {
+fn setup_dns(dns: conf::CompatibleDnsConf) {
     #[cfg(feature = "trust-dns")]
     {
-        use conf::CompatibeDnsConf::*;
+        use conf::CompatibleDnsConf::*;
         match dns {
-            Dns(conf) => {
+            DnsConf(conf) => {
                 let (conf, opts) = conf.into();
                 dns::configure(Some(conf), Some(opts));
             }
