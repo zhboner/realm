@@ -35,7 +35,7 @@ cargo build --release --no-default-features --features udp, tfo, zero-copy, trus
 
 ## Usage
 ```shell
-Realm 1.5.0-rc5
+Realm 1.5.0-rc6 [udp][zero-copy][trust-dns]
 
 A high efficiency relay tool
 
@@ -49,12 +49,21 @@ FLAGS:
     -d, --daemon    run as a unix daemon
 
 OPTIONS:
+    -h, --help                    show help
+    -v, --version                 show version
     -c, --config <path>           use config file
     -l, --listen <addr>           listen address
     -r, --remote <addr>           remote address
     -x, --through <addr>          send through ip or address
         --tcp-timeout <second>    set timeout value for tcp
         --udp-timeout <second>    set timeout value for udp
+
+GLOBAL OPTIONS:
+        --log-level <level>          override log level
+        --log-output <path>          override log output
+        --dns-mode <mode>            override dns mode
+        --dns-protocol <protocol>    override dns protocol
+        --dns-servers <protocol>     override dns servers
 ```
 
 start from command line arguments:
@@ -115,9 +124,9 @@ Note: must provide `endpoint.local` and `endpoint.remote`
 ### log: [level, output]
 
 #### log.level
-- off
+- off *(default)*
 - error
-- info *(default)*
+- info
 - debug
 - trace
 
@@ -133,9 +142,9 @@ this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lo
 #### dns.mode
 - ipv4_only
 - ipv6_only
-- ipv4_then_ipv6 *(default)*
+- ipv4_then_ipv6
 - ipv6_then_ipv4
-- ipv4_and_ipv6
+- ipv4_and_ipv6 *(default)*
 
 #### dns.protocol
 - tcp
