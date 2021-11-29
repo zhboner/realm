@@ -63,7 +63,7 @@ GLOBAL OPTIONS:
         --log-output <path>          override log output
         --dns-mode <mode>            override dns mode
         --dns-protocol <protocol>    override dns protocol
-        --dns-servers <servers>     override dns servers
+        --dns-servers <servers>      override dns servers
 ```
 
 start from command line arguments:
