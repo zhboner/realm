@@ -124,7 +124,7 @@ fn add_global_options(app: App) -> App {
         Arg::new("dns_servers")
             .long("dns-servers")
             .about("override dns servers")
-            .value_name("protocol")
+            .value_name("servers")
             .takes_value(true)
             .display_order(4),
     ])
