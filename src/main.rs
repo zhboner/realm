@@ -66,27 +66,21 @@ fn start_from_conf(conf: FullConf) {
 fn setup_log(conf: conf::LogConf) {
     println!("log: {}", &conf);
 
-    #[cfg(feature = "x-debug")]
-    env_logger::init();
-
-    #[cfg(not(feature = "x-debug"))]
-    {
-        let (level, output) = conf.into();
-        fern::Dispatch::new()
-            .format(|out, message, record| {
-                out.finish(format_args!(
-                    "{}[{}][{}] {}",
-                    chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                    record.target(),
-                    record.level(),
-                    message
-                ))
-            })
-            .level(level)
-            .chain(output)
-            .apply()
-            .unwrap_or_else(|e| panic!("failed to setup logger: {}", &e))
-    }
+    let (level, output) = conf.into();
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(level)
+        .chain(output)
+        .apply()
+        .unwrap_or_else(|e| panic!("failed to setup logger: {}", &e))
 }
 
 #[allow(unused_variables)]
