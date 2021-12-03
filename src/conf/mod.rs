@@ -25,7 +25,7 @@ pub struct FullConf {
     #[serde(default)]
     pub log: LogConf,
 
-    #[serde(default, rename = "dns_mode")]
+    #[serde(default)]
     pub dns: CompatibleDnsConf,
 
     pub endpoints: Vec<EndpointConf>,

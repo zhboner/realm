@@ -87,7 +87,7 @@ TOML Example
 level = "warn"
 output = "/var/log/realm.log"
 
-[dns_mode]
+[dns]
 mode = "ipv4_only"
 protocol = "tcp_and_udp"
 nameservers = ["8.8.8.8:53", "8.8.4.4:53"]
@@ -115,7 +115,7 @@ through = "0.0.0.0"
 		"level": "warn",
 		"output": "/var/log/realm.log"
 	},
-	"dns_mode": {
+	"dns": {
 		"mode": "ipv4_only",
 		"protocol": "tcp_and_udp",
 		"nameservers": ["8.8.8.8:53", "8.8.4.4:53"]
@@ -160,7 +160,7 @@ Note: must provide `endpoint.local` and `endpoint.remote`
 
 ---
 ### dns: [mode, protocol, nameservers]
-this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lookup priority with `"dns_mode": "ipv4_only"`, which is equal to `"dns_mode": {"mode": "ipv4_only"}`
+~~this is compatibe with old versions(before `v1.5.0-rc3`),~~ you could still set lookup strategy with `"dns": "ipv4_only"`, which is equal to `"dns": {"mode": "ipv4_only"}`
 
 #### dns.mode
 - ipv4_only
@@ -178,7 +178,7 @@ this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lo
 format: ["server1", "server2" ...]
 
 default:
-On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`). Otherwise use google's public dns as default upstream resolver(`8.8.8.8`, `8.8.4.4` and `2001:4860:4860::8888`, `2001:4860:4860::8844`).
+On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`). Otherwise use google's public dns as default upstream resolver(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:4860::8888:53`, `2001:4860:4860::8844:53`).
 
 ---
 ### endpoint objects
