@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::{Result, Error, ErrorKind};
 
 use serde::{Serialize, Deserialize};
 
@@ -45,21 +46,32 @@ impl FullConf {
         }
     }
 
-    pub fn from_config_file(file: &str) -> Self {
-        let config = fs::read_to_string(file)
+    pub fn from_conf_file(file: &str) -> Self {
+        let conf = fs::read_to_string(file)
             .unwrap_or_else(|e| panic!("unable to open {}: {}", file, &e));
-        let toml_err = match toml::from_str(&config) {
-            Ok(x) => return x,
+        match Self::from_conf_str(&conf) {
+            Ok(x) => x,
+            Err(e) => panic!("failed to parse {}: {}", file, &e),
+        }
+    }
+
+    pub fn from_conf_str(conf: &str) -> Result<Self> {
+        let toml_err = match toml::from_str(conf) {
+            Ok(x) => return Ok(x),
             Err(e) => e,
         };
-        let json_err = match serde_json::from_str(&config) {
-            Ok(x) => return x,
+        let json_err = match serde_json::from_str(conf) {
+            Ok(x) => return Ok(x),
             Err(e) => e,
         };
-        panic!(
-            "parse {0} as toml: {1}; parse {0} as json: {2}",
-            file, &toml_err, &json_err
-        );
+
+        Err(Error::new(
+            ErrorKind::Other,
+            format!(
+                "parse as toml: {0}; parse as json: {1}",
+                &toml_err, &json_err
+            ),
+        ))
     }
 
     pub fn add_endpoint(&mut self, endpoint: EndpointConf) -> &mut Self {

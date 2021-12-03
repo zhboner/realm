@@ -4,12 +4,15 @@ mod conf;
 mod utils;
 mod relay;
 
+use std::env;
+
 use cfg_if::cfg_if;
 use cmd::CmdInput;
 use conf::FullConf;
 use utils::Endpoint;
 
 const VERSION: &str = "1.5.0-rc6";
+const ENV_CONFIG: &str = "CONFIG";
 
 cfg_if! {
     if #[cfg(all(feature = "mi-malloc"))] {
@@ -24,21 +27,29 @@ cfg_if! {
 }
 
 fn main() {
-    let conf = match cmd::scan() {
-        CmdInput::Endpoint(ep, opts) => {
-            let mut conf = FullConf::default();
-            conf.add_endpoint(ep).apply_global_opts(opts);
-            conf
+    let conf = || {
+        if let Ok(conf_str) = env::var(ENV_CONFIG) {
+            if let Ok(conf) = FullConf::from_conf_str(&conf_str) {
+                return conf;
+            }
+        };
+
+        match cmd::scan() {
+            CmdInput::Endpoint(ep, opts) => {
+                let mut conf = FullConf::default();
+                conf.add_endpoint(ep).apply_global_opts(opts);
+                conf
+            }
+            CmdInput::Config(conf, opts) => {
+                let mut conf = FullConf::from_conf_file(&conf);
+                conf.apply_global_opts(opts);
+                conf
+            }
+            CmdInput::None => std::process::exit(0),
         }
-        CmdInput::Config(conf, opts) => {
-            let mut conf = FullConf::from_config_file(&conf);
-            conf.apply_global_opts(opts);
-            conf
-        }
-        CmdInput::None => std::process::exit(0),
     };
 
-    start_from_conf(conf);
+    start_from_conf(conf());
 }
 
 fn start_from_conf(conf: FullConf) {

@@ -69,16 +69,24 @@ GLOBAL OPTIONS:
 
 start from command line arguments:
 ```shell
-# enable udp
-realm -l 127.0.0.1:5000 -r 1.1.1.1:443 --udp
-
-# specify outbound ip
-realm -l 127.0.0.1:5000 -r 1.1.1.1:443 --through 127.0.0.1
+realm -l 0.0.0.0:5000 -r 1.1.1.1:443
 ```
 
-or use a config file:
+start from config file:
 ```shell
+# use toml
+realm -c config.toml
+
+# use json
 realm -c config.json
+```
+
+start from environment variable:
+```shell
+CONFIG='{"endpoints":[{"local":"127.0.0.1:5000","remote":"1.1.1.1:443"}]}' realm
+
+export CONFIG=`cat config.json | jq -c `
+realm
 ```
 
 ## Configuration
