@@ -19,6 +19,7 @@ available Options:
 - udp *(enabled by default)*
 - trust-dns *(enabled by default)*
 - zero-copy *(enabled on linux)*
+- multi-thread *(enabled by default)*
 - tfo
 - mi-malloc
 - jemalloc

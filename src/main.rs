@@ -103,9 +103,21 @@ fn setup_dns(dns: conf::CompatibleDnsConf) {
 }
 
 fn execute(eps: Vec<Endpoint>) {
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(relay::run(eps))
+    #[cfg(feature = "multi-thread")]
+    {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(relay::run(eps))
+    }
+
+    #[cfg(not(feature = "multi-thread"))]
+    {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(relay::run(eps))
+    }
 }

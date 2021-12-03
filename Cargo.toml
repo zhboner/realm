@@ -16,7 +16,7 @@ toml = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "io-util", "net", "time"] }
+tokio = { version = "1", features = ["rt", "io-util", "net", "time"] }
 trust-dns-resolver = { version = "0.20", optional = true }
 
 lazy_static = "1"
@@ -50,11 +50,12 @@ panic = "abort"
 opt-level = 0
 
 [features]
-default = ["udp", "zero-copy", "trust-dns"]
+default = ["udp", "zero-copy", "trust-dns", "multi-thread" ]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = ["libc"]
 trust-dns = ["trust-dns-resolver"]
+multi-thread = ["tokio/rt-multi-thread"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
 

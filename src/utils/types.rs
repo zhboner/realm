@@ -4,9 +4,6 @@ use std::net::SocketAddr;
 
 use crate::dns;
 
-pub const TCP_TIMEOUT: usize = 300;
-pub const UDP_TIMEOUT: usize = 30;
-
 #[derive(Clone)]
 pub enum RemoteAddr {
     SocketAddr(SocketAddr),
