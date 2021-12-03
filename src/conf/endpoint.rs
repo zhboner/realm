@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
-use crate::utils::Endpoint;
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use crate::utils::{Endpoint, RemoteAddr, ConnectOpts};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConf {
@@ -35,16 +36,66 @@ const fn udp_timeout() -> usize {
 }
 
 impl EndpointConf {
+    fn build_local(&self) -> SocketAddr {
+        self.local
+            .to_socket_addrs()
+            .expect("invalid local address")
+            .next()
+            .unwrap()
+    }
+
+    fn build_remote(&self) -> RemoteAddr {
+        let Self { remote, .. } = self;
+        if let Ok(sockaddr) = remote.parse::<SocketAddr>() {
+            RemoteAddr::SocketAddr(sockaddr)
+        } else {
+            let mut iter = remote.rsplitn(2, ':');
+            let port = iter.next().unwrap().parse::<u16>().unwrap();
+            let addr = iter.next().unwrap().to_string();
+            // test addr
+            let _ = crate::dns::resolve_sync(&addr, 0).unwrap();
+            RemoteAddr::DomainName(addr, port)
+        }
+    }
+
+    fn build_send_through(&self) -> Option<SocketAddr> {
+        let Self { through, .. } = self;
+        match through.to_socket_addrs() {
+            Ok(mut x) => Some(x.next().unwrap()),
+            Err(_) => {
+                let mut ipstr = String::from(through);
+                ipstr.retain(|c| c != '[' && c != ']');
+                ipstr
+                    .parse::<IpAddr>()
+                    .map_or(None, |ip| Some(SocketAddr::new(ip, 0)))
+            }
+        }
+    }
+
+    fn build_conn_opts(&self) -> ConnectOpts {
+        let Self {
+            udp,
+            fast_open,
+            zero_copy,
+            tcp_timeout,
+            udp_timeout,
+            ..
+        } = *self;
+
+        ConnectOpts {
+            use_udp: udp,
+            fast_open,
+            zero_copy,
+            tcp_timeout,
+            udp_timeout,
+            send_through: self.build_send_through(),
+        }
+    }
+
     pub fn build(&self) -> Endpoint {
-        Endpoint::new(
-            &self.local,
-            &self.remote,
-            &self.through,
-            self.udp,
-            self.fast_open,
-            self.zero_copy,
-            self.tcp_timeout,
-            self.udp_timeout,
-        )
+        let local = self.build_local();
+        let remote = self.build_remote();
+        let opts = self.build_conn_opts();
+        Endpoint::new(local, remote, opts)
     }
 }

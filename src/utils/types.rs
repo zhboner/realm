@@ -1,6 +1,6 @@
 use std::io::Result;
 use std::fmt::{Formatter, Display};
-use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 
 use crate::dns;
 
@@ -67,59 +67,15 @@ impl RemoteAddr {
 }
 
 impl Endpoint {
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
-        local: &str,
-        remote: &str,
-        through: &str,
-        use_udp: bool,
-        fast_open: bool,
-        zero_copy: bool,
-        tcp_timeout: usize,
-        udp_timeout: usize,
+        local: SocketAddr,
+        remote: RemoteAddr,
+        opts: ConnectOpts,
     ) -> Self {
-        // check local addr
-        let local = local
-            .to_socket_addrs()
-            .expect("invalid local address")
-            .next()
-            .unwrap();
-
-        // check remote addr
-        let remote = if let Ok(sockaddr) = remote.parse::<SocketAddr>() {
-            RemoteAddr::SocketAddr(sockaddr)
-        } else {
-            let mut iter = remote.rsplitn(2, ':');
-            let port = iter.next().unwrap().parse::<u16>().unwrap();
-            let addr = iter.next().unwrap().to_string();
-            // test addr
-            let _ = dns::resolve_sync(&addr, 0).unwrap();
-            RemoteAddr::DomainName(addr, port)
-        };
-
-        // check bind addr
-        let through = match through.to_socket_addrs() {
-            Ok(mut x) => Some(x.next().unwrap()),
-            Err(_) => {
-                let mut ipstr = String::from(through);
-                ipstr.retain(|c| c != '[' && c != ']');
-                ipstr
-                    .parse::<IpAddr>()
-                    .map_or(None, |ip| Some(SocketAddr::new(ip, 0)))
-            }
-        };
-
         Endpoint {
             local,
             remote,
-            opts: ConnectOpts {
-                use_udp,
-                fast_open,
-                zero_copy,
-                tcp_timeout,
-                udp_timeout,
-                send_through: through,
-            },
+            opts,
         }
     }
 }
