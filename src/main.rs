@@ -8,7 +8,7 @@ use std::env;
 
 use cfg_if::cfg_if;
 use cmd::CmdInput;
-use conf::FullConf;
+use conf::{FullConf, LogConf, DnsConf};
 use utils::Endpoint;
 
 const VERSION: &str = "1.5.0-rc6";
@@ -52,12 +52,12 @@ fn main() {
     start_from_conf(conf());
 }
 
-fn start_from_conf(conf: FullConf) {
+fn start_from_conf(full: FullConf) {
     let FullConf {
         log: log_conf,
         dns: dns_conf,
         endpoints: eps_conf,
-    } = conf;
+    } = full;
 
     setup_log(log_conf);
     setup_dns(dns_conf);
@@ -74,10 +74,10 @@ fn start_from_conf(conf: FullConf) {
     execute(eps);
 }
 
-fn setup_log(conf: conf::LogConf) {
-    println!("log: {}", &conf);
+fn setup_log(log: LogConf) {
+    println!("log: {}", &log);
 
-    let (level, output) = conf.into();
+    let (level, output) = log.into();
     fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -95,20 +95,13 @@ fn setup_log(conf: conf::LogConf) {
 }
 
 #[allow(unused_variables)]
-fn setup_dns(dns: conf::CompatibleDnsConf) {
+fn setup_dns(dns: DnsConf) {
     println!("dns: {}", &dns);
 
     #[cfg(feature = "trust-dns")]
     {
-        use conf::CompatibleDnsConf::*;
-        match dns {
-            DnsConf(conf) => {
-                let (conf, opts) = conf.into();
-                dns::configure(Some(conf), Some(opts));
-            }
-            DnsMode(mode) => dns::configure(Option::None, Some(mode.into())),
-            None => (),
-        }
+        let (conf, opts) = dns.into();
+        dns::configure(Some(conf), Some(opts));
         dns::build();
     }
 }

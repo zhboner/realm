@@ -169,7 +169,7 @@ Note: must provide `endpoint.local` and `endpoint.remote`
 
 ---
 ### dns: [mode, protocol, nameservers]
-~~this is compatibe with old versions(before `v1.5.0-rc3`),~~ you could still set lookup strategy with `"dns": "ipv4_only"`, which is equal to `"dns": {"mode": "ipv4_only"}`
+~~this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lookup strategy with `"dns": "ipv4_only"`, which is equal to `"dns": {"mode": "ipv4_only"}`~~ You must use `dns.mode` instead of `dns_mode`
 
 #### dns.mode
 - ipv4_only

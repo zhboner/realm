@@ -7,7 +7,7 @@ mod log;
 pub use self::log::{LogLevel, LogConf};
 
 mod dns;
-pub use dns::{DnsMode, DnsProtocol, DnsConf, CompatibleDnsConf};
+pub use dns::{DnsMode, DnsProtocol, DnsConf};
 
 mod endpoint;
 pub use endpoint::EndpointConf;
@@ -27,7 +27,7 @@ pub struct FullConf {
     pub log: LogConf,
 
     #[serde(default)]
-    pub dns: CompatibleDnsConf,
+    pub dns: DnsConf,
 
     pub endpoints: Vec<EndpointConf>,
 }
@@ -41,7 +41,7 @@ impl FullConf {
     ) -> Self {
         FullConf {
             log,
-            dns: CompatibleDnsConf::DnsConf(dns),
+            dns,
             endpoints,
         }
     }
@@ -79,22 +79,6 @@ impl FullConf {
         self
     }
 
-    // move CompatibleDnsConf::DnsMode into CompatibleDnsConf::DnsConf
-    pub fn move_dns_conf(&mut self) -> &mut Self {
-        if let CompatibleDnsConf::None = self.dns {
-            let conf = DnsConf::default();
-            self.dns = CompatibleDnsConf::DnsConf(conf);
-        }
-        if let CompatibleDnsConf::DnsMode(mode) = self.dns {
-            let conf = DnsConf {
-                mode,
-                ..Default::default()
-            };
-            self.dns = CompatibleDnsConf::DnsConf(conf);
-        }
-        self
-    }
-
     pub fn apply_global_opts(&mut self, opts: GlobalOpts) -> &mut Self {
         let GlobalOpts {
             log_level,
@@ -104,11 +88,6 @@ impl FullConf {
             dns_servers,
         } = opts;
 
-        if dns_mode.is_some() || dns_protocol.is_some() || dns_servers.is_some()
-        {
-            self.move_dns_conf();
-        }
-
         macro_rules! reset {
             ($res: expr, $field: ident) => {
                 if let Some($field) = $field {
@@ -116,11 +95,12 @@ impl FullConf {
                 }
             };
         }
+
         reset!(self.log.level, log_level);
         reset!(self.log.output, log_output);
-        reset!(self.dns.as_mut().mode, dns_mode);
-        reset!(self.dns.as_mut().protocol, dns_protocol);
-        reset!(self.dns.as_mut().nameservers, dns_servers);
+        reset!(self.dns.mode, dns_mode);
+        reset!(self.dns.protocol, dns_protocol);
+        reset!(self.dns.nameservers, dns_servers);
 
         self
     }
