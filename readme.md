@@ -101,16 +101,18 @@ mode = "ipv4_only"
 protocol = "tcp_and_udp"
 nameservers = ["8.8.8.8:53", "8.8.4.4:53"]
 
+[network]
+udp = true
+zero_copy = true
+fast_open = true
+tcp_timeout = 300
+udp_timeout = 30
+
 [[endpoints]]
 local = "0.0.0.0:5000"
 remote = "1.1.1.1:443"
 
 [[endpoints]]
-udp = true
-fast_open = true
-zero_copy = false
-tcp_timeout = 300
-udp_timeout = 30
 local = "0.0.0.0:10000"
 remote = "www.google.com:443"
 through = "0.0.0.0"
@@ -129,17 +131,19 @@ through = "0.0.0.0"
 		"protocol": "tcp_and_udp",
 		"nameservers": ["8.8.8.8:53", "8.8.4.4:53"]
 	},
+	"network": {
+		"udp": true,
+		"fast_open": true,
+		"zero_copy": true,
+		"tcp_timeout": 300,
+		"udp_timeout": 30,
+	},
 	"endpoints": [
 		{
 			"local": "0.0.0.0:5000",
 			"remote": "1.1.1.1:443"
 		},
 		{
-			"udp": true,
-			"fast_open": true,
-			"zero_copy": true,
-			"tcp_timeout": 300,
-			"udp_timeout": 30,
 			"local": "0.0.0.0:10000",
 			"remote": "www.google.com:443",
 			"through": "0.0.0.0"

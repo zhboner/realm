@@ -82,7 +82,7 @@ impl Config for LogConf {
         use std::fs::OpenOptions;
         let LogConf { level, output } = self;
         let level = level.unwrap_or_default();
-        let output = output.unwrap_or_else(||String::from(DEFAULT_LOG_FILE));
+        let output = output.unwrap_or_else(|| String::from(DEFAULT_LOG_FILE));
 
         let output: fern::Output = match output.as_str() {
             "stdout" => io::stdout().into(),

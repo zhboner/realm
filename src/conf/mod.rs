@@ -9,6 +9,9 @@ pub use self::log::{LogLevel, LogConf};
 mod dns;
 pub use dns::{DnsMode, DnsProtocol, DnsConf};
 
+mod net;
+pub use net::{NetConf};
+
 mod endpoint;
 pub use endpoint::EndpointConf;
 
@@ -35,6 +38,9 @@ pub struct FullConf {
     #[serde(default)]
     pub dns: Option<DnsConf>,
 
+    #[serde(default)]
+    pub network: Option<NetConf>,
+
     pub endpoints: Vec<EndpointConf>,
 }
 
@@ -43,11 +49,13 @@ impl FullConf {
     pub fn new(
         log: Option<LogConf>,
         dns: Option<DnsConf>,
+        network: Option<NetConf>,
         endpoints: Vec<EndpointConf>,
     ) -> Self {
         FullConf {
             log,
             dns,
+            network,
             endpoints,
         }
     }

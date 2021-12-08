@@ -57,6 +57,7 @@ fn start_from_conf(full: FullConf) {
         log: log_conf,
         dns: dns_conf,
         endpoints: eps_conf,
+        ..
     } = full;
 
     setup_log(log_conf.unwrap_or_default());
