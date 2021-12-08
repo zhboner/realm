@@ -78,7 +78,7 @@ fn output() -> String {
 impl Default for LogConf {
     fn default() -> Self {
         Self {
-            level: LogLevel::Info,
+            level: Default::default(),
             output: output(),
         }
     }
