@@ -12,6 +12,12 @@ pub use dns::{DnsMode, DnsProtocol, DnsConf};
 mod endpoint;
 pub use endpoint::EndpointConf;
 
+pub trait Config {
+    type Output;
+
+    fn resolve(self) -> Self::Output;
+}
+
 #[derive(Debug, Default)]
 pub struct GlobalOpts {
     pub log_level: Option<LogLevel>,
@@ -24,10 +30,10 @@ pub struct GlobalOpts {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct FullConf {
     #[serde(default)]
-    pub log: LogConf,
+    pub log: Option<LogConf>,
 
     #[serde(default)]
-    pub dns: DnsConf,
+    pub dns: Option<DnsConf>,
 
     pub endpoints: Vec<EndpointConf>,
 }
@@ -35,8 +41,8 @@ pub struct FullConf {
 impl FullConf {
     #[allow(unused)]
     pub fn new(
-        log: LogConf,
-        dns: DnsConf,
+        log: Option<LogConf>,
+        dns: Option<DnsConf>,
         endpoints: Vec<EndpointConf>,
     ) -> Self {
         FullConf {
@@ -89,18 +95,23 @@ impl FullConf {
         } = opts;
 
         macro_rules! reset {
-            ($res: expr, $field: ident) => {
-                if let Some($field) = $field {
-                    $res = $field
+            ($main: ident, $field: ident, $value: expr) => {
+                if $value.is_some() {
+                    let mut conf = match self.$main.clone() {
+                        Some(c) => c,
+                        None => Default::default(),
+                    };
+                    conf.$field = $value;
+                    self.$main = Some(conf);
                 }
             };
         }
 
-        reset!(self.log.level, log_level);
-        reset!(self.log.output, log_output);
-        reset!(self.dns.mode, dns_mode);
-        reset!(self.dns.protocol, dns_protocol);
-        reset!(self.dns.nameservers, dns_servers);
+        reset!(log, level, log_level);
+        reset!(log, output, log_output);
+        reset!(dns, mode, dns_mode);
+        reset!(dns, protocol, dns_protocol);
+        reset!(dns, nameservers, dns_servers);
 
         self
     }

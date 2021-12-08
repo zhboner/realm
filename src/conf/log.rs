@@ -1,6 +1,8 @@
 use std::fmt::{Formatter, Display};
 use serde::{Serialize, Deserialize};
 use log::LevelFilter;
+use super::Config;
+use crate::utils::DEFAULT_LOG_FILE;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
@@ -63,32 +65,25 @@ impl Display for LogLevel {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct LogConf {
     #[serde(default)]
-    pub level: LogLevel,
-    #[serde(default = "output")]
-    pub output: String,
+    pub level: Option<LogLevel>,
+
+    #[serde(default)]
+    pub output: Option<String>,
 }
 
-fn output() -> String {
-    String::from("stdout")
-}
+impl Config for LogConf {
+    type Output = (LevelFilter, fern::Output);
 
-impl Default for LogConf {
-    fn default() -> Self {
-        Self {
-            level: Default::default(),
-            output: output(),
-        }
-    }
-}
-
-impl From<LogConf> for (LevelFilter, fern::Output) {
-    fn from(conf: LogConf) -> Self {
+    fn resolve(self) -> Self::Output {
         use std::io;
         use std::fs::OpenOptions;
-        let LogConf { level, output } = conf;
+        let LogConf { level, output } = self;
+        let level = level.unwrap_or_default();
+        let output = output.unwrap_or_else(||String::from(DEFAULT_LOG_FILE));
+
         let output: fern::Output = match output.as_str() {
             "stdout" => io::stdout().into(),
             "stderr" => io::stderr().into(),
@@ -100,12 +95,17 @@ impl From<LogConf> for (LevelFilter, fern::Output) {
                 .unwrap_or_else(|e| panic!("failed to open {}: {}", output, &e))
                 .into(),
         };
+
         (level.into(), output)
     }
 }
 
 impl Display for LogConf {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "level={}, output={}", self.level, &self.output)
+        let LogConf { level, output } = self.clone();
+        let level = level.unwrap_or_default();
+        let output = output.unwrap_or_default();
+
+        write!(f, "level={}, output={}", level, output)
     }
 }

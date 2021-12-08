@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 use std::fmt::{Formatter, Display};
 use serde::{Serialize, Deserialize};
+use super::Config;
 
 cfg_if! {
     if #[cfg(feature = "trust-dns")] {
@@ -74,7 +75,7 @@ impl From<DnsMode> for ResolverOpts {
 }
 
 // dns protocol
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum DnsProtocol {
     Tcp,
@@ -124,59 +125,79 @@ impl From<DnsProtocol> for Vec<Protocol> {
 }
 
 // dns config
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct DnsConf {
     #[serde(default)]
-    pub mode: DnsMode,
+    pub mode: Option<DnsMode>,
 
     #[serde(default)]
-    pub protocol: DnsProtocol,
+    pub protocol: Option<DnsProtocol>,
 
     #[serde(default)]
-    pub nameservers: Vec<String>,
+    pub nameservers: Option<Vec<String>>,
 }
 
 impl Display for DnsConf {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let servers = if self.nameservers.is_empty() {
-            String::from("system")
-        } else {
-            self.nameservers.join(", ")
-        };
-
-        write!(f, "mode={}, protocol={}, ", self.mode, self.protocol).unwrap();
-        write!(f, "servers={}", &servers)
-    }
-}
-
-#[cfg(feature = "trust-dns")]
-impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
-    fn from(conf: DnsConf) -> Self {
         let DnsConf {
             mode,
             protocol,
             nameservers,
-        } = conf;
+        } = self;
 
-        let opts = mode.into();
-
-        let protocols: Vec<Protocol> = protocol.into();
-
-        let nameservers = if nameservers.is_empty() {
-            use crate::dns::DnsConf as XdnsConf;
-            let XdnsConf { conf, .. } = XdnsConf::default();
-            let mut addrs: Vec<std::net::SocketAddr> =
-                conf.name_servers().iter().map(|x| x.socket_addr).collect();
-            addrs.dedup();
-            addrs
-        } else {
-            nameservers
-                .iter()
-                .map(|x| x.to_socket_addrs().unwrap().next().unwrap())
-                .collect()
+        let mode = match mode {
+            Some(m) => *m,
+            None => Default::default(),
         };
 
+        let protocol = match protocol {
+            Some(x) => *x,
+            None => Default::default(),
+        };
+
+        let nameservers = match nameservers {
+            Some(s) => s.join(", "),
+            None => String::from("system"),
+        };
+
+        write!(f, "mode={}, protocol={}, ", &mode, &protocol).unwrap();
+        write!(f, "servers={}", &nameservers)
+    }
+}
+
+impl Config for DnsConf {
+    type Output = (Option<ResolverConfig>, Option<ResolverOpts>);
+
+    fn resolve(self) -> Self::Output {
+        let DnsConf {
+            mode,
+            protocol,
+            nameservers,
+        } = self;
+
+        let opts: Option<ResolverOpts> = mode.map(|x| x.into());
+
+        let protocol = protocol.unwrap_or_default();
+        if nameservers.is_none() && (protocol == DnsProtocol::default()) {
+            return (None, opts);
+        }
+
         let mut conf = ResolverConfig::new();
+        let protocols: Vec<Protocol> = protocol.into();
+        let nameservers = match nameservers {
+            Some(addrs) => addrs
+                .iter()
+                .map(|x| x.to_socket_addrs().unwrap().next().unwrap())
+                .collect(),
+            None => {
+                use crate::dns::DnsConf as TrustDnsConf;
+                let TrustDnsConf { conf, .. } = TrustDnsConf::default();
+                let mut addrs: Vec<std::net::SocketAddr> =
+                    conf.name_servers().iter().map(|x| x.socket_addr).collect();
+                addrs.dedup();
+                addrs
+            }
+        };
 
         for socket_addr in nameservers {
             for protocol in protocols.clone() {
@@ -188,6 +209,7 @@ impl From<DnsConf> for (ResolverConfig, ResolverOpts) {
                 });
             }
         }
-        (conf, opts)
+
+        (Some(conf), opts)
     }
 }

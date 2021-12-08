@@ -1,5 +1,8 @@
 use std::fmt::{Display, Formatter};
 
+// default logfile
+pub const DEFAULT_LOG_FILE: &str = "stdout";
+
 // default timeout
 pub const TCP_TIMEOUT: usize = 300;
 pub const UDP_TIMEOUT: usize = 30;

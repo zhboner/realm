@@ -8,7 +8,7 @@ use std::env;
 
 use cfg_if::cfg_if;
 use cmd::CmdInput;
-use conf::{FullConf, LogConf, DnsConf};
+use conf::{Config, FullConf, LogConf, DnsConf};
 use utils::Endpoint;
 
 const VERSION: &str = "1.5.0-rc6";
@@ -59,8 +59,8 @@ fn start_from_conf(full: FullConf) {
         endpoints: eps_conf,
     } = full;
 
-    setup_log(log_conf);
-    setup_dns(dns_conf);
+    setup_log(log_conf.unwrap_or_default());
+    setup_dns(dns_conf.unwrap_or_default());
 
     let eps: Vec<Endpoint> = eps_conf
         .into_iter()
@@ -77,7 +77,7 @@ fn start_from_conf(full: FullConf) {
 fn setup_log(log: LogConf) {
     println!("log: {}", &log);
 
-    let (level, output) = log.into();
+    let (level, output) = log.resolve();
     fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -100,8 +100,8 @@ fn setup_dns(dns: DnsConf) {
 
     #[cfg(feature = "trust-dns")]
     {
-        let (conf, opts) = dns.into();
-        dns::configure(Some(conf), Some(opts));
+        let (conf, opts) = dns.resolve();
+        dns::configure(conf, opts);
         dns::build();
     }
 }
