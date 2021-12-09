@@ -11,8 +11,8 @@ use cmd::CmdInput;
 use conf::{Config, FullConf, LogConf, DnsConf};
 use utils::Endpoint;
 
-const VERSION: &str = "1.5.0-rc6";
-const ENV_CONFIG: &str = "CONFIG";
+const VERSION: &str = "1.5.0-rc9";
+const ENV_CONFIG: &str = "REALM_CONF";
 
 cfg_if! {
     if #[cfg(all(feature = "mi-malloc"))] {

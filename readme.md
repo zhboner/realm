@@ -83,9 +83,9 @@ realm -c config.json
 
 start from environment variable:
 ```shell
-CONFIG='{"endpoints":[{"local":"127.0.0.1:5000","remote":"1.1.1.1:443"}]}' realm
+REALM_CONF='{"endpoints":[{"local":"127.0.0.1:5000","remote":"1.1.1.1:443"}]}' realm
 
-export CONFIG=`cat config.json | jq -c `
+export REALM_CONF=`cat config.json | jq -c `
 realm
 ```
 
