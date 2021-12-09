@@ -29,8 +29,8 @@ use futures::try_join;
 use log::{debug, info};
 
 use tokio::net::TcpSocket;
-use tokio::time::timeout as timeoutfut;
 
+use crate::utils::timeoutfut;
 use crate::utils::{RemoteAddr, ConnectOpts};
 
 #[derive(Clone, Copy)]
@@ -64,7 +64,11 @@ pub async fn proxy(
     } = conn_opts;
 
     let remote = remote.into_sockaddr().await?;
-    let timeout = Duration::from_secs(timeout as u64);
+    let timeout = if timeout != 0 {
+        Some(Duration::from_secs(timeout))
+    } else {
+        None
+    };
 
     let mut outbound = match send_through {
         Some(x) => {
@@ -137,7 +141,7 @@ mod normal_copy {
     pub async fn copy(
         mut r: ReadHalf<'_>,
         mut w: WriteHalf<'_>,
-        timeout: Duration,
+        timeout: Option<Duration>,
         direction: TcpDirection,
     ) -> Result<()>
 where {
@@ -146,7 +150,7 @@ where {
         let mut buf = vec![0u8; BUF_SIZE];
         let mut n: usize;
         loop {
-            n = timeoutfut(timeout, r.read(&mut buf)).await??;
+            n = timeoutfut(r.read(&mut buf), timeout).await??;
             if n == 0 {
                 break;
             }
@@ -231,7 +235,7 @@ mod zero_copy {
     pub async fn copy(
         r: ReadHalf<'_>,
         mut w: WriteHalf<'_>,
-        timeout: Duration,
+        timeout: Option<Duration>,
         direction: TcpDirection,
     ) -> Result<()> {
         use std::os::unix::io::AsRawFd;
@@ -252,7 +256,7 @@ mod zero_copy {
         let res = 'LOOP: loop {
             // read until the socket buffer is empty
             // or the pipe is filled
-            timeoutfut(timeout, rx.readable()).await??;
+            timeoutfut(rx.readable(), timeout).await??;
             while n < BUF_SIZE {
                 match splice_n(rfd, wpipe, BUF_SIZE - n) {
                     x if x > 0 => n += x as usize,

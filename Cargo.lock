@@ -741,6 +741,7 @@ dependencies = [
  "libc",
  "log",
  "mimalloc",
+ "pin-project",
  "serde",
  "serde_json",
  "tokio",

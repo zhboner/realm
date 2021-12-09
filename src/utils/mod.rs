@@ -4,6 +4,9 @@ pub use types::*;
 mod consts;
 pub use consts::*;
 
+mod timeout;
+pub use timeout::*;
+
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 #[allow(unused)]
