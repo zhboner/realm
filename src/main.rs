@@ -60,8 +60,8 @@ fn start_from_conf(full: FullConf) {
         ..
     } = full;
 
-    setup_log(log_conf.unwrap_or_default());
-    setup_dns(dns_conf.unwrap_or_default());
+    setup_log(log_conf);
+    setup_dns(dns_conf);
 
     let eps: Vec<Endpoint> = eps_conf
         .into_iter()
@@ -78,7 +78,7 @@ fn start_from_conf(full: FullConf) {
 fn setup_log(log: LogConf) {
     println!("log: {}", &log);
 
-    let (level, output) = log.resolve();
+    let (level, output) = log.build();
     fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -101,7 +101,7 @@ fn setup_dns(dns: DnsConf) {
 
     #[cfg(feature = "trust-dns")]
     {
-        let (conf, opts) = dns.resolve();
+        let (conf, opts) = dns.build();
         dns::configure(conf, opts);
         dns::build();
     }

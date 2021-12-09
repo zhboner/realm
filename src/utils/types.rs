@@ -15,8 +15,8 @@ pub struct ConnectOpts {
     pub use_udp: bool,
     pub fast_open: bool,
     pub zero_copy: bool,
-    pub tcp_timeout: usize,
-    pub udp_timeout: usize,
+    pub tcp_timeout: u64,
+    pub udp_timeout: u64,
     pub send_through: Option<SocketAddr>,
 }
 

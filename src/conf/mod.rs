@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::{Result, Error, ErrorKind};
 
+use clap::ArgMatches;
 use serde::{Serialize, Deserialize};
 
 mod log;
@@ -18,25 +19,29 @@ pub use endpoint::EndpointConf;
 pub trait Config {
     type Output;
 
-    fn resolve(self) -> Self::Output;
+    fn build(self) -> Self::Output;
+
+    fn rst_field(&mut self, other: &Self) -> &mut Self;
+
+    fn take_field(&mut self, other: &Self) -> &mut Self;
+
+    fn from_cmd_args(matches: &ArgMatches) -> Self;
 }
 
 #[derive(Debug, Default)]
-pub struct GlobalOpts {
-    pub log_level: Option<LogLevel>,
-    pub log_output: Option<String>,
-    pub dns_mode: Option<DnsMode>,
-    pub dns_protocol: Option<DnsProtocol>,
-    pub dns_servers: Option<Vec<String>>,
+pub struct CmdOverride {
+    pub log: LogConf,
+    pub dns: DnsConf,
+    pub network: NetConf,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct FullConf {
     #[serde(default)]
-    pub log: Option<LogConf>,
+    pub log: LogConf,
 
     #[serde(default)]
-    pub dns: Option<DnsConf>,
+    pub dns: DnsConf,
 
     #[serde(default)]
     pub network: Option<NetConf>,
@@ -47,8 +52,8 @@ pub struct FullConf {
 impl FullConf {
     #[allow(unused)]
     pub fn new(
-        log: Option<LogConf>,
-        dns: Option<DnsConf>,
+        log: LogConf,
+        dns: DnsConf,
         network: Option<NetConf>,
         endpoints: Vec<EndpointConf>,
     ) -> Self {
@@ -93,34 +98,40 @@ impl FullConf {
         self
     }
 
-    pub fn apply_global_opts(&mut self, opts: GlobalOpts) -> &mut Self {
-        let GlobalOpts {
-            log_level,
-            log_output,
-            dns_mode,
-            dns_protocol,
-            dns_servers,
+    pub fn apply_global_opts(&mut self, opts: CmdOverride) -> &mut Self {
+        let CmdOverride {
+            ref log,
+            ref dns,
+            ref network,
         } = opts;
+        let global_network = self.network.unwrap_or_default();
 
-        macro_rules! reset {
-            ($main: ident, $field: ident, $value: expr) => {
-                if $value.is_some() {
-                    let mut conf = match self.$main.clone() {
-                        Some(c) => c,
-                        None => Default::default(),
-                    };
-                    conf.$field = $value;
-                    self.$main = Some(conf);
-                }
-            };
-        }
-
-        reset!(log, level, log_level);
-        reset!(log, output, log_output);
-        reset!(dns, mode, dns_mode);
-        reset!(dns, protocol, dns_protocol);
-        reset!(dns, nameservers, dns_servers);
+        self.log.rst_field(log);
+        self.dns.rst_field(dns);
+        self.endpoints.iter_mut().for_each(|x| {
+            x.network.take_field(&global_network).rst_field(network);
+        });
 
         self
     }
+}
+
+#[macro_export]
+macro_rules! rst {
+    ($this: ident, $field: ident, $other: ident) => {
+        let Self { $field, .. } = $other;
+        if $field.is_some() {
+            $this.$field = $field;
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! take {
+    ($this: ident, $field: ident, $other: ident) => {
+        let Self { $field, .. } = $other;
+        if $this.$field.is_none() && $field.is_some() {
+            $this.$field = $field;
+        }
+    };
 }

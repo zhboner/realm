@@ -77,7 +77,7 @@ pub struct LogConf {
 impl Config for LogConf {
     type Output = (LevelFilter, fern::Output);
 
-    fn resolve(self) -> Self::Output {
+    fn build(self) -> Self::Output {
         use std::io;
         use std::fs::OpenOptions;
         let LogConf { level, output } = self;
@@ -97,6 +97,34 @@ impl Config for LogConf {
         };
 
         (level.into(), output)
+    }
+
+    fn rst_field(&mut self, other: &Self) -> &mut Self {
+        use crate::rst;
+        let other = other.clone();
+
+        rst!(self, level, other);
+        rst!(self, output, other);
+        self
+    }
+
+    fn take_field(&mut self, other: &Self) -> &mut Self {
+        use crate::take;
+        let other = other.clone();
+
+        take!(self, level, other);
+        take!(self, output, other);
+        self
+    }
+
+    fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
+        let level = matches
+            .value_of("log_level")
+            .map(|x| String::from(x).into());
+
+        let output = matches.value_of("log_output").map(String::from);
+
+        Self { level, output }
     }
 }
 

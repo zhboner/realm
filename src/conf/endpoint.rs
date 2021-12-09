@@ -1,38 +1,19 @@
 use serde::{Serialize, Deserialize};
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
-use crate::utils::{Endpoint, RemoteAddr, ConnectOpts};
+use super::{NetConf, Config};
+use crate::utils::{Endpoint, RemoteAddr};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConf {
-    #[serde(default)]
-    pub udp: bool,
-
-    #[serde(default)]
-    pub fast_open: bool,
-
-    #[serde(default)]
-    pub zero_copy: bool,
-
-    #[serde(default = "tcp_timeout")]
-    pub tcp_timeout: usize,
-
-    #[serde(default = "udp_timeout")]
-    pub udp_timeout: usize,
-
     pub local: String,
 
     pub remote: String,
 
     #[serde(default)]
-    pub through: String,
-}
+    pub through: Option<String>,
 
-const fn tcp_timeout() -> usize {
-    crate::utils::TCP_TIMEOUT
-}
-
-const fn udp_timeout() -> usize {
-    crate::utils::UDP_TIMEOUT
+    #[serde(default)]
+    pub network: NetConf,
 }
 
 impl EndpointConf {
@@ -60,6 +41,10 @@ impl EndpointConf {
 
     fn build_send_through(&self) -> Option<SocketAddr> {
         let Self { through, .. } = self;
+        let through = match through {
+            Some(x) => x,
+            None => return None,
+        };
         match through.to_socket_addrs() {
             Ok(mut x) => Some(x.next().unwrap()),
             Err(_) => {
@@ -71,31 +56,38 @@ impl EndpointConf {
             }
         }
     }
+}
 
-    fn build_conn_opts(&self) -> ConnectOpts {
-        let Self {
-            udp,
-            fast_open,
-            zero_copy,
-            tcp_timeout,
-            udp_timeout,
-            ..
-        } = *self;
+impl Config for EndpointConf {
+    type Output = Endpoint;
 
-        ConnectOpts {
-            use_udp: udp,
-            fast_open,
-            zero_copy,
-            tcp_timeout,
-            udp_timeout,
-            send_through: self.build_send_through(),
-        }
-    }
-
-    pub fn build(&self) -> Endpoint {
+    fn build(self) -> Self::Output {
         let local = self.build_local();
         let remote = self.build_remote();
-        let opts = self.build_conn_opts();
-        Endpoint::new(local, remote, opts)
+        let through = self.build_send_through();
+        let mut conn_opts = self.network.build();
+        conn_opts.send_through = through;
+        Endpoint::new(local, remote, conn_opts)
+    }
+
+    fn rst_field(&mut self, _: &Self) -> &mut Self {
+        unreachable!()
+    }
+
+    fn take_field(&mut self, _: &Self) -> &mut Self {
+        unreachable!()
+    }
+
+    fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
+        let local = matches.value_of("local").unwrap().to_string();
+        let remote = matches.value_of("remote").unwrap().to_string();
+        let through = matches.value_of("through").map(String::from);
+
+        EndpointConf {
+            local,
+            remote,
+            through,
+            network: Default::default(),
+        }
     }
 }

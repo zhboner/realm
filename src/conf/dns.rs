@@ -168,7 +168,7 @@ impl Display for DnsConf {
 impl Config for DnsConf {
     type Output = (Option<ResolverConfig>, Option<ResolverOpts>);
 
-    fn resolve(self) -> Self::Output {
+    fn build(self) -> Self::Output {
         let DnsConf {
             mode,
             protocol,
@@ -211,5 +211,41 @@ impl Config for DnsConf {
         }
 
         (Some(conf), opts)
+    }
+
+    fn rst_field(&mut self, other: &Self) -> &mut Self {
+        use crate::rst;
+        let other = other.clone();
+        rst!(self, mode, other);
+        rst!(self, protocol, other);
+        rst!(self, nameservers, other);
+        self
+    }
+
+    fn take_field(&mut self, other: &Self) -> &mut Self {
+        use crate::take;
+        let other = other.clone();
+        take!(self, mode, other);
+        take!(self, protocol, other);
+        take!(self, nameservers, other);
+        self
+    }
+
+    fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
+        let mode = matches.value_of("dns_mode").map(|x| String::from(x).into());
+
+        let protocol = matches
+            .value_of("dns_protocol")
+            .map(|x| String::from(x).into());
+
+        let nameservers = matches
+            .value_of("dns_servers")
+            .map(|x| x.split(',').map(String::from).collect());
+
+        Self {
+            mode,
+            protocol,
+            nameservers,
+        }
     }
 }

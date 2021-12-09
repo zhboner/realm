@@ -1,23 +1,22 @@
 use clap::{App, AppSettings};
 use clap::{Arg, ArgMatches};
 
-use crate::conf::GlobalOpts;
+use crate::conf::CmdOverride;
 use crate::conf::EndpointConf;
+use crate::conf::{Config, LogConf, DnsConf, NetConf};
 
 use super::VERSION;
 use crate::utils::FEATURES;
-use crate::utils::TCP_TIMEOUT;
-use crate::utils::UDP_TIMEOUT;
 
 pub enum CmdInput {
-    Config(String, GlobalOpts),
-    Endpoint(EndpointConf, GlobalOpts),
+    Config(String, CmdOverride),
+    Endpoint(EndpointConf, CmdOverride),
     None,
 }
 
 fn add_flags(app: App) -> App {
     app.help_heading("FLAGS").args(&[
-        Arg::new("udp")
+        Arg::new("use_udp")
             .short('u')
             .long("udp")
             .about("enable udp forward")
@@ -180,61 +179,16 @@ fn parse_matches(matches: ArgMatches) -> CmdInput {
     if matches.value_of("local").is_some()
         && matches.value_of("remote").is_some()
     {
-        let ep = parse_single_ep(&matches);
+        let ep = EndpointConf::from_cmd_args(&matches);
         return CmdInput::Endpoint(ep, opts);
     }
 
     CmdInput::None
 }
 
-fn parse_single_ep(matches: &ArgMatches) -> EndpointConf {
-    let udp = matches.is_present("udp");
-    let fast_open = matches.is_present("fast_open");
-    let zero_copy = matches.is_present("zero_copy");
-
-    let local = matches.value_of("local").unwrap().to_string();
-    let remote = matches.value_of("remote").unwrap().to_string();
-    let through = matches
-        .value_of("through")
-        .map_or(String::new(), String::from);
-
-    let tcp_timeout = matches
-        .value_of("tcp_timeout")
-        .map_or(TCP_TIMEOUT, |t| t.parse::<usize>().unwrap_or(TCP_TIMEOUT));
-    let udp_timeout = matches
-        .value_of("udp_timeout")
-        .map_or(UDP_TIMEOUT, |t| t.parse::<usize>().unwrap_or(UDP_TIMEOUT));
-
-    EndpointConf {
-        udp,
-        fast_open,
-        zero_copy,
-        local,
-        remote,
-        through,
-        tcp_timeout,
-        udp_timeout,
-    }
-}
-
-fn parse_global_opts(matches: &ArgMatches) -> GlobalOpts {
-    let log_level = matches
-        .value_of("log_level")
-        .map(|x| String::from(x).into());
-    let log_output = matches.value_of("log_output").map(String::from);
-    let dns_mode = matches.value_of("dns_mode").map(|x| String::from(x).into());
-    let dns_protocol = matches
-        .value_of("dns_protocol")
-        .map(|x| String::from(x).into());
-    let dns_servers = matches
-        .value_of("dns_servers")
-        .map(|x| x.split(',').map(String::from).collect());
-
-    GlobalOpts {
-        log_level,
-        log_output,
-        dns_mode,
-        dns_protocol,
-        dns_servers,
-    }
+fn parse_global_opts(matches: &ArgMatches) -> CmdOverride {
+    let log = LogConf::from_cmd_args(matches);
+    let dns = DnsConf::from_cmd_args(matches);
+    let network = NetConf::from_cmd_args(matches);
+    CmdOverride { log, dns, network }
 }
