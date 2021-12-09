@@ -18,7 +18,7 @@ type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
 const BUF_SIZE: usize = DEFAULT_BUF_SIZE;
 
 pub async fn proxy(
-    local: SocketAddr,
+    listen: SocketAddr,
     remote: RemoteAddr,
     conn_opts: ConnectOpts,
 ) -> Result<()> {
@@ -28,12 +28,12 @@ pub async fn proxy(
         ..
     } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
-    let local_sock = Arc::new(UdpSocket::bind(&local).await?);
+    let listen_sock = Arc::new(UdpSocket::bind(&listen).await?);
     let timeout = Duration::from_secs(timeout as u64);
     let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
-        let (n, client_addr) = match local_sock.recv_from(&mut buf).await {
+        let (n, client_addr) = match listen_sock.recv_from(&mut buf).await {
             Ok(x) => x,
             Err(e) => {
                 error!("failed to recv udp packet from client: {}", &e);
@@ -61,7 +61,7 @@ pub async fn proxy(
                     client_addr,
                     &remote_addr,
                     &send_through,
-                    local_sock.clone(),
+                    listen_sock.clone(),
                     timeout,
                 )
                 .await
@@ -79,7 +79,7 @@ pub async fn proxy(
 async fn send_back(
     sock_map: SockMap,
     client_addr: SocketAddr,
-    local_sock: Arc<UdpSocket>,
+    listen_sock: Arc<UdpSocket>,
     alloc_sock: Arc<UdpSocket>,
     timeout: Duration,
 ) {
@@ -105,7 +105,7 @@ async fn send_back(
 
         debug!("recv udp packet from remote: {}", &remote_addr);
 
-        if let Err(e) = local_sock.send_to(&buf[..n], &client_addr).await {
+        if let Err(e) = listen_sock.send_to(&buf[..n], &client_addr).await {
             error!("failed to send udp packet back to client: {}", &e);
             continue;
         }
@@ -130,7 +130,7 @@ async fn alloc_new_socket(
     client_addr: SocketAddr,
     remote_addr: &SocketAddr,
     send_through: &Option<SocketAddr>,
-    local_sock: Arc<UdpSocket>,
+    listen_sock: Arc<UdpSocket>,
     timeout: Duration,
 ) -> Arc<UdpSocket> {
     // pick a random port
@@ -149,7 +149,7 @@ async fn alloc_new_socket(
     tokio::spawn(send_back(
         sock_map.clone(),
         client_addr,
-        local_sock,
+        listen_sock,
         alloc_sock.clone(),
         timeout,
     ));

@@ -5,7 +5,7 @@ use crate::utils::{Endpoint, RemoteAddr};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConf {
-    pub local: String,
+    pub listen: String,
 
     pub remote: String,
 
@@ -18,7 +18,7 @@ pub struct EndpointConf {
 
 impl EndpointConf {
     fn build_local(&self) -> SocketAddr {
-        self.local
+        self.listen
             .to_socket_addrs()
             .expect("invalid local address")
             .next()
@@ -79,12 +79,12 @@ impl Config for EndpointConf {
     }
 
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
-        let local = matches.value_of("local").unwrap().to_string();
+        let listen = matches.value_of("local").unwrap().to_string();
         let remote = matches.value_of("remote").unwrap().to_string();
         let through = matches.value_of("through").map(String::from);
 
         EndpointConf {
-            local,
+            listen,
             remote,
             through,
             network: Default::default(),

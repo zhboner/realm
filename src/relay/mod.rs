@@ -19,15 +19,15 @@ pub async fn run(eps: Vec<Endpoint>) {
 
 async fn proxy_tcp(ep: Endpoint) {
     let Endpoint {
-        local,
+        listen,
         remote,
         opts,
         ..
     } = ep;
 
-    let lis = TcpListener::bind(local)
+    let lis = TcpListener::bind(listen)
         .await
-        .unwrap_or_else(|e| panic!("unable to bind {}: {}", &local, &e));
+        .unwrap_or_else(|e| panic!("unable to bind {}: {}", &listen, &e));
 
     loop {
         let (stream, addr) = match lis.accept().await {
@@ -50,13 +50,13 @@ mod udp;
 #[cfg(feature = "udp")]
 async fn proxy_udp(ep: Endpoint) {
     let Endpoint {
-        local,
+        listen,
         remote,
         opts,
         ..
     } = ep;
 
-    if let Err(e) = udp::proxy(local, remote, opts).await {
+    if let Err(e) = udp::proxy(listen, remote, opts).await {
         panic!("udp forward exit: {}", &e);
     }
 }

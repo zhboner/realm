@@ -35,8 +35,8 @@ cargo build --release --no-default-features --features udp, tfo, zero-copy, trus
 ```
 
 ## Usage
-```shell
-Realm 1.5.0-rc6 [udp][zero-copy][trust-dns]
+```
+Realm 1.5.x [udp][zero-copy][trust-dns][multi-thread]
 
 A high efficiency relay tool
 
@@ -44,20 +44,18 @@ USAGE:
     realm [FLAGS] [OPTIONS]
 
 FLAGS:
-    -u, --udp       enable udp forward
-    -f, --tfo       enable tcp fast open
-    -z, --splice    enable tcp zero copy
-    -d, --daemon    run as a unix daemon
+    -h, --help       show help
+    -v, --version    show version
+    -d, --daemon     run as a unix daemon
+    -u, --udp        force enable udp forward
+    -f, --tfo        force enable tcp fast open
+    -z, --splice     force enable tcp zero copy
 
 OPTIONS:
-    -h, --help                    show help
-    -v, --version                 show version
-    -c, --config <path>           use config file
-    -l, --listen <addr>           listen address
-    -r, --remote <addr>           remote address
-    -x, --through <addr>          send through ip or address
-        --tcp-timeout <second>    set timeout value for tcp
-        --udp-timeout <second>    set timeout value for udp
+    -c, --config <path>     use config file
+    -l, --listen <addr>     listen address
+    -r, --remote <addr>     remote address
+    -x, --through <addr>    send through ip or address
 
 GLOBAL OPTIONS:
         --log-level <level>          override log level
@@ -65,6 +63,8 @@ GLOBAL OPTIONS:
         --dns-mode <mode>            override dns mode
         --dns-protocol <protocol>    override dns protocol
         --dns-servers <servers>      override dns servers
+        --tcp-timeout <second>       override tcp timeout
+        --udp-timeout <second>       override udp timeout
 ```
 
 start from command line arguments:
@@ -102,18 +102,18 @@ protocol = "tcp_and_udp"
 nameservers = ["8.8.8.8:53", "8.8.4.4:53"]
 
 [network]
-udp = true
+use_udp = true
 zero_copy = true
 fast_open = true
 tcp_timeout = 300
 udp_timeout = 30
 
 [[endpoints]]
-local = "0.0.0.0:5000"
+listen = "0.0.0.0:5000"
 remote = "1.1.1.1:443"
 
 [[endpoints]]
-local = "0.0.0.0:10000"
+listen = "0.0.0.0:10000"
 remote = "www.google.com:443"
 through = "0.0.0.0"
 ```
@@ -132,7 +132,7 @@ through = "0.0.0.0"
 		"nameservers": ["8.8.8.8:53", "8.8.4.4:53"]
 	},
 	"network": {
-		"udp": true,
+		"use_udp": true,
 		"fast_open": true,
 		"zero_copy": true,
 		"tcp_timeout": 300,
@@ -140,11 +140,11 @@ through = "0.0.0.0"
 	},
 	"endpoints": [
 		{
-			"local": "0.0.0.0:5000",
+			"listen": "0.0.0.0:5000",
 			"remote": "1.1.1.1:443"
 		},
 		{
-			"local": "0.0.0.0:10000",
+			"listen": "0.0.0.0:10000",
 			"remote": "www.google.com:443",
 			"through": "0.0.0.0"
 		}
@@ -153,11 +153,39 @@ through = "0.0.0.0"
 </pre>
 </details>
 
-## global: [log, dns, endpoints]
-Note: must provide `endpoint.local` and `endpoint.remote`
+## global
+```shell
+├── log
+│   ├── level
+│   └── output
+├── dns
+│   ├── mode
+│   ├── protocol
+│   └── nameservers
+├── network
+│   ├── use_udp
+│   ├── fast_open
+│   ├── zero_copy
+│   ├── tcp_timeout
+│   └── udp_timeout
+└── endpoints
+    ├── listen
+    ├── remote
+    ├── through
+    └── network
+        ├── use_udp
+        ├── fast_open
+        ├── zero_copy
+        ├── tcp_timeout
+        └── udp_timeout
+```
+
+You should provide at least `endpoint.listen` and `endpoint.remote`, other fields will take their default values if not provided.
+
+Priority: cmd override > endpoint config > global config
 
 ---
-### log: [level, output]
+### log
 
 #### log.level
 - off *(default)*
@@ -172,7 +200,7 @@ Note: must provide `endpoint.local` and `endpoint.remote`
 - path, e.g. (`/var/log/realm.log`)
 
 ---
-### dns: [mode, protocol, nameservers]
+### dns
 ~~this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lookup strategy with `"dns": "ipv4_only"`, which is equal to `"dns": {"mode": "ipv4_only"}`~~ You must use `dns.mode` instead of `dns_mode`
 
 #### dns.mode
@@ -194,12 +222,18 @@ default:
 On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`). Otherwise use google's public dns as default upstream resolver(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:4860::8888:53`, `2001:4860:4860::8844:53`).
 
 ---
+### network
+- use_udp (default: false)
+- zero_copy (default: false)
+- fast_open (default: false)
+- tcp_timeout (default: 300)
+- udp_timeout (default: 30)
+
+To disable timeout, you need to explicitly set timeout value as 0
+
+---
 ### endpoint objects
-- local:       listen address
-- remote:      remote address
-- through:     send through specified ip or address, this is optional
-- udp:         true|false, default=false
-- zero_copy:   true|false, default=false
-- fast_open:   true|false, default=false
-- tcp_timeout: tcp timeout(sec), default=300
-- udp_timeout: udp timeout(sec), default=30
+- local: listen address
+- remote: remote address
+- through: send through specified ip or address
+- network: override global network config
