@@ -229,11 +229,11 @@ On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.c
 - tcp_timeout (default: 300)
 - udp_timeout (default: 30)
 
-To disable timeout, you need to explicitly set timeout value as 0
+To disable timeout, you need to explicitly set timeout value to 0
 
 ---
-### endpoint objects
-- local: listen address
+### endpoint
+- listen: listen address
 - remote: remote address
 - through: send through specified ip or address
 - network: override global network config
