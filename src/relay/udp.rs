@@ -7,11 +7,11 @@ use std::collections::HashMap;
 use log::{debug, info, error};
 
 use tokio::net::UdpSocket;
-use tokio::time::timeout as timeoutfut;
 
 use crate::utils::DEFAULT_BUF_SIZE;
 use crate::utils::{RemoteAddr, ConnectOpts};
 use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
+use crate::utils::timeoutfut;
 
 // client <--> allocated socket
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
@@ -29,7 +29,12 @@ pub async fn proxy(
     } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let listen_sock = Arc::new(UdpSocket::bind(&listen).await?);
-    let timeout = Duration::from_secs(timeout as u64);
+    let timeout = if timeout != 0 {
+        Some(Duration::from_secs(timeout))
+    } else {
+        None
+    };
+
     let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
@@ -81,13 +86,13 @@ async fn send_back(
     client_addr: SocketAddr,
     listen_sock: Arc<UdpSocket>,
     alloc_sock: Arc<UdpSocket>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) {
     let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
         let res =
-            match timeoutfut(timeout, alloc_sock.recv_from(&mut buf)).await {
+            match timeoutfut(alloc_sock.recv_from(&mut buf), timeout).await {
                 Ok(x) => x,
                 Err(_) => {
                     info!("udp association for {} timeout", &client_addr);
@@ -131,7 +136,7 @@ async fn alloc_new_socket(
     remote_addr: &SocketAddr,
     send_through: &Option<SocketAddr>,
     listen_sock: Arc<UdpSocket>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Arc<UdpSocket> {
     // pick a random port
     let alloc_sock = Arc::new(match send_through {
