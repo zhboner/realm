@@ -47,16 +47,16 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           image-name: realm
-          tag: latest,${{ env.GITHUB_REF }}
+          tag: ${{ env.GITHUB_REF }}
       - name: mv Dockerfile for alpine
         run: |
           mkdir -p /tmp/alpine-docker
-          mv Dockerfile.alpine /tmp/alpine-docker
+          mv Dockerfile.alpine /tmp/alpine-docker/Dockerfile
       - name: Build, Tag, Push with alpine
         uses: mattdavis0351/actions/docker-gpr@v1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           image-name: realm
           dockerfile-location: /tmp/alpine-docker
-          tag: alpine,${{ env.GITHUB_REF }}-alpine
+          tag: ${{ env.GITHUB_REF }}-alpine
           
