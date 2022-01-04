@@ -19,6 +19,17 @@ jobs:
           target: x86_64-unknown-linux-musl
           override: true
           components: rustfmt, clippy
+      
+      - name: Cache cargo dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run cargo build
         uses: actions-rs/cargo@v1
