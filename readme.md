@@ -22,3 +22,7 @@ An example to listen on port 30000 and forwarding traffic to example.com:12345 i
 ```
 ./realm -l 127.0.0.1:30000 -r example.com:12345
 ```
+
+## Usage in container
+
+realm can be run in a container with OCI (like Docker, Podman, Kubernetes, etc). Guide in [here](./readme.container.md).
