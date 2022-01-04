@@ -1,0 +1,62 @@
+on:
+  release:
+    types: [published]
+  workflow_dispatch: {}
+
+name: realm
+
+jobs:
+  build:
+    name: Build Rust project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install latest stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target x86_64-unknown-linux-musl
+          
+      - uses: actions/upload-artifact@v2
+        with:
+          name: realm
+          path: target/x86_64-unknown-linux-musl
+  
+  docker:
+    name: Build and push docker image
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: realm
+          path: target/x86_64-unknown-linux-musl
+      - name: Build, Tag, Push with latest(debian)
+        uses: mattdavis0351/actions/docker-gpr@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          image-name: realm
+          tag: latest,${{ env.GITHUB_REF }}
+      - name: mv Dockerfile for alpine
+        run: |
+          mkdir -p /tmp/alpine-docker
+          mv Dockerfile.alpine /tmp/alpine-docker
+      - name: Build, Tag, Push with alpine
+        uses: mattdavis0351/actions/docker-gpr@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          image-name: realm
+          dockerfile-location: /tmp/alpine-docker
+          tag: alpine,${{ env.GITHUB_REF }}-alpine
+          
