@@ -3,7 +3,7 @@ on:
     types: [published]
   workflow_dispatch: {}
 
-name: realm
+name: realm Docker Image Build
 
 jobs:
   build:
