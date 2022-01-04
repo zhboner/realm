@@ -55,8 +55,8 @@ spec:
       - name: realm
         image: ghcr.io/zhboner/realm:latest
         args:
-          - "-l 0.0.0.0:9000"
-          - "-r 192.168.233.2:9000"
+          - "-l=0.0.0.0:9000"
+          - "-r=192.168.233.2:9000"
         ports:
         - containerPort: 9000
         resources:
