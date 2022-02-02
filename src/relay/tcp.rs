@@ -365,12 +365,14 @@ mod tfo {
 
         #[allow(unused)]
         pub async fn readable(&self) -> Result<()> {
-            self.0.inner().readable().await
+            let s = unsafe { const_cast(&self.0).inner() };
+            s.readable().await
         }
 
         #[allow(unused)]
         pub async fn writable(&self) -> Result<()> {
-            self.0.inner().writable().await
+            let s = unsafe { const_cast(&self.0).inner() };
+            s.writable().await
         }
 
         pub fn set_nodelay(&self, nodelay: bool) -> Result<()> {
@@ -387,7 +389,8 @@ mod tfo {
             interest: Interest,
             f: impl FnOnce() -> Result<R>,
         ) -> Result<R> {
-            self.0.inner().try_io(interest, f)
+            let s = unsafe { const_cast(&self.0).inner() };
+            s.try_io(interest, f)
         }
     }
 
