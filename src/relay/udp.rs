@@ -60,7 +60,7 @@ pub async fn proxy(
         let alloc_sock = match get_socket(&sock_map, &client_addr) {
             Some(x) => x,
             None => {
-                info!("new udp association for client {}", &client_addr);
+                info!("new udp association for {}", &client_addr);
                 alloc_new_socket(
                     &sock_map,
                     client_addr,
@@ -74,7 +74,7 @@ pub async fn proxy(
         };
 
         if let Err(e) = alloc_sock.send_to(&buf[..n], &remote_addr).await {
-            error!("failed to send udp packet to remote: {}", &e);
+            error!("failed to send udp packet to {}: {}", &remote_addr, &e);
         }
     }
 
@@ -111,13 +111,16 @@ async fn send_back(
         debug!("recv udp packet from remote: {}", &remote_addr);
 
         if let Err(e) = listen_sock.send_to(&buf[..n], &client_addr).await {
-            error!("failed to send udp packet back to client: {}", &e);
+            error!(
+                "failed to send udp packet back to {}: {}",
+                &client_addr, &e
+            );
             continue;
         }
     }
 
     sock_map.write().unwrap().remove(&client_addr);
-    info!("remove udp association for {}", &client_addr);
+    debug!("remove udp association for {}", &client_addr);
 }
 
 #[inline]

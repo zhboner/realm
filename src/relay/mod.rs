@@ -38,7 +38,7 @@ async fn proxy_tcp(ep: Endpoint) {
             }
         };
 
-        info!("new tcp connection from client {}", &addr);
+        info!("new tcp connection from {}", &addr);
 
         tokio::spawn(tcp::proxy(stream, remote.clone(), opts));
     }
