@@ -20,6 +20,10 @@ jobs:
             output: realm
           - target: x86_64-pc-windows-gnu
             output: realm.exe
+          - target: aarch64-unknown-linux-gnu
+            output: realm
+          - target: aarch64-unknown-linux-musl
+            output: realm
     steps:
       - uses: actions/checkout@v2
       - name: install toolchain
