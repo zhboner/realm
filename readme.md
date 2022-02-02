@@ -33,6 +33,7 @@ Enter the directory and build
 
 ```shell
 cd realm
+git submodule sync && git submodule update --init --recursive
 cargo build --release
 ```
 

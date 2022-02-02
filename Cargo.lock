@@ -929,8 +929,8 @@ dependencies = [
 
 [[package]]
 name = "tokio-tfo"
-version = "0.1.6"
-source = "git+https://github.com/zephyrchien/tokio-tfo?branch=main#e64331f7e056f74c158281ca100b6758e43e41cf"
+version = "0.1.9"
+source = "git+https://github.com/zephyrchien/tokio-tfo?branch=main#03c8b5dc622c0e882a109fd4729477f7ebad3605"
 dependencies = [
  "cfg-if",
  "futures",

@@ -23,7 +23,7 @@ pin-project = "1"
 lazy_static = "1"
 
 # tfo
-tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.6", optional = true }
+tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.9", optional = true }
 
 # zero-copy
 libc = { version = "0.2", optional = true }
