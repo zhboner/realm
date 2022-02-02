@@ -132,7 +132,7 @@ impl Display for LogConf {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let LogConf { level, output } = self.clone();
         let level = level.unwrap_or_default();
-        let output = output.unwrap_or(String::from("stdout"));
+        let output = output.unwrap_or_else(|| String::from("stdout"));
 
         write!(f, "level={}, output={}", level, output)
     }
