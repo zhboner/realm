@@ -26,7 +26,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use futures::try_join;
 
-use log::{debug, info};
+use log::{warn, debug};
 
 use tokio::net::TcpSocket;
 
@@ -47,6 +47,13 @@ impl Display for TcpDirection {
             Reverse => write!(f, "reverse"),
         }
     }
+}
+
+macro_rules! setsockopt_warn {
+    ($op: expr, $opt: expr) => {{
+        let _ =
+            $op.map_err(|e| warn!("failed to set socket option $opt: {}", &e));
+    }};
 }
 
 #[allow(unused_variables)]
@@ -76,9 +83,12 @@ pub async fn proxy(
                 SocketAddr::V4(_) => TcpSocket::new_v4()?,
                 SocketAddr::V6(_) => TcpSocket::new_v6()?,
             };
-            socket.set_reuseaddr(true)?;
+
+            setsockopt_warn!(socket.set_reuseaddr(true), "reuseaddr");
+
             #[cfg(unix)]
-            socket.set_reuseport(true)?;
+            setsockopt_warn!(socket.set_reuseport(true), "reuseport");
+
             socket.bind(x)?;
 
             #[cfg(feature = "tfo")]
@@ -94,10 +104,10 @@ pub async fn proxy(
         None => TcpStream::connect(remote).await?,
     };
 
-    info!("new tcp connection to remote {}", &remote);
+    debug!("new tcp connection to {}", &remote);
 
-    inbound.set_nodelay(true)?;
-    outbound.set_nodelay(true)?;
+    setsockopt_warn!(inbound.set_nodelay(true), "nodelay");
+    setsockopt_warn!(outbound.set_nodelay(true), "nodelay");
 
     let (ri, wi) = inbound.split();
     let (ro, wo) = outbound.split();
@@ -128,7 +138,13 @@ pub async fn proxy(
         )
     };
 
-    info!("tcp forward compelete or abort, close these 2 connection");
+    debug!(
+        "tcp forward compelete: {}",
+        match &res {
+            Ok(_) => String::from("ok"),
+            Err(e) => e.to_string(),
+        }
+    );
 
     // ignore read/write n bytes
     res.map(|_| ())
@@ -268,12 +284,7 @@ mod zero_copy {
                         clear_readiness(rx, Interest::READABLE);
                         break;
                     }
-                    _ => {
-                        break 'LOOP Err(Error::new(
-                            ErrorKind::Other,
-                            "failed to splice from tcp connection",
-                        ))
-                    }
+                    _ => break 'LOOP Err(Error::last_os_error()),
                 }
             }
             // write until the pipe is empty
@@ -284,12 +295,7 @@ mod zero_copy {
                     x if x < 0 && is_wouldblock() => {
                         clear_readiness(wx, Interest::WRITABLE);
                     }
-                    _ => {
-                        break 'LOOP Err(Error::new(
-                            ErrorKind::Other,
-                            "failed to splice to tcp connection",
-                        ))
-                    }
+                    _ => break 'LOOP Err(Error::last_os_error()),
                 }
             }
             // complete
