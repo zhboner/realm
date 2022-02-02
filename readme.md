@@ -7,15 +7,37 @@
 
 ## Introduction
 
-realm is a simple, high performance relay server written in rust.
+Realm is a simple, high performance relay server written in rust.
 
 ## Features
+
 - ~~Zero configuration.~~ Setup and run in one command.
 - Concurrency. Bidirectional concurrent traffic leads to high performance.
 - Low resources cost.
 
-## Custom Build
-available Options:
+## Build
+
+Install rust toolchains with [rustup](https://rustup.rs/).
+
+```shell
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Clone this repository
+
+```shell
+git clone https://github.com/zephyrchien/realm
+```
+
+Enter the directory and build
+
+```shell
+cd realm
+cargo build --release
+```
+
+### Build options
+
 - udp *(enabled by default)*
 - trust-dns *(enabled by default)*
 - zero-copy *(enabled on linux)*
@@ -24,7 +46,9 @@ available Options:
 - mi-malloc
 - jemalloc
 
-see also: `Cargo.toml`
+See also: `Cargo.toml`
+
+Examples:
 
 ```shell
 # simple tcp
@@ -34,8 +58,17 @@ cargo build --release --no-default-features
 cargo build --release --no-default-features --features udp, tfo, zero-copy, trust-dns
 ```
 
+### Cross compile
+
+Please refer to [https://rust-lang.github.io/rustup/cross-compilation.html](https://rust-lang.github.io/rustup/cross-compilation.html).
+
+You may need to install cross-compilers or other SDKs, and specify them when building the project.
+
+Using [Cross](https://github.com/cross-rs/cross) is also a simple and good enough solution.
+
 ## Usage
-```
+
+```shell
 Realm 1.5.x [udp][zero-copy][trust-dns][multi-thread]
 
 A high efficiency relay tool
@@ -68,11 +101,13 @@ GLOBAL OPTIONS:
 ```
 
 start from command line arguments:
+
 ```shell
 realm -l 0.0.0.0:5000 -r 1.1.1.1:443
 ```
 
 start from config file:
+
 ```shell
 # use toml
 realm -c config.toml
@@ -82,6 +117,7 @@ realm -c config.json
 ```
 
 start from environment variable:
+
 ```shell
 REALM_CONF='{"endpoints":[{"local":"127.0.0.1:5000","remote":"1.1.1.1:443"}]}' realm
 
@@ -90,7 +126,9 @@ realm
 ```
 
 ## Configuration
+
 TOML Example
+
 ```toml
 [log]
 level = "warn"
@@ -154,6 +192,7 @@ through = "0.0.0.0"
 </details>
 
 ## global
+
 ```shell
 ├── log
 │   ├── level
@@ -185,9 +224,11 @@ You should provide at least `endpoint.listen` and `endpoint.remote`, other field
 Priority: cmd override > endpoint config > global config
 
 ---
+
 ### log
 
 #### log.level
+
 - off *(default)*
 - error
 - info
@@ -195,15 +236,17 @@ Priority: cmd override > endpoint config > global config
 - trace
 
 #### log.output
+
 - stdout *(default)*
 - stderr
 - path, e.g. (`/var/log/realm.log`)
 
 ---
+
 ### dns
-~~this is compatibe with old versions(before `v1.5.0-rc3`), you could still set lookup strategy with `"dns": "ipv4_only"`, which is equal to `"dns": {"mode": "ipv4_only"}`~~ You must use `dns.mode` instead of `dns_mode`
 
 #### dns.mode
+
 - ipv4_only
 - ipv6_only
 - ipv4_then_ipv6
@@ -211,18 +254,25 @@ Priority: cmd override > endpoint config > global config
 - ipv4_and_ipv6 *(default)*
 
 #### dns.protocol
+
 - tcp
 - udp
 - tcp_and_udp *(default)*
 
 #### dns.nameservers
+
 format: ["server1", "server2" ...]
 
 default:
-On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`). Otherwise use google's public dns as default upstream resolver(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:4860::8888:53`, `2001:4860:4860::8844:53`).
+
+On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`).
+
+Otherwise, use google's public dns(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:4860::8888:53`, `2001:4860:4860::8844:53`).
 
 ---
+
 ### network
+
 - use_udp (default: false)
 - zero_copy (default: false)
 - fast_open (default: false)
@@ -232,7 +282,9 @@ On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.c
 To disable timeout, you need to explicitly set timeout value to 0
 
 ---
+
 ### endpoint
+
 - listen: listen address
 - remote: remote address
 - through: send through specified ip or address
