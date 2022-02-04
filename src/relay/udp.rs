@@ -41,17 +41,20 @@ pub async fn proxy(
         let (n, client_addr) = match listen_sock.recv_from(&mut buf).await {
             Ok(x) => x,
             Err(e) => {
-                error!("failed to recv udp packet from client: {}", &e);
+                error!("[udp]failed to recvfrom client: {}", e);
                 continue;
             }
         };
 
-        debug!("recv udp packet from {}", &client_addr);
+        debug!("[udp]recvfrom client {}", &client_addr);
 
         let remote_addr = match remote.to_sockaddr().await {
-            Ok(x) => x,
+            Ok(x) => {
+                debug!("[udp]remote resolved as {}", &x);
+                x
+            }
             Err(e) => {
-                error!("failed to resolve remote addr: {}", &e);
+                error!("[udp]failed to resolve remote: {}", e);
                 continue;
             }
         };
@@ -60,7 +63,10 @@ pub async fn proxy(
         let alloc_sock = match get_socket(&sock_map, &client_addr) {
             Some(x) => x,
             None => {
-                info!("new udp association for {}", &client_addr);
+                info!(
+                    "[udp]new association {} => {}",
+                    &client_addr, &remote_addr
+                );
                 alloc_new_socket(
                     &sock_map,
                     client_addr,
@@ -74,7 +80,7 @@ pub async fn proxy(
         };
 
         if let Err(e) = alloc_sock.send_to(&buf[..n], &remote_addr).await {
-            error!("failed to send udp packet to {}: {}", &remote_addr, &e);
+            error!("[udp]failed to sendto remote {}: {}", &remote_addr, e);
         }
     }
 
@@ -95,7 +101,7 @@ async fn send_back(
             match timeoutfut(alloc_sock.recv_from(&mut buf), timeout).await {
                 Ok(x) => x,
                 Err(_) => {
-                    info!("udp association for {} timeout", &client_addr);
+                    debug!("[udp]association for {} timeout", &client_addr);
                     break;
                 }
             };
@@ -103,24 +109,21 @@ async fn send_back(
         let (n, remote_addr) = match res {
             Ok(x) => x,
             Err(e) => {
-                error!("failed to recv udp packet from remote: {}", &e);
+                error!("[udp]failed to recvfrom remote: {}", e);
                 continue;
             }
         };
 
-        debug!("recv udp packet from remote: {}", &remote_addr);
+        debug!("[udp]recvfrom remote {}", &remote_addr);
 
         if let Err(e) = listen_sock.send_to(&buf[..n], &client_addr).await {
-            error!(
-                "failed to send udp packet back to {}: {}",
-                &client_addr, &e
-            );
+            error!("[udp]failed to sendto client{}: {}", &client_addr, e);
             continue;
         }
     }
 
     sock_map.write().unwrap().remove(&client_addr);
-    debug!("remove udp association for {}", &client_addr);
+    info!("[udp]remove association for {}", &client_addr);
 }
 
 #[inline]

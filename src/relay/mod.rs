@@ -33,14 +33,24 @@ async fn proxy_tcp(ep: Endpoint) {
         let (stream, addr) = match lis.accept().await {
             Ok(x) => x,
             Err(e) => {
-                error!("failed to accept tcp connection: {}", &e);
+                error!("[tcp]failed to accept: {}", &e);
                 continue;
             }
         };
 
-        info!("new tcp connection from {}", &addr);
+        let msg = format!("{} => {}", &addr, &remote);
+        info!("[tcp]{}", &msg);
 
-        tokio::spawn(tcp::proxy(stream, remote.clone(), opts));
+        let remote = remote.clone();
+        tokio::spawn(async move {
+            match tcp::proxy(stream, remote, opts).await {
+                Ok((up, dl)) => info!(
+                    "[tcp]{} finish, upload: {}b, download: {}b",
+                    msg, up, dl
+                ),
+                Err(e) => error!("[tcp]{} error: {}", msg, e),
+            }
+        });
     }
 }
 
