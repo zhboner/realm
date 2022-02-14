@@ -51,34 +51,41 @@ fn add_flags(app: App) -> App {
 
 fn add_options(app: App) -> App {
     app.help_heading("OPTIONS").args(&[
+        Arg::new("nofile")
+            .short('n')
+            .long("nofile")
+            .help("set nofile limit")
+            .value_name("limit")
+            .takes_value(true)
+            .display_order(0),
         Arg::new("config")
             .short('c')
             .long("config")
             .help("use config file")
             .value_name("path")
             .takes_value(true)
-            .display_order(0),
+            .display_order(1),
         Arg::new("local")
             .short('l')
             .long("listen")
             .help("listen address")
             .value_name("addr")
             .takes_value(true)
-            .display_order(1),
+            .display_order(2),
         Arg::new("remote")
             .short('r')
             .long("remote")
             .help("remote address")
             .value_name("addr")
             .takes_value(true)
-            .display_order(2),
+            .display_order(3),
         Arg::new("through")
             .short('x')
             .long("through")
             .help("send through ip or address")
             .value_name("addr")
             .takes_value(true)
-            .display_order(3),
+            .display_order(4),
     ])
 }
 
@@ -167,6 +174,15 @@ fn parse_matches(matches: ArgMatches) -> CmdInput {
     #[cfg(unix)]
     if matches.is_present("daemon") {
         crate::utils::daemonize();
+    }
+
+    #[cfg(all(unix, not(target_os = "android")))]
+    if let Some(nofile) = matches.value_of("nofile") {
+        if let Ok(nofile) = nofile.parse::<u64>() {
+            crate::utils::set_nofile_limit(nofile);
+        } else {
+            eprintln!("invalid nofile value: {}", nofile);
+        }
     }
 
     let opts = parse_global_opts(&matches);
