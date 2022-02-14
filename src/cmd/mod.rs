@@ -109,30 +109,48 @@ fn add_global_options(app: App) -> App {
             .value_name("mode")
             .takes_value(true)
             .display_order(2),
+        Arg::new("dns_min_ttl")
+            .long("dns-min-ttl")
+            .help("override dns min ttl")
+            .value_name("second")
+            .takes_value(true)
+            .display_order(3),
+        Arg::new("dns_max_ttl")
+            .long("dns-max-ttl")
+            .help("override dns max ttl")
+            .value_name("second")
+            .takes_value(true)
+            .display_order(4),
+        Arg::new("dns_cache_size")
+            .long("dns-cache-size")
+            .help("override dns cache size")
+            .value_name("number")
+            .takes_value(true)
+            .display_order(5),
         Arg::new("dns_protocol")
             .long("dns-protocol")
             .help("override dns protocol")
             .value_name("protocol")
             .takes_value(true)
-            .display_order(3),
+            .display_order(6),
         Arg::new("dns_servers")
             .long("dns-servers")
             .help("override dns servers")
             .value_name("servers")
             .takes_value(true)
-            .display_order(4),
+            .display_order(7),
         Arg::new("tcp_timeout")
             .long("tcp-timeout")
             .help("override tcp timeout")
             .value_name("second")
             .takes_value(true)
-            .display_order(5),
+            .display_order(8),
         Arg::new("udp_timeout")
             .long("udp-timeout")
             .help("override udp timeout")
             .value_name("second")
             .takes_value(true)
-            .display_order(6),
+            .display_order(9),
     ])
 }
 
