@@ -90,7 +90,8 @@ fn add_options(app: App) -> App {
 }
 
 fn add_global_options(app: App) -> App {
-    app.help_heading("GLOBAL OPTIONS").args(&[
+    // log
+    let app = app.help_heading("LOG OPTIONS").args(&[
         Arg::new("log_level")
             .long("log-level")
             .help("override log level")
@@ -103,42 +104,50 @@ fn add_global_options(app: App) -> App {
             .value_name("path")
             .takes_value(true)
             .display_order(1),
+    ]);
+
+    // dns
+    let app = app.help_heading("DNS OPTIONS").args(&[
         Arg::new("dns_mode")
             .long("dns-mode")
             .help("override dns mode")
             .value_name("mode")
             .takes_value(true)
-            .display_order(2),
+            .display_order(0),
         Arg::new("dns_min_ttl")
             .long("dns-min-ttl")
             .help("override dns min ttl")
             .value_name("second")
             .takes_value(true)
-            .display_order(3),
+            .display_order(1),
         Arg::new("dns_max_ttl")
             .long("dns-max-ttl")
             .help("override dns max ttl")
             .value_name("second")
             .takes_value(true)
-            .display_order(4),
+            .display_order(2),
         Arg::new("dns_cache_size")
             .long("dns-cache-size")
             .help("override dns cache size")
             .value_name("number")
             .takes_value(true)
-            .display_order(5),
+            .display_order(3),
         Arg::new("dns_protocol")
             .long("dns-protocol")
             .help("override dns protocol")
             .value_name("protocol")
             .takes_value(true)
-            .display_order(6),
+            .display_order(4),
         Arg::new("dns_servers")
             .long("dns-servers")
             .help("override dns servers")
             .value_name("servers")
             .takes_value(true)
-            .display_order(7),
+            .display_order(5),
+    ]);
+
+    // network
+    let app = app.help_heading("TIMEOUT OPTIONS").args([
         Arg::new("tcp_timeout")
             .long("tcp-timeout")
             .help("override tcp timeout")
@@ -151,7 +160,9 @@ fn add_global_options(app: App) -> App {
             .value_name("second")
             .takes_value(true)
             .display_order(9),
-    ])
+    ]);
+
+    app
 }
 
 pub fn scan() -> CmdInput {

@@ -71,7 +71,6 @@ Using [Cross](https://github.com/cross-rs/cross) is also a simple and good enoug
 
 ```shell
 Realm 1.5.x [udp][zero-copy][trust-dns][multi-thread]
-
 A high efficiency relay tool
 
 USAGE:
@@ -86,19 +85,27 @@ FLAGS:
     -z, --splice     force enable tcp zero copy
 
 OPTIONS:
+    -n, --nofile <limit>    set nofile limit
     -c, --config <path>     use config file
     -l, --listen <addr>     listen address
     -r, --remote <addr>     remote address
     -x, --through <addr>    send through ip or address
 
-GLOBAL OPTIONS:
-        --log-level <level>          override log level
-        --log-output <path>          override log output
+LOG OPTIONS:
+        --log-level <level>    override log level
+        --log-output <path>    override log output
+
+DNS OPTIONS:
         --dns-mode <mode>            override dns mode
+        --dns-min-ttl <second>       override dns min ttl
+        --dns-max-ttl <second>       override dns max ttl
+        --dns-cache-size <number>    override dns cache size
         --dns-protocol <protocol>    override dns protocol
         --dns-servers <servers>      override dns servers
-        --tcp-timeout <second>       override tcp timeout
-        --udp-timeout <second>       override udp timeout
+
+TIMEOUT OPTIONS:
+        --tcp-timeout <second>    override tcp timeout
+        --udp-timeout <second>    override udp timeout
 ```
 
 start from command line arguments:
@@ -196,26 +203,29 @@ through = "0.0.0.0"
 
 ```shell
 ├── log
-│   ├── level
-│   └── output
+│   ├── level
+│   └── output
 ├── dns
-│   ├── mode
-│   ├── protocol
-│   └── nameservers
+│   ├── mode
+│   ├── protocol
+│   ├── nameservers
+│   ├── min_ttl
+│   ├── max_ttl
+│   └── cache_size
 ├── network
-│   ├── use_udp
-│   ├── fast_open
-│   ├── zero_copy
-│   ├── tcp_timeout
-│   └── udp_timeout
+│   ├── use_udp
+│   ├── zero_copy
+│   ├── fast_open
+│   ├── tcp_timeout
+│   └── udp_timeout
 └── endpoints
     ├── listen
     ├── remote
     ├── through
     └── network
         ├── use_udp
-        ├── fast_open
         ├── zero_copy
+        ├── fast_open
         ├── tcp_timeout
         └── udp_timeout
 ```
@@ -224,7 +234,6 @@ You should provide at least `endpoint.listen` and `endpoint.remote`, other field
 
 Priority: cmd override > endpoint config > global config
 
----
 
 ### log
 
@@ -241,8 +250,6 @@ Priority: cmd override > endpoint config > global config
 - stdout *(default)*
 - stderr
 - path, e.g. (`/var/log/realm.log`)
-
----
 
 ### dns
 
@@ -266,11 +273,21 @@ format: ["server1", "server2" ...]
 
 default:
 
-On **unix/windows**, it will read from the default location.(e.g. `/etc/resolv.conf`).
+If on **unix/windows**, read from the default location.(e.g. `/etc/resolv.conf`).
 
 Otherwise, use google's public dns(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:4860::8888:53`, `2001:4860:4860::8844:53`).
 
----
+#### dns.min_ttl
+
+default: 0
+
+#### dns.max_ttl
+
+default: 86400 (1 day)
+
+#### cache_size
+
+default: 32
 
 ### network
 
@@ -282,7 +299,6 @@ Otherwise, use google's public dns(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:486
 
 To disable timeout, you need to explicitly set timeout value to 0
 
----
 
 ### endpoint
 

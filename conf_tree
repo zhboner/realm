@@ -1,0 +1,55 @@
+
+#
+## log
+### level
+### output
+## dns
+### mode
+### protocol
+### nameservers
+### min_ttl
+### max_ttl
+### cache_size
+## network
+### use_udp
+### zero_copy
+### fast_open
+### tcp_timeout
+### udp_timeout
+## endpoints
+### listen
+### remote
+### through
+### network
+#### use_udp
+#### zero_copy
+#### fast_open
+#### tcp_timeout
+#### udp_timeout
+
+├── log
+│   ├── level
+│   └── output
+├── dns
+│   ├── mode
+│   ├── protocol
+│   ├── nameservers
+│   ├── min_ttl
+│   ├── max_ttl
+│   └── cache_size
+├── network
+│   ├── use_udp
+│   ├── zero_copy
+│   ├── fast_open
+│   ├── tcp_timeout
+│   └── udp_timeout
+└── endpoints
+    ├── listen
+    ├── remote
+    ├── through
+    └── network
+        ├── use_udp
+        ├── zero_copy
+        ├── fast_open
+        ├── tcp_timeout
+        └── udp_timeout
