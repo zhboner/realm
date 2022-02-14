@@ -57,3 +57,24 @@ pub fn set_nofile_limit(nofile: u64) {
         println!("set nofile limit to {}", nofile);
     }
 }
+
+// refer to
+// https://man7.org/linux/man-pages/man2/setrlimit.2.html
+#[cfg(all(unix, not(target_os = "android")))]
+pub fn get_nofile_limit() -> Option<(u64, u64)> {
+    use libc::RLIMIT_NOFILE;
+    use libc::rlimit;
+    use std::io::Error;
+
+    let mut lim = rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+
+    if unsafe { libc::getrlimit(RLIMIT_NOFILE, &mut lim as *mut _) } < 0 {
+        eprintln!("failed to get nofile limit: {}", Error::last_os_error());
+        return None;
+    };
+
+    Some((lim.rlim_cur as u64, lim.rlim_max as u64))
+}

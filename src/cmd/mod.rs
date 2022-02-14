@@ -177,11 +177,22 @@ fn parse_matches(matches: ArgMatches) -> CmdInput {
     }
 
     #[cfg(all(unix, not(target_os = "android")))]
-    if let Some(nofile) = matches.value_of("nofile") {
-        if let Ok(nofile) = nofile.parse::<u64>() {
-            crate::utils::set_nofile_limit(nofile);
-        } else {
-            eprintln!("invalid nofile value: {}", nofile);
+    {
+        use crate::utils::get_nofile_limit;
+        use crate::utils::set_nofile_limit;
+
+        // get
+        if let Some((soft, hard)) = get_nofile_limit() {
+            println!("nofile limit: soft={}, hard={}", soft, hard);
+        }
+
+        // set
+        if let Some(nofile) = matches.value_of("nofile") {
+            if let Ok(nofile) = nofile.parse::<u64>() {
+                set_nofile_limit(nofile);
+            } else {
+                eprintln!("invalid nofile value: {}", nofile);
+            }
         }
     }
 
