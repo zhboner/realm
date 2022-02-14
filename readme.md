@@ -146,6 +146,9 @@ output = "/var/log/realm.log"
 mode = "ipv4_only"
 protocol = "tcp_and_udp"
 nameservers = ["8.8.8.8:53", "8.8.4.4:53"]
+min_ttl = 600
+max_ttl = 3600
+cache_size = 256
 
 [network]
 use_udp = true
@@ -157,44 +160,53 @@ udp_timeout = 30
 [[endpoints]]
 listen = "0.0.0.0:5000"
 remote = "1.1.1.1:443"
+through = "0.0.0.0"
 
 [[endpoints]]
 listen = "0.0.0.0:10000"
 remote = "www.google.com:443"
 through = "0.0.0.0"
+
 ```
 
 <details>
 <summary>JSON Example</summary>
 <pre>
 <code>{
-	"log": {
-		"level": "warn",
-		"output": "/var/log/realm.log"
-	},
-	"dns": {
-		"mode": "ipv4_only",
-		"protocol": "tcp_and_udp",
-		"nameservers": ["8.8.8.8:53", "8.8.4.4:53"]
-	},
-	"network": {
-		"use_udp": true,
-		"fast_open": true,
-		"zero_copy": true,
-		"tcp_timeout": 300,
-		"udp_timeout": 30,
-	},
-	"endpoints": [
-		{
-			"listen": "0.0.0.0:5000",
-			"remote": "1.1.1.1:443"
-		},
-		{
-			"listen": "0.0.0.0:10000",
-			"remote": "www.google.com:443",
-			"through": "0.0.0.0"
-		}
-	]
+  "log": {
+    "level": "warn",
+    "output": "/var/log/realm.log"
+  },
+  "dns": {
+    "mode": "ipv4_only",
+    "protocol": "tcp_and_udp",
+    "nameservers": [
+      "8.8.8.8:53",
+      "8.8.4.4:53"
+    ],
+    "min_ttl": 600,
+    "max_ttl": 3600,
+    "cache_size": 256
+  },
+  "network": {
+    "use_udp": true,
+    "zero_copy": true,
+    "fast_open": true,
+    "tcp_timeout": 300,
+    "udp_timeout": 30
+  },
+  "endpoints": [
+    {
+      "listen": "0.0.0.0:5000",
+      "remote": "1.1.1.1:443",
+      "through": "0.0.0.0"
+    },
+    {
+      "listen": "0.0.0.0:10000",
+      "remote": "www.google.com:443",
+      "through": "0.0.0.0"
+    }
+  ]
 }</code>
 </pre>
 </details>
