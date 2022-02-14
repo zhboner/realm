@@ -11,7 +11,7 @@ use cmd::CmdInput;
 use conf::{Config, FullConf, LogConf, DnsConf};
 use utils::Endpoint;
 
-const VERSION: &str = "1.5.0-rc10";
+const VERSION: &str = "1.5.0-rc11";
 const ENV_CONFIG: &str = "REALM_CONF";
 
 cfg_if! {
