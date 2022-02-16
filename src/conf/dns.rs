@@ -198,8 +198,18 @@ impl Display for DnsConf {
 }
 
 impl Config for DnsConf {
+    #[cfg(feature = "trust-dns")]
     type Output = (Option<ResolverConfig>, Option<ResolverOpts>);
 
+    #[cfg(not(feature = "trust-dns"))]
+    type Output = ();
+
+    #[cfg(not(feature = "trust-dns"))]
+    fn build(self) -> Self::Output {
+        unreachable!()
+    }
+
+    #[cfg(feature = "trust-dns")]
     fn build(self) -> Self::Output {
         use std::time::Duration;
 

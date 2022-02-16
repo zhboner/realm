@@ -10,6 +10,7 @@ edition = "2021"
 cfg-if = "1"
 futures = "0.3"
 log = "0.4"
+libc = "0.2"
 
 clap = "3"
 toml = "0.5"
@@ -24,9 +25,6 @@ lazy_static = "1"
 
 # tfo
 tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.9", optional = true }
-
-# zero-copy
-libc = { version = "0.2", optional = true }
 
 # logger
 chrono = "0.4"
@@ -54,7 +52,7 @@ opt-level = 0
 default = ["udp", "zero-copy", "trust-dns", "multi-thread" ]
 udp = []
 tfo = ["tokio-tfo"]
-zero-copy = ["libc"]
+zero-copy = []
 trust-dns = ["trust-dns-resolver"]
 multi-thread = ["tokio/rt-multi-thread"]
 jemalloc = ["jemallocator"]
