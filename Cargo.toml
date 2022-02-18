@@ -4,7 +4,13 @@ version = "1.5.0"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "realm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "realm"
+path = "src/bin.rs"
 
 [dependencies]
 cfg-if = "1"

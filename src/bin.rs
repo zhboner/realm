@@ -1,18 +1,12 @@
-mod cmd;
-mod dns;
-mod conf;
-mod utils;
-mod relay;
-
 use std::env;
-
 use cfg_if::cfg_if;
-use cmd::CmdInput;
-use conf::{Config, FullConf, LogConf, DnsConf};
-use utils::Endpoint;
 
-const VERSION: &str = "1.5.0-rc12";
-const ENV_CONFIG: &str = "REALM_CONF";
+use realm::cmd;
+use realm::dns;
+use realm::conf::{Config, FullConf, LogConf, DnsConf};
+use realm::utils::Endpoint;
+use realm::relay;
+use realm::ENV_CONFIG;
 
 cfg_if! {
     if #[cfg(all(feature = "mi-malloc"))] {
@@ -34,6 +28,7 @@ fn main() {
             }
         };
 
+        use cmd::CmdInput;
         match cmd::scan() {
             CmdInput::Endpoint(ep, opts) => {
                 let mut conf = FullConf::default();

@@ -5,7 +5,7 @@ use crate::conf::CmdOverride;
 use crate::conf::EndpointConf;
 use crate::conf::{Config, LogConf, DnsConf, NetConf};
 
-use super::VERSION;
+use crate::VERSION;
 use crate::utils::FEATURES;
 
 pub enum CmdInput {
