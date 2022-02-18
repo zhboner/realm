@@ -152,7 +152,7 @@ remote = "www.google.com:443"
 
 <details>
 <summary>JSON Example</summary>
-<pre>
+<p>
 
 ```json
 {
@@ -169,12 +169,12 @@ remote = "www.google.com:443"
 }
 ```
 
-</pre>
+</p>
 </details>
 
 <details>
 <summary>Recommended Configuration</summary>
-<pre>
+<p>
 
 ```toml
 [log]
@@ -192,11 +192,9 @@ remote = "1.1.1.1:443"
 [[endpoints]]
 listen = "0.0.0.0:10000"
 remote = "www.google.com:443"
-
-
 ```
 
-</pre>
+</p>
 </details>
 
 ## global
@@ -324,7 +322,7 @@ Require the `udp` feature
 
 Start listening on a udp endpoint and forward packets to the remote peer.
 
-It will dynamically allocate local endpoints and establish udp associations. Once timeout, the endpoints will be deallocated and the association will be terminated. See also: [network.udp_timeout](#networkudptimeout-unsigned-int)
+It will dynamically allocate local endpoints and establish udp associations. Once timeout, the endpoints will be deallocated and the association will be terminated. See also: [network.udp_timeout](#networkudp_timeout-unsigned-int)
 
 Due to the receiver side not limiting access to the association, the relay works like a full-cone NAT.
 
@@ -368,7 +366,7 @@ default: 30
 
 Requires the `proxy-protocol` feature
 
-Send haproxy PROXY header once the connection established. Both `v1` and `v2` are supported, see [send_proxy_version](#networksendproxyversion-unsigned-int).
+Send haproxy PROXY header once the connection established. Both `v1` and `v2` are supported, see [send_proxy_version](#networksend_proxy_version-unsigned-int).
 
 You should make sure the remote peer also speaks proxy-protocol.
 
@@ -378,7 +376,7 @@ default: false
 
 Requires the `proxy-protocol` feature
 
-This option has no effect unless [send_proxy](#networksendproxy-bool) is enabled.
+This option has no effect unless [send_proxy](#networksend_proxy-bool) is enabled.
 
 value:
 
