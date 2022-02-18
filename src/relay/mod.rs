@@ -4,28 +4,32 @@ use futures::future::join_all;
 mod tcp;
 use tcp::TcpListener;
 use crate::utils::Endpoint;
+use crate::utils::{EndpointX, RemoteAddrX, ConnectOptsX};
 
 pub async fn run(eps: Vec<Endpoint>) {
     let mut workers = Vec::with_capacity(compute_workers(&eps));
-    for ep in eps.into_iter() {
+    for ep in eps.iter() {
         #[cfg(feature = "udp")]
         if ep.opts.use_udp {
-            workers.push(tokio::spawn(proxy_udp(ep.clone())))
+            workers.push(tokio::spawn(proxy_udp(ep.into())))
         }
-        workers.push(tokio::spawn(proxy_tcp(ep)));
+        workers.push(tokio::spawn(proxy_tcp(ep.into())));
     }
     join_all(workers).await;
 }
 
-async fn proxy_tcp(ep: Endpoint) {
+async fn proxy_tcp(ep: EndpointX) {
     let Endpoint {
         listen,
         remote,
         opts,
         ..
-    } = ep;
+    } = ep.as_ref();
 
-    let lis = TcpListener::bind(listen)
+    let remote: RemoteAddrX = remote.into();
+    let opts: ConnectOptsX = opts.into();
+
+    let lis = TcpListener::bind(*listen)
         .await
         .unwrap_or_else(|e| panic!("unable to bind {}: {}", &listen, &e));
 
@@ -38,10 +42,9 @@ async fn proxy_tcp(ep: Endpoint) {
             }
         };
 
-        let msg = format!("{} => {}", &addr, &remote);
+        let msg = format!("{} => {}", &addr, remote.as_ref());
         info!("[tcp]{}", &msg);
 
-        let remote = remote.clone();
         tokio::spawn(async move {
             match tcp::proxy(stream, remote, opts).await {
                 Ok((up, dl)) => info!(
@@ -58,15 +61,15 @@ async fn proxy_tcp(ep: Endpoint) {
 mod udp;
 
 #[cfg(feature = "udp")]
-async fn proxy_udp(ep: Endpoint) {
+async fn proxy_udp(ep: EndpointX) {
     let Endpoint {
         listen,
         remote,
         opts,
         ..
-    } = ep;
+    } = ep.as_ref();
 
-    if let Err(e) = udp::proxy(listen, remote, opts).await {
+    if let Err(e) = udp::proxy(listen, remote, opts.into()).await {
         panic!("udp forward exit: {}", &e);
     }
 }
