@@ -17,7 +17,6 @@ cfg_if! {
 
 use std::io::Result;
 use std::net::SocketAddr;
-use std::time::Duration;
 
 use log::{warn, debug};
 
@@ -38,7 +37,6 @@ pub async fn proxy(
     conn_opts: ConnectOpts,
 ) -> Result<(u64, u64)> {
     let ConnectOpts {
-        tcp_timeout: timeout,
         fast_open,
         zero_copy,
         send_through,
@@ -49,12 +47,6 @@ pub async fn proxy(
     let remote = remote.into_sockaddr().await?;
 
     debug!("[tcp]remote resolved as {}", &remote);
-
-    let timeout = if timeout != 0 {
-        Some(Duration::from_secs(timeout))
-    } else {
-        None
-    };
 
     let mut outbound = match send_through {
         Some(x) => {
