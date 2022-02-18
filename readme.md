@@ -108,13 +108,13 @@ TIMEOUT OPTIONS:
         --udp-timeout <second>    override udp timeout
 ```
 
-start from command line arguments:
+Start from command line arguments:
 
 ```shell
 realm -l 0.0.0.0:5000 -r 1.1.1.1:443
 ```
 
-start from config file:
+Start with a config file:
 
 ```shell
 # use toml
@@ -124,90 +124,78 @@ realm -c config.toml
 realm -c config.json
 ```
 
-start from environment variable:
+Start with environment variables:
 
 ```shell
 REALM_CONF='{"endpoints":[{"local":"127.0.0.1:5000","remote":"1.1.1.1:443"}]}' realm
 
+# or
 export REALM_CONF=`cat config.json | jq -c `
 realm
 ```
 
 ## Configuration
 
-TOML Example
+See [examples](./examples)
+
+Basic TOML Example
+
+```toml
+[[endpoints]]
+listen = "0.0.0.0:5000"
+remote = "1.1.1.1:443"
+
+[[endpoints]]
+listen = "0.0.0.0:10000"
+remote = "www.google.com:443"
+```
+
+<details>
+<summary>JSON Example</summary>
+<pre>
+
+```json
+{
+  "endpoints": [
+    {
+      "listen": "0.0.0.0:5000",
+      "remote": "1.1.1.1:443"
+    },
+    {
+      "listen": "0.0.0.0:10000",
+      "remote": "www.google.com:443"
+    }
+  ]
+}
+```
+
+</pre>
+</details>
+
+<details>
+<summary>Recommended Configuration</summary>
+<pre>
 
 ```toml
 [log]
 level = "warn"
 output = "/var/log/realm.log"
 
-[dns]
-mode = "ipv4_only"
-protocol = "tcp_and_udp"
-nameservers = ["8.8.8.8:53", "8.8.4.4:53"]
-min_ttl = 600
-max_ttl = 3600
-cache_size = 256
-
 [network]
 use_udp = true
 zero_copy = true
-fast_open = true
-tcp_timeout = 300
-udp_timeout = 30
 
 [[endpoints]]
 listen = "0.0.0.0:5000"
 remote = "1.1.1.1:443"
-through = "0.0.0.0"
 
 [[endpoints]]
 listen = "0.0.0.0:10000"
 remote = "www.google.com:443"
-through = "0.0.0.0"
+
 
 ```
 
-<details>
-<summary>JSON Example</summary>
-<pre>
-<code>{
-  "log": {
-    "level": "warn",
-    "output": "/var/log/realm.log"
-  },
-  "dns": {
-    "mode": "ipv4_only",
-    "protocol": "tcp_and_udp",
-    "nameservers": [
-      "8.8.8.8:53",
-      "8.8.4.4:53"
-    ],
-    "min_ttl": 600,
-    "max_ttl": 3600,
-    "cache_size": 256
-  },
-  "network": {
-    "use_udp": true,
-    "zero_copy": true,
-    "fast_open": true,
-    "tcp_timeout": 300,
-    "udp_timeout": 30
-  },
-  "endpoints": [
-    {
-      "listen": "0.0.0.0:5000",
-      "remote": "1.1.1.1:443",
-      "through": "0.0.0.0"
-    },
-    {
-      "listen": "0.0.0.0:10000",
-      "remote": "www.google.com:443",
-      "through": "0.0.0.0"
-    }
-  ]
-}</code>
 </pre>
 </details>
 
@@ -229,57 +217,78 @@ through = "0.0.0.0"
 │   ├── zero_copy
 │   ├── fast_open
 │   ├── tcp_timeout
-│   └── udp_timeout
+│   ├── udp_timeout
+│   ├── send_proxy
+│   ├── accept_proxy
+│   └── send_proxy_version
 └── endpoints
     ├── listen
     ├── remote
     ├── through
     └── network
-        ├── use_udp
-        ├── zero_copy
-        ├── fast_open
-        ├── tcp_timeout
-        └── udp_timeout
 ```
 
-You should provide at least `endpoint.listen` and `endpoint.remote`, other fields will take their default values if not provided.
+You should provide at least [endpoint.listen](#endpointlisten-string) and [endpoint.remote](#endpointremote-string), other fields will apply default values.
 
-Priority: cmd override > endpoint config > global config
-
+Option priority: cmd override > endpoint config > global config
 
 ### log
 
-#### log.level
+#### log.level: string
 
-- off *(default)*
+values:
+
+- off
 - error
 - info
 - debug
 - trace
 
-#### log.output
+default: off
 
-- stdout *(default)*
+#### log.output: string
+
+values:
+
+- stdout
 - stderr
-- path, e.g. (`/var/log/realm.log`)
+- path (e.g. `/var/log/realm.log`)
+
+default: stdout
 
 ### dns
 
-#### dns.mode
+Require the `trust-dns` feature
+
+#### dns.mode: string
+
+Dns resolve strategy.
+
+values:
 
 - ipv4_only
 - ipv6_only
 - ipv4_then_ipv6
 - ipv6_then_ipv4
-- ipv4_and_ipv6 *(default)*
+- ipv4_and_ipv6
 
-#### dns.protocol
+default: ipv4_and_ipv6
+
+#### dns.protocol: string
+
+Dns transport protocol.
+
+values:
 
 - tcp
 - udp
-- tcp_and_udp *(default)*
+- tcp_and_udp
 
-#### dns.nameservers
+default: tcp_and_udp
+
+#### dns.nameservers: string array
+
+Custom upstream servers.
 
 format: ["server1", "server2" ...]
 
@@ -289,32 +298,133 @@ If on **unix/windows**, read from the default location.(e.g. `/etc/resolv.conf`)
 
 Otherwise, use google's public dns(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:4860::8888:53`, `2001:4860:4860::8844:53`).
 
-#### dns.min_ttl
+#### dns.min_ttl: unsigned int
+
+The minimum lifetime of a positive dns cache
 
 default: 0
 
-#### dns.max_ttl
+#### dns.max_ttl: unsigned int
+
+The maximum lifetime of a positive dns cache
 
 default: 86400 (1 day)
 
-#### cache_size
+#### dns.cache_size: unsigned int
+
+The maximum count of dns cache
 
 default: 32
 
 ### network
 
-- use_udp (default: false)
-- zero_copy (default: false)
-- fast_open (default: false)
-- tcp_timeout (default: 300)
-- udp_timeout (default: 30)
+#### network.use_udp: bool
 
-To disable timeout, you need to explicitly set timeout value to 0
+Require the `udp` feature
 
+Start listening on a udp endpoint and forward packets to the remote peer.
+
+It will dynamically allocate local endpoints and establish udp associations. Once timeout, the endpoints will be deallocated and the association will be terminated. See also: [network.udp_timeout](#networkudptimeout-unsigned-int)
+
+Due to the receiver side not limiting access to the association, the relay works like a full-cone NAT.
+
+default: false
+
+#### network.zero_copy: bool
+
+Require the `zero-copy` feature
+
+Use `splice` instead of `send/recv` while handing tcp connection. This will save a lot of memory copies and context switches.
+
+default: false
+
+#### network.fast_open: bool
+
+Require the `fast-open` feature
+
+It is not recommended to enable this option, see [The Sad Story of TCP Fast Open](https://squeeze.isobar.com/2019/04/11/the-sad-story-of-tcp-fast-open/).
+
+default: false
+
+#### network.tcp_tomeout: unsigned int
+
+Close the connection if the peer does not send any data during `timeout`.
+
+***This option remains unimplemented! (since ce5213)***
+
+To disable timeout, you need to explicitly set timeout value to 0.
+
+default: 300
+
+#### network.udp_timeout: unsigned int
+
+Terminate udp association after `timeout`.
+
+The timeout value mut be properly configured in case of memory leak. Do not use a large `timeout`!
+
+default: 30
+
+#### network.send_proxy: bool
+
+Requires the `proxy-protocol` feature
+
+Send haproxy PROXY header once the connection established. Both `v1` and `v2` are supported, see [send_proxy_version](#networksendproxyversion-unsigned-int).
+
+You should make sure the remote peer also speaks proxy-protocol.
+
+default: false
+
+#### network.send_proxy_version: unsigned int
+
+Requires the `proxy-protocol` feature
+
+This option has no effect unless [send_proxy](#networksendproxy-bool) is enabled.
+
+value:
+
+- 1
+- 2
+
+default: 2
+
+#### network.accept_proxy: bool
+
+Requires the `proxy-protocol` feature
+
+Wait for PROXY header once the connection established.
+
+If the remote sender does not send a `v1` or `v2` header before other contents, the connection will be closed.
+
+default: false
 
 ### endpoint
 
-- listen: listen address
-- remote: remote address
-- through: send through specified ip or address
-- network: override global network config
+#### endpoint.listen: string
+
+Local address, supported formats:
+
+- ipv4:port
+- ipv6:port
+
+#### endpoint.remote: string
+
+Remote address, supported formats:
+
+- ipv4:port
+- ipv6:port
+- example.com:port
+
+#### endpoint.through: string
+
+TCP: Bind a specific `ip` before openning a connection
+
+UDP: Bind a specific `ip` or `address` before sending packet
+
+Supported formats:
+
+- ipv4/ipv6 (tcp/udp)
+- ipv4/ipv6:port (udp)
+
+#### endpoint.network
+
+The same as [network](#network), override global options.
