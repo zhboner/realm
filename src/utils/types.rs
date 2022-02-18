@@ -12,8 +12,10 @@ pub enum RemoteAddr {
 
 #[derive(Clone, Copy)]
 pub struct HaproxyOpts {
-    pub send_proxy: usize,
-    pub accept_proxy: usize,
+    pub send_proxy: bool,
+    pub accept_proxy: bool,
+    pub send_proxy_version: usize,
+    pub accept_proxy_timeout: usize,
 }
 
 #[derive(Clone, Copy)]

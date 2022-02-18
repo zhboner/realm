@@ -3,6 +3,7 @@ use super::Config;
 use crate::utils::{ConnectOpts, HaproxyOpts};
 use crate::utils::{TCP_TIMEOUT, UDP_TIMEOUT};
 use crate::utils::PROXY_PROTOCOL_VERSION;
+use crate::utils::PROXY_PROTOCOL_TIMEOUT;
 
 #[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
 pub struct NetConf {
@@ -23,6 +24,9 @@ pub struct NetConf {
 
     #[serde(default)]
     pub send_proxy_version: Option<usize>,
+
+    #[serde(default)]
+    pub accept_proxy_timeout: Option<usize>,
 
     #[serde(default)]
     pub tcp_timeout: Option<u64>,
@@ -52,12 +56,11 @@ impl Config for NetConf {
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
-        let accept_proxy = unbox!(accept_proxy) as usize;
-        let send_proxy = if unbox!(send_proxy) {
-            unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION)
-        } else {
-            0_usize
-        };
+        let send_proxy = unbox!(send_proxy);
+        let send_proxy_version = unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
+
+        let accept_proxy = unbox!(accept_proxy);
+        let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
 
         ConnectOpts {
             use_udp,
@@ -69,6 +72,8 @@ impl Config for NetConf {
             haproxy_opts: HaproxyOpts {
                 send_proxy,
                 accept_proxy,
+                send_proxy_version,
+                accept_proxy_timeout
             },
         }
     }
@@ -85,6 +90,7 @@ impl Config for NetConf {
         rst!(self, send_proxy, other);
         rst!(self, accept_proxy, other);
         rst!(self, send_proxy_version, other);
+        rst!(self, accept_proxy_timeout, other);
         self
     }
 
@@ -100,45 +106,47 @@ impl Config for NetConf {
         take!(self, send_proxy, other);
         take!(self, accept_proxy, other);
         take!(self, send_proxy_version, other);
+        take!(self, accept_proxy_timeout, other);
         self
     }
 
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
-        let use_udp = matches.is_present("use_udp");
-
-        let fast_open = matches.is_present("fast_open");
-        let zero_copy = matches.is_present("zero_copy");
-
-        let tcp_timeout = matches
-            .value_of("tcp_timeout")
-            .map(|x| x.parse::<u64>().unwrap());
-        let udp_timeout = matches
-            .value_of("udp_timeout")
-            .map(|x| x.parse::<u64>().unwrap());
-
-        let send_proxy = matches.is_present("send_proxy");
-        let accept_proxy = matches.is_present("accept_proxy");
-        let send_proxy_version = matches
-            .value_of("send_proxy_version")
-            .map(|x| x.parse::<usize>().unwrap());
-
-        const fn bool_to_opt(b: bool) -> Option<bool> {
-            if b {
-                Some(true)
-            } else {
-                None
+        macro_rules! unpack {
+            ($key: expr) => {
+                if matches.is_present($key) {
+                    Some(true)
+                } else {
+                    None
+                }
+            };
+            ($key: expr, $t: ident) => {
+                matches.value_of($key).map(|x| x.parse::<$t>().unwrap())
             }
         }
 
+        let use_udp =  unpack!("use_udp");
+        let fast_open = unpack!("fast_open");
+        let zero_copy = unpack!("zero_copy");
+
+        let tcp_timeout = unpack!("tcp_timeout", u64);
+        let udp_timeout = unpack!("udp_timeout", u64);
+
+        let send_proxy = unpack!("send_proxy");
+        let send_proxy_version = unpack!("send_proxy_version", usize);
+
+        let accept_proxy = unpack!("accept_proxy");
+        let accept_proxy_timeout = unpack!("accept_proxy_timeout", usize);
+
         Self {
-            use_udp: bool_to_opt(use_udp),
-            fast_open: bool_to_opt(fast_open),
-            zero_copy: bool_to_opt(zero_copy),
+            use_udp,
+            fast_open,
+            zero_copy,
             tcp_timeout,
             udp_timeout,
-            send_proxy: bool_to_opt(send_proxy),
-            accept_proxy: bool_to_opt(accept_proxy),
+            send_proxy,
+            accept_proxy,
             send_proxy_version,
+            accept_proxy_timeout
         }
     }
 }

@@ -79,7 +79,7 @@ pub async fn proxy(
     setsockopt_warn!(outbound.set_nodelay(true), "nodelay");
 
     #[cfg(feature = "proxy-protocol")]
-    if haproxy_opts.send_proxy != 0 || haproxy_opts.accept_proxy != 0 {
+    if haproxy_opts.send_proxy || haproxy_opts.accept_proxy {
         haproxy::handle_proxy_protocol(
             &mut inbound,
             &mut outbound,
