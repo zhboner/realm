@@ -11,6 +11,7 @@ cfg-if = "1"
 futures = "0.3"
 log = "0.4"
 libc = "0.2"
+bytes = "1"
 
 clap = "3"
 toml = "0.5"
@@ -29,6 +30,9 @@ tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main",
 # logger
 chrono = "0.4"
 fern = "0.6"
+
+# haproxy proxy-protocol
+haproxy = { package = "proxy-protocol", version = "0.5", optional = true }
 
 # malloc
 mimalloc = { version = "0.1", optional = true }
@@ -49,11 +53,12 @@ panic = "abort"
 opt-level = 0
 
 [features]
-default = ["udp", "zero-copy", "trust-dns", "multi-thread" ]
+default = ["udp", "zero-copy", "trust-dns", "multi-thread", "proxy-protocol"]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = []
 trust-dns = ["trust-dns-resolver"]
+proxy-protocol = ["haproxy"]
 multi-thread = ["tokio/rt-multi-thread"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]

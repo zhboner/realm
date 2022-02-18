@@ -1,7 +1,8 @@
 use serde::{Serialize, Deserialize};
 use super::Config;
-use crate::utils::ConnectOpts;
+use crate::utils::{ConnectOpts, HaproxyOpts};
 use crate::utils::{TCP_TIMEOUT, UDP_TIMEOUT};
+use crate::utils::PROXY_PROTOCOL_VERSION;
 
 #[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
 pub struct NetConf {
@@ -13,6 +14,15 @@ pub struct NetConf {
 
     #[serde(default)]
     pub zero_copy: Option<bool>,
+
+    #[serde(default)]
+    pub send_proxy: Option<bool>,
+
+    #[serde(default)]
+    pub accept_proxy: Option<bool>,
+
+    #[serde(default)]
+    pub send_proxy_version: Option<usize>,
 
     #[serde(default)]
     pub tcp_timeout: Option<u64>,
@@ -35,10 +45,19 @@ impl Config for NetConf {
         }
 
         let use_udp = unbox!(use_udp);
+
         let fast_open = unbox!(fast_open);
         let zero_copy = unbox!(zero_copy);
+
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
+
+        let accept_proxy = unbox!(accept_proxy) as usize;
+        let send_proxy = if unbox!(send_proxy) {
+            unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION)
+        } else {
+            0_usize
+        };
 
         ConnectOpts {
             use_udp,
@@ -47,6 +66,10 @@ impl Config for NetConf {
             tcp_timeout,
             udp_timeout,
             send_through: None,
+            haproxy_opts: HaproxyOpts {
+                send_proxy,
+                accept_proxy,
+            },
         }
     }
 
@@ -59,6 +82,9 @@ impl Config for NetConf {
         rst!(self, zero_copy, other);
         rst!(self, tcp_timeout, other);
         rst!(self, udp_timeout, other);
+        rst!(self, send_proxy, other);
+        rst!(self, accept_proxy, other);
+        rst!(self, send_proxy_version, other);
         self
     }
 
@@ -71,11 +97,15 @@ impl Config for NetConf {
         take!(self, zero_copy, other);
         take!(self, tcp_timeout, other);
         take!(self, udp_timeout, other);
+        take!(self, send_proxy, other);
+        take!(self, accept_proxy, other);
+        take!(self, send_proxy_version, other);
         self
     }
 
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
         let use_udp = matches.is_present("use_udp");
+
         let fast_open = matches.is_present("fast_open");
         let zero_copy = matches.is_present("zero_copy");
 
@@ -85,6 +115,12 @@ impl Config for NetConf {
         let udp_timeout = matches
             .value_of("udp_timeout")
             .map(|x| x.parse::<u64>().unwrap());
+
+        let send_proxy = matches.is_present("send_proxy");
+        let accept_proxy = matches.is_present("accept_proxy");
+        let send_proxy_version = matches
+            .value_of("send_proxy_version")
+            .map(|x| x.parse::<usize>().unwrap());
 
         const fn bool_to_opt(b: bool) -> Option<bool> {
             if b {
@@ -100,6 +136,9 @@ impl Config for NetConf {
             zero_copy: bool_to_opt(zero_copy),
             tcp_timeout,
             udp_timeout,
+            send_proxy: bool_to_opt(send_proxy),
+            accept_proxy: bool_to_opt(accept_proxy),
+            send_proxy_version,
         }
     }
 }

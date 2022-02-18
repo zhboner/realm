@@ -7,6 +7,9 @@ pub const DEFAULT_LOG_FILE: &str = "stdout";
 pub const TCP_TIMEOUT: u64 = 300;
 pub const UDP_TIMEOUT: u64 = 30;
 
+// default haproxy proxy-protocol version
+pub const PROXY_PROTOCOL_VERSION: usize = 2;
+
 // https://github.com/rust-lang/rust/blob/master/library/std/src/sys_common/io.rs#L1
 pub const DEFAULT_BUF_SIZE: usize = if cfg!(target_os = "espidf") {
     512
@@ -29,6 +32,7 @@ def_feat!(FEATURE_UDP, "udp");
 def_feat!(FEATURE_TFO, "tfo");
 def_feat!(FEATURE_ZERO_COPY, "zero-copy");
 def_feat!(FEATURE_TRUST_DNS, "trust-dns");
+def_feat!(FEATURE_PROXY_PROTOCOL, "proxy-protocol");
 def_feat!(FEATURE_MIMALLOC, "mi-malloc");
 def_feat!(FEATURE_JEMALLOC, "jemalloc");
 def_feat!(FEATURE_MULTI_THREAD, "multi-thread");
@@ -41,6 +45,7 @@ pub struct Features {
     pub mimalloc: bool,
     pub jemalloc: bool,
     pub multi_thread: bool,
+    pub proxy_protocol: bool,
 }
 
 pub const FEATURES: Features = Features {
@@ -51,6 +56,7 @@ pub const FEATURES: Features = Features {
     mimalloc: FEATURE_MIMALLOC,
     jemalloc: FEATURE_JEMALLOC,
     multi_thread: FEATURE_MULTI_THREAD,
+    proxy_protocol: FEATURE_PROXY_PROTOCOL,
 };
 
 impl Display for Features {
@@ -66,6 +72,7 @@ impl Display for Features {
         disp_feat!(tfo, "tfo");
         disp_feat!(zero_copy, "zero-copy");
         disp_feat!(trust_dns, "trust-dns");
+        disp_feat!(proxy_protocol, "proxy-protocol");
         disp_feat!(multi_thread, "multi-thread");
         disp_feat!(mimalloc, "mimalloc");
         disp_feat!(jemalloc, "jemalloc");

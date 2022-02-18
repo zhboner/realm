@@ -1,6 +1,8 @@
 mod zio;
-
 use cfg_if::cfg_if;
+
+#[cfg(feature = "proxy-protocol")]
+mod haproxy;
 
 cfg_if! {
     if #[cfg(feature = "tfo")] {
@@ -40,6 +42,7 @@ pub async fn proxy(
         fast_open,
         zero_copy,
         send_through,
+        haproxy_opts,
         ..
     } = conn_opts;
 
@@ -82,6 +85,16 @@ pub async fn proxy(
 
     setsockopt_warn!(inbound.set_nodelay(true), "nodelay");
     setsockopt_warn!(outbound.set_nodelay(true), "nodelay");
+
+    #[cfg(feature = "proxy-protocol")]
+    if haproxy_opts.send_proxy != 0 || haproxy_opts.accept_proxy != 0 {
+        haproxy::handle_proxy_protocol(
+            &mut inbound,
+            &mut outbound,
+            haproxy_opts,
+        )
+        .await?;
+    }
 
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     let res = if zero_copy {

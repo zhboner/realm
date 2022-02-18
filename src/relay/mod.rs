@@ -48,7 +48,7 @@ async fn proxy_tcp(ep: Endpoint) {
                     "[tcp]{} finish, upload: {}b, download: {}b",
                     msg, up, dl
                 ),
-                Err(e) => error!("[tcp]{} error: {}", msg, e),
+                Err(e) => error!("[tcp]{}, error: {}", msg, e),
             }
         });
     }

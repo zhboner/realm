@@ -146,20 +146,38 @@ fn add_global_options(app: App) -> App {
             .display_order(5),
     ]);
 
-    // network
+    // proxy-protocol belogs to network
+    let app = app.help_heading("PROXY OPTIONS").args([
+        Arg::new("send_proxy")
+            .long("send-proxy")
+            .help("send haproxy proxy protocol")
+            .display_order(0),
+        Arg::new("accept_proxy")
+            .long("accept-proxy")
+            .help("accept haproxy proxy protocol")
+            .display_order(1),
+        Arg::new("send_proxy_version")
+            .long("send-proxy-version")
+            .help("haproxy proxy protocol version")
+            .value_name("version")
+            .takes_value(true)
+            .display_order(2),
+    ]);
+
+    // timeout belogs to network
     let app = app.help_heading("TIMEOUT OPTIONS").args([
         Arg::new("tcp_timeout")
             .long("tcp-timeout")
             .help("override tcp timeout")
             .value_name("second")
             .takes_value(true)
-            .display_order(8),
+            .display_order(0),
         Arg::new("udp_timeout")
             .long("udp-timeout")
             .help("override udp timeout")
             .value_name("second")
             .takes_value(true)
-            .display_order(9),
+            .display_order(1),
     ]);
 
     app

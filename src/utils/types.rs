@@ -11,12 +11,19 @@ pub enum RemoteAddr {
 }
 
 #[derive(Clone, Copy)]
+pub struct HaproxyOpts {
+    pub send_proxy: usize,
+    pub accept_proxy: usize,
+}
+
+#[derive(Clone, Copy)]
 pub struct ConnectOpts {
     pub use_udp: bool,
     pub fast_open: bool,
     pub zero_copy: bool,
     pub tcp_timeout: u64,
     pub udp_timeout: u64,
+    pub haproxy_opts: HaproxyOpts,
     pub send_through: Option<SocketAddr>,
 }
 
@@ -89,14 +96,12 @@ impl Display for RemoteAddr {
 
 impl Display for ConnectOpts {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        macro_rules! on_off {
-            ($x: expr) => {
-                if $x {
-                    "on"
-                } else {
-                    "off"
-                }
-            };
+        const fn on_off(b: bool) -> &'static str {
+            if b {
+                "on"
+            } else {
+                "off"
+            }
         }
         if let Some(send_through) = &self.send_through {
             write!(f, "send-through={}, ", send_through)?;
@@ -104,9 +109,14 @@ impl Display for ConnectOpts {
         write!(
             f,
             "udp-forward={}, tcp-fast-open={}, tcp-zero-copy={}, ",
-            on_off!(self.use_udp),
-            on_off!(self.fast_open),
-            on_off!(self.zero_copy)
+            on_off(self.use_udp),
+            on_off(self.fast_open),
+            on_off(self.zero_copy)
+        )?;
+        write!(
+            f,
+            "send-proxy={}, accept-proxy={}, ",
+            self.haproxy_opts.send_proxy, self.haproxy_opts.accept_proxy
         )?;
         write!(
             f,
