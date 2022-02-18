@@ -54,7 +54,7 @@ pub fn timeoutfut<F: Future>(future: F, timeout: usize) -> Timeout<F> {
     use tokio::time::sleep;
     let delay = match timeout {
         0 => Delay::None,
-        x @ _ => Delay::Some(sleep(Duration::from_secs(x as u64))),
+        x => Delay::Some(sleep(Duration::from_secs(x as u64))),
     };
     Timeout {
         value: future,
