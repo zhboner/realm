@@ -1,8 +1,9 @@
-use log::{info, error};
+use log::{info, warn, error};
 use futures::future::join_all;
 
 mod tcp;
 use tcp::TcpListener;
+
 use crate::utils::Endpoint;
 use crate::utils::{EndpointX, RemoteAddrX, ConnectOptsX};
 
@@ -44,6 +45,13 @@ async fn proxy_tcp(ep: EndpointX) {
 
         let msg = format!("{} => {}", &addr, remote.as_ref());
         info!("[tcp]{}", &msg);
+
+        if let Err(e) = stream.set_nodelay(true) {
+            warn!(
+                "[tcp]failed to set no_delay option for incoming stream: {}",
+                e
+            );
+        }
 
         tokio::spawn(async move {
             match tcp::proxy(stream, remote, opts).await {

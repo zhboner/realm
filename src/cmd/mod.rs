@@ -86,6 +86,13 @@ fn add_options(app: App) -> App {
             .value_name("address")
             .takes_value(true)
             .display_order(4),
+        Arg::new("interface")
+            .short('i')
+            .long("interface")
+            .help("bind to interface")
+            .value_name("device")
+            .takes_value(true)
+            .display_order(5),
     ])
 }
 

@@ -1,14 +1,17 @@
-mod types;
+pub mod types;
 pub use types::*;
 
-mod consts;
+pub mod consts;
 pub use consts::*;
 
-mod timeout;
+pub mod timeout;
 pub use timeout::*;
 
-mod ex_types;
+pub mod ex_types;
 pub use ex_types::*;
+
+pub mod socket;
+pub use socket::*;
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
@@ -80,4 +83,32 @@ pub fn get_nofile_limit() -> Option<(u64, u64)> {
     };
 
     Some((lim.rlim_cur as u64, lim.rlim_max as u64))
+}
+
+// from dear shadowoscks-rust:
+// https://docs.rs/shadowsocks/1.13.1/src/shadowsocks/net/sys/unix/linux/mod.rs.html#256-276
+// seems bsd does not support SO_BINDTODEVICE
+// should use IP_SENDIF instead
+// ref: https://lists.freebsd.org/pipermail/freebsd-net/2012-April/032064.html
+#[cfg(target_os = "linux")]
+pub fn bind_to_device<T: std::os::unix::io::AsRawFd>(
+    socket: &T,
+    iface: &str,
+) -> std::io::Result<()> {
+    let iface_bytes = iface.as_bytes();
+
+    if unsafe {
+        libc::setsockopt(
+            socket.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_BINDTODEVICE,
+            iface_bytes.as_ptr() as *const _ as *const libc::c_void,
+            iface_bytes.len() as libc::socklen_t,
+        )
+    } < 0
+    {
+        Err(std::io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
 }

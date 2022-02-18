@@ -70,7 +70,11 @@ impl Config for NetConf {
             zero_copy,
             tcp_timeout,
             udp_timeout,
+
+            // from endpoint
             send_through: None,
+            bind_interface: None,
+
             haproxy_opts: HaproxyOpts {
                 send_proxy,
                 accept_proxy,

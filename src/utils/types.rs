@@ -18,7 +18,7 @@ pub struct HaproxyOpts {
     pub accept_proxy_timeout: usize,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ConnectOpts {
     pub use_udp: bool,
     pub fast_open: bool,
@@ -27,6 +27,7 @@ pub struct ConnectOpts {
     pub udp_timeout: usize,
     pub haproxy_opts: HaproxyOpts,
     pub send_through: Option<SocketAddr>,
+    pub bind_interface: Option<String>,
 }
 
 #[derive(Clone)]
@@ -105,6 +106,11 @@ impl Display for ConnectOpts {
                 "off"
             }
         }
+
+        if let Some(bind_interface) = &self.bind_interface {
+            write!(f, "bind-iface={}, ", bind_interface)?;
+        }
+
         if let Some(send_through) = &self.send_through {
             write!(f, "send-through={}, ", send_through)?;
         }

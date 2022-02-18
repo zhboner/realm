@@ -10,8 +10,8 @@ use tokio::net::UdpSocket;
 use crate::utils::DEFAULT_BUF_SIZE;
 use crate::utils::{RemoteAddr, ConnectOpts};
 use crate::utils::ConnectOptsX;
-use crate::utils::{new_sockaddr_v4, new_sockaddr_v6};
 use crate::utils::timeoutfut;
+use crate::utils::socket;
 
 // client <--> allocated socket
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
@@ -23,7 +23,6 @@ pub async fn proxy(
     conn_opts: ConnectOptsX,
 ) -> Result<()> {
     let ConnectOpts {
-        send_through,
         udp_timeout: timeout,
         ..
     } = conn_opts.as_ref();
@@ -63,15 +62,30 @@ pub async fn proxy(
                     "[udp]new association {} => {}",
                     &client_addr, &remote_addr
                 );
+
+                let socket = match socket::new_socket(
+                    socket::Type::DGRAM,
+                    &remote_addr,
+                    &conn_opts,
+                ) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        error!("[udp]failed to open new socket: {}", e);
+                        continue;
+                    }
+                };
+                // from_std panics only when tokio runtime not setup
+                let new_sock =
+                    Arc::new(UdpSocket::from_std(socket.into()).unwrap());
+
                 alloc_new_socket(
                     &sock_map,
                     client_addr,
-                    &remote_addr,
-                    send_through,
-                    listen_sock.clone(),
+                    &new_sock,
+                    &listen_sock,
                     *timeout,
-                )
-                .await
+                );
+                new_sock
             }
         };
 
@@ -132,39 +146,25 @@ fn get_socket(
     // drop the lock
 }
 
-async fn alloc_new_socket(
+fn alloc_new_socket(
     sock_map: &SockMap,
     client_addr: SocketAddr,
-    remote_addr: &SocketAddr,
-    send_through: &Option<SocketAddr>,
-    listen_sock: Arc<UdpSocket>,
+    new_sock: &Arc<UdpSocket>,
+    listen_sock: &Arc<UdpSocket>,
     timeout: usize,
-) -> Arc<UdpSocket> {
-    // pick a random port
-    let alloc_sock = Arc::new(match send_through {
-        Some(x) => UdpSocket::bind(x).await.unwrap(),
-        None => match remote_addr {
-            SocketAddr::V4(_) => {
-                UdpSocket::bind(new_sockaddr_v4()).await.unwrap()
-            }
-            SocketAddr::V6(_) => {
-                UdpSocket::bind(new_sockaddr_v6()).await.unwrap()
-            }
-        },
-    });
+) {
     // new send back task
     tokio::spawn(send_back(
         sock_map.clone(),
         client_addr,
-        listen_sock,
-        alloc_sock.clone(),
+        listen_sock.clone(),
+        new_sock.clone(),
         timeout,
     ));
 
     sock_map
         .write()
         .unwrap()
-        .insert(client_addr, alloc_sock.clone());
-    alloc_sock
+        .insert(client_addr, new_sock.clone());
     // drop the lock
 }

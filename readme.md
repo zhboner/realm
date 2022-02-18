@@ -83,11 +83,12 @@ FLAGS:
     -z, --splice     force enable tcp zero copy
 
 OPTIONS:
-    -n, --nofile <limit>       set nofile limit
-    -c, --config <path>        use config file
-    -l, --listen <address>     listen address
-    -r, --remote <address>     remote address
-    -x, --through <address>    send through ip or address
+    -n, --nofile <limit>        set nofile limit
+    -c, --config <path>         use config file
+    -l, --listen <address>      listen address
+    -r, --remote <address>      remote address
+    -x, --through <address>     send through ip or address
+    -i, --interface <device>    bind to interface
 
 LOG OPTIONS:
         --log-level <level>    override log level
@@ -214,12 +215,14 @@ remote = "www.google.com:443"
 │   ├── tcp_timeout
 │   ├── udp_timeout
 │   ├── send_proxy
+│   ├── send_proxy_version
 │   ├── accept_proxy
-│   └── send_proxy_version
+│   └── accept_proxy_timeout
 └── endpoints
     ├── listen
     ├── remote
     ├── through
+    ├── interface
     └── network
 ```
 
@@ -420,6 +423,10 @@ Supported formats:
 
 - ipv4/ipv6 (tcp/udp)
 - ipv4/ipv6:port (udp)
+
+#### endpoint.interface: string
+
+Bind to a specific interface
 
 #### endpoint.network
 

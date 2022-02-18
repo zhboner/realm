@@ -16,20 +16,14 @@ cfg_if! {
 }
 
 use std::io::Result;
-use std::net::SocketAddr;
 
-use log::{warn, debug};
+use log::debug;
 
 use tokio::net::TcpSocket;
 
+use crate::utils::socket;
 use crate::utils::ConnectOpts;
 use crate::utils::{RemoteAddrX, ConnectOptsX};
-
-macro_rules! setsockopt_warn {
-    ($op: expr, $opt: expr) => {{
-        let _ = $op.map_err(|e| warn!("[tcp]failed to setsockopt $opt: {}", e));
-    }};
-}
 
 #[allow(unused_variables)]
 pub async fn proxy(
@@ -41,44 +35,30 @@ pub async fn proxy(
         fast_open,
         zero_copy,
         send_through,
+        bind_interface,
         haproxy_opts,
         ..
     } = conn_opts.as_ref();
 
+    // before connect
     let remote = remote.to_sockaddr().await?;
-
     debug!("[tcp]remote resolved as {}", &remote);
 
-    let mut outbound = match send_through {
-        Some(x) => {
-            let socket = match x {
-                SocketAddr::V4(_) => TcpSocket::new_v4()?,
-                SocketAddr::V6(_) => TcpSocket::new_v6()?,
-            };
+    let socket = socket::new_socket(socket::Type::STREAM, &remote, &conn_opts)?;
+    let socket = TcpSocket::from_std_stream(socket.into());
 
-            setsockopt_warn!(socket.set_reuseaddr(true), "reuseaddr");
+    // connect!
+    #[cfg(not(feature = "tfo"))]
+    let mut outbound = socket.connect(remote).await?;
 
-            #[cfg(unix)]
-            setsockopt_warn!(socket.set_reuseport(true), "reuseport");
-
-            socket.bind(*x)?;
-
-            #[cfg(feature = "tfo")]
-            if *fast_open {
-                TcpStream::connect_with_socket(socket, remote).await?
-            } else {
-                socket.connect(remote).await?.into()
-            }
-
-            #[cfg(not(feature = "tfo"))]
-            socket.connect(remote).await?
-        }
-        None => TcpStream::connect(remote).await?,
+    #[cfg(feature = "tfo")]
+    let mut outbound = if *fast_open {
+        TcpStream::connect_with_socket(socket, remote).await?
+    } else {
+        socket.connect(remote).await?.into()
     };
 
-    setsockopt_warn!(inbound.set_nodelay(true), "nodelay");
-    setsockopt_warn!(outbound.set_nodelay(true), "nodelay");
-
+    // after connected
     #[cfg(feature = "proxy-protocol")]
     if haproxy_opts.send_proxy || haproxy_opts.accept_proxy {
         haproxy::handle_proxy_protocol(

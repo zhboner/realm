@@ -18,6 +18,7 @@ futures = "0.3"
 log = "0.4"
 libc = "0.2"
 bytes = "1"
+socket2 = "0.4"
 
 clap = "3"
 toml = "0.5"

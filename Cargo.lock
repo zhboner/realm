@@ -705,6 +705,7 @@ dependencies = [
  "proxy-protocol",
  "serde",
  "serde_json",
+ "socket2 0.4.4",
  "tokio",
  "tokio-tfo",
  "toml",

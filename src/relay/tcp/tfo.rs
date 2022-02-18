@@ -37,10 +37,6 @@ impl TcpListener {
 }
 
 impl TcpStream {
-    pub async fn connect(addr: SocketAddr) -> Result<TcpStream> {
-        TfoStream::connect(addr).await.map(TcpStream)
-    }
-
     pub async fn connect_with_socket(
         socket: TcpSocket,
         addr: SocketAddr,
