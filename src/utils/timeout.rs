@@ -50,6 +50,7 @@ impl<T: Future> Future for Timeout<T> {
 
 // timeout = 0 means never timeout
 // instead of timeout immediately
+#[allow(unused)]
 pub fn timeoutfut<F: Future>(future: F, timeout: usize) -> Timeout<F> {
     use tokio::time::sleep;
     let delay = match timeout {

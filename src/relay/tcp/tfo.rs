@@ -50,6 +50,10 @@ impl TcpStream {
             .map(TcpStream)
     }
 
+    pub fn peer_addr(&self) -> Result<SocketAddr> {
+        self.0.peer_addr()
+    }
+
     pub fn set_nodelay(&self, nodelay: bool) -> Result<()> {
         self.0.set_nodelay(nodelay)
     }
