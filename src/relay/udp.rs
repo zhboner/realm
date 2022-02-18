@@ -1,5 +1,4 @@
 use std::io::Result;
-use std::time::Duration;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
@@ -29,11 +28,6 @@ pub async fn proxy(
     } = conn_opts;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let listen_sock = Arc::new(UdpSocket::bind(&listen).await?);
-    let timeout = if timeout != 0 {
-        Some(Duration::from_secs(timeout))
-    } else {
-        None
-    };
 
     let mut buf = vec![0u8; BUF_SIZE];
 
@@ -92,7 +86,7 @@ async fn send_back(
     client_addr: SocketAddr,
     listen_sock: Arc<UdpSocket>,
     alloc_sock: Arc<UdpSocket>,
-    timeout: Option<Duration>,
+    timeout: usize,
 ) {
     let mut buf = vec![0u8; BUF_SIZE];
 
@@ -142,7 +136,7 @@ async fn alloc_new_socket(
     remote_addr: &SocketAddr,
     send_through: &Option<SocketAddr>,
     listen_sock: Arc<UdpSocket>,
-    timeout: Option<Duration>,
+    timeout: usize,
 ) -> Arc<UdpSocket> {
     // pick a random port
     let alloc_sock = Arc::new(match send_through {

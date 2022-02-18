@@ -27,7 +27,7 @@ pub async fn handle_proxy_protocol(
         send_proxy,
         accept_proxy,
         send_proxy_version,
-        accept_proxy_timeout
+        accept_proxy_timeout,
     } = opts;
 
     let mut client_addr = MaybeUninit::<SocketAddr>::uninit();
@@ -41,13 +41,13 @@ pub async fn handle_proxy_protocol(
 
     // parse PROXY header from client and write log
     // may not get src and dst addr
-    if accept_proxy  {
+    if accept_proxy {
         let buf = buf.write(BytesMut::with_capacity(256));
 
         // FIXME: may not read the entire header
 
-        // The receiver may apply a short timeout and decide to 
-        // abort the connection if the protocol header is not seen 
+        // The receiver may apply a short timeout and decide to
+        // abort the connection if the protocol header is not seen
         // within a few seconds (at least 3 seconds to cover a TCP retransmit).
         let n = timeoutfut(src.read_buf(buf), accept_proxy_timeout).await??;
 
@@ -93,14 +93,15 @@ pub async fn handle_proxy_protocol(
     let server_addr = unsafe { server_addr.assume_init() };
 
     // write header
-    let header = encode(make_header(client_addr, server_addr, send_proxy_version))
-        .map_err(|e| Error::new(ErrorKind::Other, e))?;
+    let header =
+        encode(make_header(client_addr, server_addr, send_proxy_version))
+            .map_err(|e| Error::new(ErrorKind::Other, e))?;
     debug!("[tcp]send initial {} bytes: {:?}", header.len(), &header);
     dst.write_all(&header).await?;
 
     // write left bytes
     // Safety: buf is initialized, filled with PROXY header
-    if accept_proxy  {
+    if accept_proxy {
         let buf = unsafe { buf.assume_init() };
         if !buf.is_empty() {
             debug!("[tcp]send left {} bytes: {:?}", buf.len(), &buf);

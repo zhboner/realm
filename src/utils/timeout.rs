@@ -2,7 +2,7 @@ use std::pin::Pin;
 use std::task::{Poll, Context};
 use std::future::Future;
 use std::time::Duration;
-use std::io::{Result, Error, ErrorKind};
+use std::io::{Result, ErrorKind};
 
 use tokio::time::Sleep;
 
@@ -40,7 +40,7 @@ impl<T: Future> Future for Timeout<T> {
         if let DelayP::Some(delay) = this.delay.project() {
             let delay: Pin<&mut Sleep> = delay;
             if delay.poll(cx).is_ready() {
-                return Ready(Err(Error::new(ErrorKind::TimedOut, "timeout")));
+                return Ready(Err(ErrorKind::TimedOut.into()));
             }
         }
 
@@ -48,12 +48,14 @@ impl<T: Future> Future for Timeout<T> {
     }
 }
 
-pub fn timeoutfut<F: Future>(
-    future: F,
-    duration: Option<Duration>,
-) -> Timeout<F> {
+// timeout = 0 means never timeout
+// instead of timeout immediately
+pub fn timeoutfut<F: Future>(future: F, timeout: usize) -> Timeout<F> {
     use tokio::time::sleep;
-    let delay = duration.map_or(Delay::None, |d| Delay::Some(sleep(d)));
+    let delay = match timeout {
+        0 => Delay::None,
+        x @ _ => Delay::Some(sleep(Duration::from_secs(x as u64))),
+    };
     Timeout {
         value: future,
         delay,

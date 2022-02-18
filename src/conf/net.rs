@@ -29,10 +29,10 @@ pub struct NetConf {
     pub accept_proxy_timeout: Option<usize>,
 
     #[serde(default)]
-    pub tcp_timeout: Option<u64>,
+    pub tcp_timeout: Option<usize>,
 
     #[serde(default)]
-    pub udp_timeout: Option<u64>,
+    pub udp_timeout: Option<usize>,
 }
 
 impl Config for NetConf {
@@ -57,10 +57,12 @@ impl Config for NetConf {
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
         let send_proxy = unbox!(send_proxy);
-        let send_proxy_version = unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
+        let send_proxy_version =
+            unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
 
         let accept_proxy = unbox!(accept_proxy);
-        let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
+        let accept_proxy_timeout =
+            unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
 
         ConnectOpts {
             use_udp,
@@ -73,7 +75,7 @@ impl Config for NetConf {
                 send_proxy,
                 accept_proxy,
                 send_proxy_version,
-                accept_proxy_timeout
+                accept_proxy_timeout,
             },
         }
     }
@@ -121,15 +123,15 @@ impl Config for NetConf {
             };
             ($key: expr, $t: ident) => {
                 matches.value_of($key).map(|x| x.parse::<$t>().unwrap())
-            }
+            };
         }
 
-        let use_udp =  unpack!("use_udp");
+        let use_udp = unpack!("use_udp");
         let fast_open = unpack!("fast_open");
         let zero_copy = unpack!("zero_copy");
 
-        let tcp_timeout = unpack!("tcp_timeout", u64);
-        let udp_timeout = unpack!("udp_timeout", u64);
+        let tcp_timeout = unpack!("tcp_timeout", usize);
+        let udp_timeout = unpack!("udp_timeout", usize);
 
         let send_proxy = unpack!("send_proxy");
         let send_proxy_version = unpack!("send_proxy_version", usize);
@@ -146,7 +148,7 @@ impl Config for NetConf {
             send_proxy,
             accept_proxy,
             send_proxy_version,
-            accept_proxy_timeout
+            accept_proxy_timeout,
         }
     }
 }

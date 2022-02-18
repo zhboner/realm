@@ -4,8 +4,8 @@ use std::fmt::{Display, Formatter};
 pub const DEFAULT_LOG_FILE: &str = "stdout";
 
 // default timeout
-pub const TCP_TIMEOUT: u64 = 300;
-pub const UDP_TIMEOUT: u64 = 30;
+pub const TCP_TIMEOUT: usize = 300;
+pub const UDP_TIMEOUT: usize = 30;
 
 // default haproxy proxy-protocol version
 #[cfg(feature = "proxy-protocol")]
