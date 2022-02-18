@@ -11,7 +11,7 @@ Realm is a simple, high performance relay server written in rust.
 
 ## Features
 
-- ~~Zero configuration.~~ Setup and run in one command.
+- Zero configuration. Setup and run in one command.
 - Concurrency. Bidirectional concurrent traffic leads to high performance.
 - Low resources cost.
 
@@ -61,11 +61,9 @@ cargo build --release --no-default-features --features udp, tfo, zero-copy, trus
 
 ### Cross compile
 
-Please refer to [https://rust-lang.github.io/rustup/cross-compilation.html](https://rust-lang.github.io/rustup/cross-compilation.html).
+Please refer to [https://rust-lang.github.io/rustup/cross-compilation.html](https://rust-lang.github.io/rustup/cross-compilation.html). You may need to install cross-compilers or other SDKs, and specify them when building the project.
 
-You may need to install cross-compilers or other SDKs, and specify them when building the project.
-
-Using [Cross](https://github.com/cross-rs/cross) is also a simple and good enough solution.
+Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things easier.
 
 ## Usage
 
@@ -142,45 +140,7 @@ realm
 
 ## Configuration
 
-See [examples](./examples)
-
-Basic TOML Example
-
-```toml
-[[endpoints]]
-listen = "0.0.0.0:5000"
-remote = "1.1.1.1:443"
-
-[[endpoints]]
-listen = "0.0.0.0:10000"
-remote = "www.google.com:443"
-```
-
-<details>
-<summary>JSON Example</summary>
-<p>
-
-```json
-{
-  "endpoints": [
-    {
-      "listen": "0.0.0.0:5000",
-      "remote": "1.1.1.1:443"
-    },
-    {
-      "listen": "0.0.0.0:10000",
-      "remote": "www.google.com:443"
-    }
-  ]
-}
-```
-
-</p>
-</details>
-
-<details>
-<summary>Recommended Configuration</summary>
-<p>
+TOML Example
 
 ```toml
 [log]
@@ -198,10 +158,41 @@ remote = "1.1.1.1:443"
 [[endpoints]]
 listen = "0.0.0.0:10000"
 remote = "www.google.com:443"
+
+```
+
+<details>
+<summary>JSON Example</summary>
+<p>
+
+```json
+{
+  "log": {
+    "level": "warn",
+    "output": "/var/log/realm.log"
+  },
+  "network": {
+    "use_udp": true,
+    "zero_copy": true
+  },
+  "endpoints": [
+    {
+      "listen": "0.0.0.0:5000",
+      "remote": "1.1.1.1:443"
+    },
+    {
+      "listen": "0.0.0.0:10000",
+      "remote": "www.google.com:443"
+    }
+  ]
+}
+
 ```
 
 </p>
 </details>
+
+[See other examples here](./examples)
 
 ## global
 
@@ -232,7 +223,7 @@ remote = "www.google.com:443"
     └── network
 ```
 
-You should provide at least [endpoint.listen](#endpointlisten-string) and [endpoint.remote](#endpointremote-string), other fields will apply default values.
+You should provide at least [endpoint.listen](#endpointlisten-string) and [endpoint.remote](#endpointremote-string), the left fields will take their default values.
 
 Option priority: cmd override > endpoint config > global config
 
@@ -244,6 +235,7 @@ values:
 
 - off
 - error
+- warn
 - info
 - debug
 - trace

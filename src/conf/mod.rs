@@ -11,7 +11,7 @@ mod dns;
 pub use dns::{DnsMode, DnsProtocol, DnsConf};
 
 mod net;
-pub use net::{NetConf};
+pub use net::NetConf;
 
 mod endpoint;
 pub use endpoint::EndpointConf;
@@ -21,8 +21,12 @@ pub trait Config {
 
     fn build(self) -> Self::Output;
 
+    // override self if other not empty
+    // usage: cmd argument overrides global and local option
     fn rst_field(&mut self, other: &Self) -> &mut Self;
 
+    // take other only if self empty & other not empty
+    // usage: local field takes global option
     fn take_field(&mut self, other: &Self) -> &mut Self;
 
     fn from_cmd_args(matches: &ArgMatches) -> Self;
