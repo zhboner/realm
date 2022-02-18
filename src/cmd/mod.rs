@@ -69,21 +69,21 @@ fn add_options(app: App) -> App {
             .short('l')
             .long("listen")
             .help("listen address")
-            .value_name("addr")
+            .value_name("address")
             .takes_value(true)
             .display_order(2),
         Arg::new("remote")
             .short('r')
             .long("remote")
             .help("remote address")
-            .value_name("addr")
+            .value_name("address")
             .takes_value(true)
             .display_order(3),
         Arg::new("through")
             .short('x')
             .long("through")
             .help("send through ip or address")
-            .value_name("addr")
+            .value_name("address")
             .takes_value(true)
             .display_order(4),
     ])
@@ -150,18 +150,24 @@ fn add_global_options(app: App) -> App {
     let app = app.help_heading("PROXY OPTIONS").args([
         Arg::new("send_proxy")
             .long("send-proxy")
-            .help("send haproxy proxy protocol")
+            .help("send proxy protocol header")
             .display_order(0),
-        Arg::new("accept_proxy")
-            .long("accept-proxy")
-            .help("accept haproxy proxy protocol")
-            .display_order(1),
         Arg::new("send_proxy_version")
             .long("send-proxy-version")
-            .help("haproxy proxy protocol version")
+            .help("send proxy protocol version")
             .value_name("version")
             .takes_value(true)
+            .display_order(1),
+        Arg::new("accept_proxy")
+            .long("accept-proxy")
+            .help("accept proxy protocol header")
             .display_order(2),
+        Arg::new("accept_proxy_timeout")
+            .long("accept-proxy-timeout")
+            .help("accept proxy protocol timeout")
+            .value_name("second")
+            .takes_value(true)
+            .display_order(3),
     ]);
 
     // timeout belogs to network
