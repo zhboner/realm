@@ -19,7 +19,11 @@
     "zero_copy": true,
     "fast_open": true,
     "tcp_timeout": 300,
-    "udp_timeout": 30
+    "udp_timeout": 30,
+    "send_proxy": true,
+    "send_proxy_version": 2,
+    "accept_proxy": true,
+    "accept_proxy_timeout": 5
   },
   "endpoints": [
     {

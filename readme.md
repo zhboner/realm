@@ -70,7 +70,7 @@ Using [Cross](https://github.com/cross-rs/cross) is also a simple and good enoug
 ## Usage
 
 ```shell
-Realm 1.5.x [udp][zero-copy][trust-dns][multi-thread]
+Realm 1.5.x [udp][zero-copy][trust-dns][proxy-protocol][multi-thread]
 A high efficiency relay tool
 
 USAGE:
@@ -85,11 +85,11 @@ FLAGS:
     -z, --splice     force enable tcp zero copy
 
 OPTIONS:
-    -n, --nofile <limit>    set nofile limit
-    -c, --config <path>     use config file
-    -l, --listen <addr>     listen address
-    -r, --remote <addr>     remote address
-    -x, --through <addr>    send through ip or address
+    -n, --nofile <limit>       set nofile limit
+    -c, --config <path>        use config file
+    -l, --listen <address>     listen address
+    -r, --remote <address>     remote address
+    -x, --through <address>    send through ip or address
 
 LOG OPTIONS:
         --log-level <level>    override log level
@@ -102,6 +102,12 @@ DNS OPTIONS:
         --dns-cache-size <number>    override dns cache size
         --dns-protocol <protocol>    override dns protocol
         --dns-servers <servers>      override dns servers
+
+PROXY OPTIONS:
+        --send-proxy                       send proxy protocol header
+        --send-proxy-version <version>     send proxy protocol version
+        --accept-proxy                     accept proxy protocol header
+        --accept-proxy-timeout <second>    accept proxy protocol timeout
 
 TIMEOUT OPTIONS:
         --tcp-timeout <second>    override tcp timeout
