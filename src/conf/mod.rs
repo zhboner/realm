@@ -16,6 +16,8 @@ pub use net::NetConf;
 mod endpoint;
 pub use endpoint::EndpointConf;
 
+mod legacy;
+
 pub trait Config {
     type Output;
 
@@ -48,7 +50,7 @@ pub struct FullConf {
     pub dns: DnsConf,
 
     #[serde(default)]
-    pub network: Option<NetConf>,
+    pub network: NetConf,
 
     pub endpoints: Vec<EndpointConf>,
 }
@@ -58,7 +60,7 @@ impl FullConf {
     pub fn new(
         log: LogConf,
         dns: DnsConf,
-        network: Option<NetConf>,
+        network: NetConf,
         endpoints: Vec<EndpointConf>,
     ) -> Self {
         FullConf {
@@ -102,18 +104,27 @@ impl FullConf {
         self
     }
 
-    pub fn apply_global_opts(&mut self, opts: CmdOverride) -> &mut Self {
+    // override
+    pub fn apply_cmd_opts(&mut self, opts: CmdOverride) -> &mut Self {
         let CmdOverride {
             ref log,
             ref dns,
             ref network,
         } = opts;
-        let global_network = self.network.unwrap_or_default();
 
         self.log.rst_field(log);
         self.dns.rst_field(dns);
         self.endpoints.iter_mut().for_each(|x| {
-            x.network.take_field(&global_network).rst_field(network);
+            x.network.rst_field(network);
+        });
+
+        self
+    }
+
+    // take inner global opts
+    pub fn apply_global_opts(&mut self) -> &mut Self {
+        self.endpoints.iter_mut().for_each(|x| {
+            x.network.take_field(&self.network);
         });
 
         self

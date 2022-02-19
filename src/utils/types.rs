@@ -112,20 +112,22 @@ impl Display for ConnectOpts {
         }
 
         if let Some(send_through) = &self.send_through {
-            write!(f, "send-through={}, ", send_through)?;
+            write!(f, "send-through={}; ", send_through)?;
         }
         write!(
             f,
-            "udp-forward={}, tcp-fast-open={}, tcp-zero-copy={}, ",
+            "udp-forward={}, tcp-fast-open={}, tcp-zero-copy={}; ",
             on_off(self.use_udp),
             on_off(self.fast_open),
             on_off(self.zero_copy)
         )?;
+
         write!(
             f,
-            "send-proxy={}, accept-proxy={}, ",
-            self.haproxy_opts.send_proxy, self.haproxy_opts.accept_proxy
+            "send-proxy={0}, send-proxy-version={2}, accept-proxy={1}, accept-proxy-timeout={3}s; ",
+            on_off(self.haproxy_opts.send_proxy), on_off(self.haproxy_opts.accept_proxy), self.haproxy_opts.send_proxy_version, self.haproxy_opts.accept_proxy_timeout
         )?;
+
         write!(
             f,
             "tcp-timeout={}s, udp-timeout={}s",
@@ -138,7 +140,7 @@ impl Display for Endpoint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} -> {}, options: {}",
+            "{} -> {}; options: {}",
             &self.listen, &self.remote, &self.opts
         )
     }
