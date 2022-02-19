@@ -1,0 +1,6 @@
+{
+    "listening_addresses": ["0.0.0.0"],
+    "listening_ports": ["8080-8088"],
+    "remote_addresses": ["1.1.1.1","2.2.2.2"],
+    "remote_ports": ["443"]
+}

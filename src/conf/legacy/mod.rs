@@ -11,9 +11,13 @@ use super::{FullConf, EndpointConf};
 // }
 #[derive(Serialize, Deserialize)]
 pub struct LegacyConf {
+    #[serde(rename = "listening_addresses")]
     pub listen_addrs: Vec<String>,
+    #[serde(rename = "listening_ports")]
     pub listen_ports: Vec<String>,
+    #[serde(rename = "remote_addresses")]
     pub remote_addrs: Vec<String>,
+    #[serde(rename = "remote_ports")]
     pub remote_ports: Vec<String>,
 }
 

@@ -94,7 +94,10 @@ impl FullConf {
 
         // to be compatible with old version
         let legacy_err = match serde_json::from_str::<LegacyConf>(s) {
-            Ok(x) => return Ok(x.into()),
+            Ok(x) => {
+                eprintln!("attention: you are using a legacy config file!");
+                return Ok(x.into())
+            },
             Err(e) => e,
         };
 
