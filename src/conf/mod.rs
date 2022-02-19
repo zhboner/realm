@@ -17,6 +17,7 @@ mod endpoint;
 pub use endpoint::EndpointConf;
 
 mod legacy;
+use legacy::LegacyConf;
 
 pub trait Config {
     type Output;
@@ -80,21 +81,28 @@ impl FullConf {
         }
     }
 
-    pub fn from_conf_str(conf: &str) -> Result<Self> {
-        let toml_err = match toml::from_str(conf) {
+    pub fn from_conf_str(s: &str) -> Result<Self> {
+        let toml_err = match toml::from_str(s) {
             Ok(x) => return Ok(x),
             Err(e) => e,
         };
-        let json_err = match serde_json::from_str(conf) {
+
+        let json_err = match serde_json::from_str(s) {
             Ok(x) => return Ok(x),
+            Err(e) => e,
+        };
+
+        // to be compatible with old version
+        let legacy_err = match serde_json::from_str::<LegacyConf>(s) {
+            Ok(x) => return Ok(x.into()),
             Err(e) => e,
         };
 
         Err(Error::new(
             ErrorKind::Other,
             format!(
-                "parse as toml: {0}; parse as json: {1}",
-                &toml_err, &json_err
+                "parse as toml: {0}; parse as json: {1}; parse as legacy: {2}",
+                toml_err, json_err, legacy_err
             ),
         ))
     }
