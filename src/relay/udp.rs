@@ -8,7 +8,7 @@ use log::{debug, info, error};
 use tokio::net::UdpSocket;
 
 use crate::utils::DEFAULT_BUF_SIZE;
-use crate::utils::{RemoteAddr, ConnectOpts};
+use crate::utils::RemoteAddr;
 use crate::utils::ConnectOptsX;
 use crate::utils::timeoutfut;
 use crate::utils::socket;
@@ -17,16 +17,12 @@ use crate::utils::socket;
 type SockMap = Arc<RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>>;
 const BUF_SIZE: usize = DEFAULT_BUF_SIZE;
 
-pub async fn proxy(
+pub async fn associate_and_relay(
     listen: &SocketAddr,
     remote: &RemoteAddr,
     conn_opts: ConnectOptsX,
 ) -> Result<()> {
-    let ConnectOpts {
-        udp_timeout: timeout,
-        ..
-    } = conn_opts.as_ref();
-
+    let timeout = conn_opts.udp_timeout;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));
     let listen_sock = Arc::new(UdpSocket::bind(&listen).await?);
 
@@ -83,7 +79,7 @@ pub async fn proxy(
                     client_addr,
                     &new_sock,
                     &listen_sock,
-                    *timeout,
+                    timeout,
                 );
                 new_sock
             }

@@ -12,14 +12,14 @@ pub async fn run(eps: Vec<Endpoint>) {
     for ep in eps.iter() {
         #[cfg(feature = "udp")]
         if ep.opts.use_udp {
-            workers.push(tokio::spawn(proxy_udp(ep.into())))
+            workers.push(tokio::spawn(run_udp(ep.into())))
         }
-        workers.push(tokio::spawn(proxy_tcp(ep.into())));
+        workers.push(tokio::spawn(run_tcp(ep.into())));
     }
     join_all(workers).await;
 }
 
-async fn proxy_tcp(ep: EndpointX) {
+async fn run_tcp(ep: EndpointX) {
     let Endpoint {
         listen,
         remote,
@@ -54,7 +54,7 @@ async fn proxy_tcp(ep: EndpointX) {
         }
 
         tokio::spawn(async move {
-            match tcp::proxy(stream, remote, opts).await {
+            match tcp::connect_and_relay(stream, remote, opts).await {
                 Ok((up, dl)) => info!(
                     "[tcp]{} finish, upload: {}b, download: {}b",
                     msg, up, dl
@@ -69,7 +69,7 @@ async fn proxy_tcp(ep: EndpointX) {
 mod udp;
 
 #[cfg(feature = "udp")]
-async fn proxy_udp(ep: EndpointX) {
+async fn run_udp(ep: EndpointX) {
     let Endpoint {
         listen,
         remote,
@@ -77,7 +77,8 @@ async fn proxy_udp(ep: EndpointX) {
         ..
     } = ep.as_ref();
 
-    if let Err(e) = udp::proxy(listen, remote, opts.into()).await {
+    if let Err(e) = udp::associate_and_relay(listen, remote, opts.into()).await
+    {
         panic!("udp forward exit: {}", &e);
     }
 }

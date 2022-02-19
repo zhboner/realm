@@ -52,7 +52,7 @@ pub async fn handle_proxy_protocol(
         let n = timeoutfut(src.read_buf(buf), accept_proxy_timeout).await??;
 
         let _ = buf.split_off(n);
-        debug!("[tcp]recv initial {} bytes: {:?}", n, buf);
+        debug!("[tcp]recv initial {} bytes: {:#x}", n, buf);
 
         let header = parse(buf).map_err(|e| Error::new(ErrorKind::Other, e))?;
         debug!("[tcp]proxy-protocol parsed, {} bytes left", buf.remaining());
@@ -68,7 +68,7 @@ pub async fn handle_proxy_protocol(
         if !send_proxy {
             // write left bytes
             if !buf.is_empty() {
-                debug!("[tcp]send left {} bytes: {:?}", buf.len(), buf);
+                debug!("[tcp]send left {} bytes: {:#x}", buf.len(), buf);
                 dst.write_all(buf).await?;
             }
             return Ok(());
@@ -96,7 +96,7 @@ pub async fn handle_proxy_protocol(
     let header =
         encode(make_header(client_addr, server_addr, send_proxy_version))
             .map_err(|e| Error::new(ErrorKind::Other, e))?;
-    debug!("[tcp]send initial {} bytes: {:?}", header.len(), &header);
+    debug!("[tcp]send initial {} bytes: {:#x}", header.len(), &header);
     dst.write_all(&header).await?;
 
     // write left bytes

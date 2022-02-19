@@ -26,7 +26,7 @@ use crate::utils::ConnectOpts;
 use crate::utils::{RemoteAddrX, ConnectOptsX};
 
 #[allow(unused_variables)]
-pub async fn proxy(
+pub async fn connect_and_relay(
     mut inbound: TcpStream,
     remote: RemoteAddrX,
     conn_opts: ConnectOptsX,
