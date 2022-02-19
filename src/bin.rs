@@ -62,11 +62,8 @@ fn start_from_conf(full: FullConf) {
 
     let eps: Vec<Endpoint> = eps_conf
         .into_iter()
-        .map(|epc| {
-            let ep = epc.build();
-            println!("inited: {}", &ep);
-            ep
-        })
+        .map(|epc| epc.build())
+        .inspect(|x| println!("inited: {}", &x))
         .collect();
 
     execute(eps);
