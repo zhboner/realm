@@ -8,35 +8,47 @@ use crate::utils::PROXY_PROTOCOL_TIMEOUT;
 #[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
 pub struct NetConf {
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_udp: Option<bool>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub fast_open: Option<bool>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub zero_copy: Option<bool>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub send_proxy: Option<bool>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accept_proxy: Option<bool>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub send_proxy_version: Option<usize>,
 
     #[serde(default)]
     pub accept_proxy_timeout: Option<usize>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tcp_timeout: Option<usize>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub udp_timeout: Option<usize>,
 }
 
 impl Config for NetConf {
     type Output = ConnectOpts;
+
+    fn is_empty(&self) -> bool {
+        crate::empty![self => use_udp, fast_open, zero_copy, send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout, tcp_timeout, udp_timeout]
+    }
 
     fn build(self) -> Self::Output {
         macro_rules! unbox {

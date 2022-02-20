@@ -10,12 +10,15 @@ pub struct EndpointConf {
     pub remote: String,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub through: Option<String>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub interface: Option<String>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Config::is_empty")]
     pub network: NetConf,
 }
 
@@ -63,6 +66,10 @@ impl EndpointConf {
 
 impl Config for EndpointConf {
     type Output = Endpoint;
+
+    fn is_empty(&self) -> bool {
+        false
+    }
 
     fn build(self) -> Self::Output {
         let local = self.build_local();

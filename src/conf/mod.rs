@@ -17,10 +17,12 @@ mod endpoint;
 pub use endpoint::EndpointConf;
 
 mod legacy;
-use legacy::LegacyConf;
+pub use legacy::LegacyConf;
 
 pub trait Config {
     type Output;
+
+    fn is_empty(&self) -> bool;
 
     fn build(self) -> Self::Output;
 
@@ -45,12 +47,15 @@ pub struct CmdOverride {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct FullConf {
     #[serde(default)]
+    #[serde(skip_serializing_if = "Config::is_empty")]
     pub log: LogConf,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Config::is_empty")]
     pub dns: DnsConf,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Config::is_empty")]
     pub network: NetConf,
 
     pub endpoints: Vec<EndpointConf>,
@@ -160,4 +165,22 @@ macro_rules! take {
             $this.$field = $field;
         }
     };
+}
+
+#[macro_export]
+macro_rules! empty {
+    ( $this:expr => $( $field: ident ),* ) => {{
+        let mut res = true;
+        $(
+            res = res && $this.$field.is_none();
+        )*
+        res
+    }};
+    ( $( $value: expr ),* ) => {{
+        let mut res = true;
+        $(
+            res = res && $value.is_none();
+        )*
+        res
+    }}
 }

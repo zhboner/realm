@@ -125,24 +125,30 @@ impl From<DnsProtocol> for Vec<Protocol> {
 pub struct DnsConf {
     // ResolverOpts
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<DnsMode>,
 
     // MAX_TTL: u32 = 86400_u32
     // https://docs.rs/trust-dns-resolver/latest/src/trust_dns_resolver/dns_lru.rs.html#26
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_ttl: Option<u32>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_ttl: Option<u32>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_size: Option<usize>,
 
     // ResolverConfig
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub protocol: Option<DnsProtocol>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nameservers: Option<Vec<String>>,
 }
 
@@ -211,6 +217,7 @@ impl Config for DnsConf {
 
     #[cfg(feature = "trust-dns")]
     fn build(self) -> Self::Output {
+        use crate::empty;
         use std::time::Duration;
 
         let DnsConf {
@@ -226,17 +233,7 @@ impl Config for DnsConf {
         // default value:
         // https://docs.rs/trust-dns-resolver/latest/src/trust_dns_resolver/config.rs.html#681-737
 
-        macro_rules! all_none {
-            ( $( $x: expr ),* ) => {{
-                let mut res = true;
-                $(
-                    res = res && $x.is_none();
-                )*
-                res
-            }}
-        }
-
-        let opts = if all_none![mode, min_ttl, max_ttl, cache_size] {
+        let opts = if empty![mode, min_ttl, max_ttl, cache_size] {
             None
         } else {
             let ip_strategy: LookupIpStrategy =
@@ -354,5 +351,9 @@ impl Config for DnsConf {
             protocol,
             nameservers,
         }
+    }
+
+    fn is_empty(&self) -> bool {
+        crate::empty![self => mode, min_ttl, max_ttl, cache_size]
     }
 }

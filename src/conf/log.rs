@@ -68,14 +68,20 @@ impl Display for LogLevel {
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct LogConf {
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub level: Option<LogLevel>,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub output: Option<String>,
 }
 
 impl Config for LogConf {
     type Output = (LevelFilter, fern::Output);
+
+    fn is_empty(&self) -> bool {
+        crate::empty![self => level, output]
+    }
 
     fn build(self) -> Self::Output {
         use std::io;
