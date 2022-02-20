@@ -1,5 +1,5 @@
-![realm](https://github.com/zephyrchien/realm/workflows/ci/badge.svg)
-![realm](https://github.com/zephyrchien/realm/workflows/release/badge.svg)
+![realm](../../workflows/ci/badge.svg)
+![realm](../../workflows/release/badge.svg)
 
 [中文说明](https://zhb.me/realm)
 
