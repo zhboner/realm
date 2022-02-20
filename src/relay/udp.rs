@@ -9,7 +9,7 @@ use tokio::net::UdpSocket;
 
 use crate::utils::DEFAULT_BUF_SIZE;
 use crate::utils::RemoteAddr;
-use crate::utils::ConnectOptsX;
+use crate::utils::ConnectOptsRef;
 use crate::utils::timeoutfut;
 use crate::utils::socket;
 
@@ -20,7 +20,7 @@ const BUF_SIZE: usize = DEFAULT_BUF_SIZE;
 pub async fn associate_and_relay(
     listen: &SocketAddr,
     remote: &RemoteAddr,
-    conn_opts: ConnectOptsX,
+    conn_opts: ConnectOptsRef,
 ) -> Result<()> {
     let timeout = conn_opts.udp_timeout;
     let sock_map: SockMap = Arc::new(RwLock::new(HashMap::new()));

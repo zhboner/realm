@@ -23,13 +23,13 @@ use tokio::net::TcpSocket;
 
 use crate::utils::socket;
 use crate::utils::ConnectOpts;
-use crate::utils::{RemoteAddrX, ConnectOptsX};
+use crate::utils::{RemoteAddrRef, ConnectOptsRef};
 
 #[allow(unused_variables)]
 pub async fn connect_and_relay(
     mut inbound: TcpStream,
-    remote: RemoteAddrX,
-    conn_opts: ConnectOptsX,
+    remote: RemoteAddrRef,
+    conn_opts: ConnectOptsRef,
 ) -> Result<(u64, u64)> {
     let ConnectOpts {
         fast_open,

@@ -2,6 +2,10 @@ use core::ops::Deref;
 
 use super::{Endpoint, RemoteAddr, ConnectOpts};
 
+// Safety:
+// pointer is not null once inited(comes from an immutable ref)
+// pointee memory is always valid during the eventloop
+
 macro_rules! ptr_wrap {
     ($old: ident,$new: ident) => {
         #[derive(Clone, Copy)]
@@ -36,6 +40,6 @@ macro_rules! ptr_wrap {
     };
 }
 
-ptr_wrap!(Endpoint, EndpointX);
-ptr_wrap!(RemoteAddr, RemoteAddrX);
-ptr_wrap!(ConnectOpts, ConnectOptsX);
+ptr_wrap!(Endpoint, EndpointRef);
+ptr_wrap!(RemoteAddr, RemoteAddrRef);
+ptr_wrap!(ConnectOpts, ConnectOptsRef);

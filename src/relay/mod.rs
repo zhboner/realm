@@ -5,7 +5,7 @@ mod tcp;
 use tcp::TcpListener;
 
 use crate::utils::Endpoint;
-use crate::utils::{EndpointX, RemoteAddrX, ConnectOptsX};
+use crate::utils::{EndpointRef, RemoteAddrRef, ConnectOptsRef};
 
 pub async fn run(eps: Vec<Endpoint>) {
     let mut workers = Vec::with_capacity(compute_workers(&eps));
@@ -19,7 +19,7 @@ pub async fn run(eps: Vec<Endpoint>) {
     join_all(workers).await;
 }
 
-async fn run_tcp(ep: EndpointX) {
+pub async fn run_tcp(ep: EndpointRef) {
     let Endpoint {
         listen,
         remote,
@@ -27,8 +27,8 @@ async fn run_tcp(ep: EndpointX) {
         ..
     } = ep.as_ref();
 
-    let remote: RemoteAddrX = remote.into();
-    let opts: ConnectOptsX = opts.into();
+    let remote: RemoteAddrRef = remote.into();
+    let opts: ConnectOptsRef = opts.into();
 
     let lis = TcpListener::bind(*listen)
         .await
@@ -69,7 +69,7 @@ async fn run_tcp(ep: EndpointX) {
 mod udp;
 
 #[cfg(feature = "udp")]
-async fn run_udp(ep: EndpointX) {
+pub async fn run_udp(ep: EndpointRef) {
     let Endpoint {
         listen,
         remote,

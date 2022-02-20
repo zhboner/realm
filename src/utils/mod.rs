@@ -7,8 +7,8 @@ pub use consts::*;
 pub mod timeout;
 pub use timeout::*;
 
-pub mod ex_types;
-pub use ex_types::*;
+pub mod ref_types;
+pub use ref_types::*;
 
 pub mod socket;
 pub use socket::*;
