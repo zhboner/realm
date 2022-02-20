@@ -7,25 +7,25 @@ use tcp::TcpListener;
 use crate::utils::Endpoint;
 use crate::utils::{EndpointRef, RemoteAddrRef, ConnectOptsRef};
 
-pub async fn run(eps: Vec<Endpoint>) {
-    let mut workers = Vec::with_capacity(compute_workers(&eps));
-    for ep in eps.iter() {
+pub async fn run(endpoints: Vec<Endpoint>) {
+    let mut workers = Vec::with_capacity(compute_workers(&endpoints));
+    for endpoint in endpoints.iter() {
         #[cfg(feature = "udp")]
-        if ep.opts.use_udp {
-            workers.push(tokio::spawn(run_udp(ep.into())))
+        if endpoint.opts.use_udp {
+            workers.push(tokio::spawn(run_udp(endpoint.into())))
         }
-        workers.push(tokio::spawn(run_tcp(ep.into())));
+        workers.push(tokio::spawn(run_tcp(endpoint.into())));
     }
     join_all(workers).await;
 }
 
-pub async fn run_tcp(ep: EndpointRef) {
+pub async fn run_tcp(endpoint: EndpointRef) {
     let Endpoint {
         listen,
         remote,
         opts,
         ..
-    } = ep.as_ref();
+    } = endpoint.as_ref();
 
     let remote: RemoteAddrRef = remote.into();
     let opts: ConnectOptsRef = opts.into();
@@ -69,13 +69,13 @@ pub async fn run_tcp(ep: EndpointRef) {
 mod udp;
 
 #[cfg(feature = "udp")]
-pub async fn run_udp(ep: EndpointRef) {
+pub async fn run_udp(endpoint: EndpointRef) {
     let Endpoint {
         listen,
         remote,
         opts,
         ..
-    } = ep.as_ref();
+    } = endpoint.as_ref();
 
     if let Err(e) = udp::associate_and_relay(listen, remote, opts.into()).await
     {

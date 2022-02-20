@@ -53,20 +53,20 @@ fn start_from_conf(full: FullConf) {
     let FullConf {
         log: log_conf,
         dns: dns_conf,
-        endpoints: eps_conf,
+        endpoints: endpoints_conf,
         ..
     } = full;
 
     setup_log(log_conf);
     setup_dns(dns_conf);
 
-    let eps: Vec<Endpoint> = eps_conf
+    let endpoints: Vec<Endpoint> = endpoints_conf
         .into_iter()
-        .map(|epc| epc.build())
+        .map(|x| x.build())
         .inspect(|x| println!("inited: {}", &x))
         .collect();
 
-    execute(eps);
+    execute(endpoints);
 }
 
 fn setup_log(log: LogConf) {
