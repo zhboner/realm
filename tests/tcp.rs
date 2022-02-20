@@ -8,7 +8,7 @@ use realm::utils::Endpoint;
 use realm::utils::timeoutfut;
 
 #[tokio::test]
-async fn test_tcp() {
+async fn tcp() {
     env_logger::init();
     let endpoint = Endpoint {
         listen: "127.0.0.1:10000".parse().unwrap(),

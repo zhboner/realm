@@ -7,7 +7,7 @@ use realm::utils::{Endpoint, ConnectOpts};
 use realm::utils::timeoutfut;
 
 #[tokio::test]
-async fn test_udp() {
+async fn udp() {
     env_logger::init();
     let endpoint = Endpoint {
         listen: "127.0.0.1:10000".parse().unwrap(),

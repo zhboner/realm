@@ -97,8 +97,6 @@ impl From<LegacyConf> for FullConf {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     macro_rules! strvec {
         ( $( $x: expr ),+ ) => {
             vec![
@@ -110,48 +108,48 @@ mod tests {
     }
 
     #[test]
-    fn test_flatten_ports() {
+    fn flatten_ports() {
         let v1 = strvec!["1-4"];
         let v2 = strvec!["1-2", "3-4"];
         let v3 = strvec!["1-3", "4"];
         let v4 = strvec!["1", "2", "3", "4"];
-        assert_eq!(flatten_ports(v1), [1, 2, 3, 4]);
-        assert_eq!(flatten_ports(v2), [1, 2, 3, 4]);
-        assert_eq!(flatten_ports(v3), [1, 2, 3, 4]);
-        assert_eq!(flatten_ports(v4), [1, 2, 3, 4]);
+        assert_eq!(super::flatten_ports(v1), [1, 2, 3, 4]);
+        assert_eq!(super::flatten_ports(v2), [1, 2, 3, 4]);
+        assert_eq!(super::flatten_ports(v3), [1, 2, 3, 4]);
+        assert_eq!(super::flatten_ports(v4), [1, 2, 3, 4]);
     }
 
     #[test]
-    fn test_join_addr_port() {
+    fn join_addr_port() {
         let addrs = strvec!["a.com", "b.com", "c.com"];
         let ports = vec![1, 2, 3];
         let result = vec!["a.com:1", "b.com:2", "c.com:3"];
-        assert_eq!(join_addr_port(addrs, ports, 3), result);
+        assert_eq!(super::join_addr_port(addrs, ports, 3), result);
 
         let addrs = strvec!["a.com", "b.com", "c.com"];
         let ports = vec![1, 2, 3];
         let result = vec!["a.com:1", "b.com:2", "c.com:3"];
-        assert_eq!(join_addr_port(addrs, ports, 2), result[..2]);
+        assert_eq!(super::join_addr_port(addrs, ports, 2), result[..2]);
 
         let addrs = strvec!["a.com", "b.com", "c.com"];
         let ports = vec![1, 2, 3];
         let result = vec!["a.com:1", "b.com:2", "c.com:3", "a.com:1"];
-        assert_eq!(join_addr_port(addrs, ports, 4), result);
+        assert_eq!(super::join_addr_port(addrs, ports, 4), result);
 
         let addrs = strvec!["a.com", "b.com", "c.com"];
         let ports = vec![1, 2, 3, 4, 5, 6];
         let result = vec!["a.com:1", "b.com:2", "c.com:3", "a.com:4"];
-        assert_eq!(join_addr_port(addrs, ports, 4), result);
+        assert_eq!(super::join_addr_port(addrs, ports, 4), result);
 
         let addrs = strvec!["a.com", "b.com", "c.com", "d.com", "e.com"];
         let ports = vec![1, 2, 3];
         let result = vec!["a.com:1", "b.com:2", "c.com:3", "d.com:1"];
-        assert_eq!(join_addr_port(addrs, ports, 4), result);
+        assert_eq!(super::join_addr_port(addrs, ports, 4), result);
 
         let addrs = strvec!["a.com", "b.com", "c.com"];
         let ports = vec![1, 2, 3];
         let result =
             vec!["a.com:1", "b.com:2", "c.com:3", "a.com:1", "a.com:1"];
-        assert_eq!(join_addr_port(addrs, ports, 5), result);
+        assert_eq!(super::join_addr_port(addrs, ports, 5), result);
     }
 }
