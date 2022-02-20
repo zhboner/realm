@@ -359,7 +359,7 @@ default: 300
 
 Terminate udp association after `timeout`.
 
-The timeout value mut be properly configured in case of memory leak. Do not use a large `timeout`!
+The timeout value must be properly configured in case of memory leak. Do not use a large `timeout`!
 
 default: 30
 
@@ -415,7 +415,7 @@ Remote address, supported formats:
 
 #### endpoint.through: string
 
-TCP: Bind a specific `ip` before openning a connection
+TCP: Bind a specific `ip` before opening a connection
 
 UDP: Bind a specific `ip` or `address` before sending packet
 
