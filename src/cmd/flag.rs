@@ -1,5 +1,6 @@
 use clap::{Command, Arg};
 
+#[allow(clippy::let_and_return)]
 pub fn add_all(app: Command) -> Command {
     let app = add_flags(app);
     let app = add_options(app);

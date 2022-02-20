@@ -46,6 +46,15 @@ pub fn scan() -> CmdInput {
         return CmdInput::None;
     }
 
+    #[allow(clippy::single_match)]
+    match matches.subcommand() {
+        Some(("convert", sub_matches)) => {
+            sub::handle_convert(sub_matches);
+            return CmdInput::None;
+        }
+        _ => {}
+    };
+
     // start
     handle_matches(matches)
 }
