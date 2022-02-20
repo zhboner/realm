@@ -10,7 +10,7 @@ pub enum RemoteAddr {
     DomainName(String, u16),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct HaproxyOpts {
     pub send_proxy: bool,
     pub accept_proxy: bool,
@@ -18,7 +18,7 @@ pub struct HaproxyOpts {
     pub accept_proxy_timeout: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ConnectOpts {
     pub use_udp: bool,
     pub fast_open: bool,
@@ -73,6 +73,12 @@ impl RemoteAddr {
     }
 }
 
+impl From<SocketAddr> for RemoteAddr {
+    fn from(addr: SocketAddr) -> Self {
+        RemoteAddr::SocketAddr(addr)
+    }
+}
+
 impl Endpoint {
     pub fn new(
         listen: SocketAddr,
@@ -86,6 +92,8 @@ impl Endpoint {
         }
     }
 }
+
+// display impl below
 
 impl Display for RemoteAddr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
