@@ -1,5 +1,7 @@
 use core::ops::Deref;
 
+use cfg_if::cfg_if;
+
 use super::{Endpoint, RemoteAddr, ConnectOpts};
 
 // Safety:
@@ -43,3 +45,18 @@ macro_rules! ptr_wrap {
 ptr_wrap!(Endpoint, EndpointRef);
 ptr_wrap!(RemoteAddr, RemoteAddrRef);
 ptr_wrap!(ConnectOpts, ConnectOptsRef);
+
+cfg_if! {
+    if #[cfg(feature = "udp")] {
+        use std::sync::RwLock;
+        use std::collections::HashMap;
+        use std::net::SocketAddr;
+        use tokio::net::UdpSocket;
+
+        // client <--> allocated socket
+        pub type SockMap = RwLock<HashMap<SocketAddr, UdpSocketRef>>;
+
+        ptr_wrap!(UdpSocket, UdpSocketRef);
+        ptr_wrap!(SockMap, SockMapRef);
+    }
+}

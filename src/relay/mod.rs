@@ -32,13 +32,13 @@ pub async fn run_tcp(endpoint: EndpointRef) {
 
     let lis = TcpListener::bind(*listen)
         .await
-        .unwrap_or_else(|e| panic!("unable to bind {}: {}", &listen, &e));
+        .unwrap_or_else(|e| panic!("[tcp]unable to bind {}: {}", &listen, e));
 
     loop {
         let (stream, addr) = match lis.accept().await {
             Ok(x) => x,
             Err(e) => {
-                error!("[tcp]failed to accept: {}", &e);
+                error!("[tcp]failed to accept: {}", e);
                 continue;
             }
         };
@@ -67,6 +67,8 @@ mod udp;
 
 #[cfg(feature = "udp")]
 pub async fn run_udp(endpoint: EndpointRef) {
+    use tokio::net::UdpSocket;
+
     let Endpoint {
         listen,
         remote,
@@ -74,9 +76,22 @@ pub async fn run_udp(endpoint: EndpointRef) {
         ..
     } = endpoint.as_ref();
 
-    if let Err(e) = udp::associate_and_relay(listen, remote, opts.into()).await
-    {
-        panic!("udp forward exit: {}", &e);
+    let sock_map = udp::new_sock_map();
+    let listen_sock = UdpSocket::bind(listen)
+        .await
+        .unwrap_or_else(|e| panic!("[udp]unable to bind {}: {}", &listen, e));
+
+    loop {
+        if let Err(e) = udp::associate_and_relay(
+            &sock_map,
+            &listen_sock,
+            remote,
+            opts.into(),
+        )
+        .await
+        {
+            error!("[udp]error: {}", e);
+        }
     }
 }
 
