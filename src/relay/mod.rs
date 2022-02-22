@@ -1,4 +1,4 @@
-use log::{info, warn, error};
+use log::{debug, info, warn, error};
 use futures::future::join_all;
 
 mod tcp;
@@ -55,10 +55,7 @@ pub async fn run_tcp(endpoint: EndpointRef) {
 
         tokio::spawn(async move {
             match tcp::connect_and_relay(stream, remote, opts).await {
-                Ok((up, dl)) => info!(
-                    "[tcp]{} finish, upload: {}b, download: {}b",
-                    msg, up, dl
-                ),
+                Ok(..) => debug!("[tcp]{}, finish", msg),
                 Err(e) => error!("[tcp]{}, error: {}", msg, e),
             }
         });

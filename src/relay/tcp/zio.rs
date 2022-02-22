@@ -94,7 +94,7 @@ where
         cx: &mut Context<'_>,
         r: &mut TcpStream,
         w: &mut TcpStream,
-    ) -> Poll<Result<u64>> {
+    ) -> Poll<Result<()>> {
         loop {
             // If our buffer is empty, then we need to read some data to
             // continue.
@@ -123,6 +123,9 @@ where
             }
 
             // If our buffer has some data, let's write it out!
+            // Note: send may return ECONNRESET but splice wont, see
+            // https://man7.org/linux/man-pages/man2/send.2.html
+            // https://man7.org/linux/man-pages/man2/splice.2.html
             while self.pos < self.cap {
                 let i = ready!(self.poll_write_tcp(cx, w))?;
 
@@ -150,7 +153,7 @@ where
             // data and finish the transfer.
             if self.pos == self.cap && self.read_done {
                 ready!(self.poll_flush_tcp(cx, w))?;
-                return Poll::Ready(Ok(self.amt));
+                return Poll::Ready(Ok(()));
             }
         }
     }
@@ -158,8 +161,8 @@ where
 
 enum TransferState<B> {
     Running(CopyBuffer<B>),
-    ShuttingDown(u64),
-    Done(u64),
+    ShuttingDown,
+    Done,
 }
 
 struct BidiCopy<'a, B> {
@@ -174,22 +177,23 @@ fn transfer_one_direction<B>(
     state: &mut TransferState<B>,
     r: &mut TcpStream,
     w: &mut TcpStream,
-) -> Poll<Result<u64>>
+) -> Poll<Result<()>>
 where
     CopyBuffer<B>: Require,
 {
     loop {
         match state {
             TransferState::Running(buf) => {
-                let count = ready!(buf.poll_copy(cx, r, w))?;
-                *state = TransferState::ShuttingDown(count);
+                ready!(buf.poll_copy(cx, r, w))?;
+
+                *state = TransferState::ShuttingDown;
             }
-            TransferState::ShuttingDown(count) => {
+            TransferState::ShuttingDown => {
                 ready!(Pin::new(&mut *w).poll_shutdown(cx))?;
 
-                *state = TransferState::Done(*count);
+                *state = TransferState::Done;
             }
-            TransferState::Done(count) => return Poll::Ready(Ok(*count)),
+            TransferState::Done => return Poll::Ready(Ok(())),
         }
     }
 }
@@ -199,7 +203,7 @@ where
     B: Unpin,
     CopyBuffer<B>: Require,
 {
-    type Output = Result<(u64, u64)>;
+    type Output = Result<()>;
 
     fn poll(
         mut self: Pin<&mut Self>,
@@ -218,17 +222,17 @@ where
 
         // It is not a problem if ready! returns early because transfer_one_direction for the
         // other direction will keep returning TransferState::Done(count) in future calls to poll
-        let a_to_b = ready!(a_to_b);
-        let b_to_a = ready!(b_to_a);
+        ready!(a_to_b);
+        ready!(b_to_a);
 
-        Poll::Ready(Ok((a_to_b, b_to_a)))
+        Poll::Ready(Ok(()))
     }
 }
 
 // async fn bidi_copy<B>(
 //     a: &mut TcpStream,
 //     b: &mut TcpStream,
-// ) -> Result<(u64, u64)>
+// ) -> Result<(())>
 // where
 //     B: Unpin,
 //     CopyBuffer<B>: Require,
@@ -247,7 +251,7 @@ where
 pub async fn bidi_copy_buffer(
     a: &mut TcpStream,
     b: &mut TcpStream,
-) -> Result<(u64, u64)> {
+) -> Result<()> {
     let a_to_b =
         TransferState::Running(CopyBuffer::<Box<[u8]>>::new().unwrap());
     let b_to_a =
@@ -265,7 +269,7 @@ pub async fn bidi_copy_buffer(
 pub async fn bidi_copy_pipe(
     a: &mut TcpStream,
     b: &mut TcpStream,
-) -> Result<(u64, u64)> {
+) -> Result<()> {
     use zero_copy::Pipe;
     let a_to_b = TransferState::Running(CopyBuffer::<Pipe>::new()?);
     let b_to_a = TransferState::Running(CopyBuffer::<Pipe>::new()?);
