@@ -1,6 +1,6 @@
 use std::io::Result;
 use std::net::SocketAddr;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
 use log::{debug, info, error};
@@ -41,31 +41,33 @@ pub async fn associate_and_relay(
         let remote_addr = remote_addr.to_sockaddr().await?;
 
         // get the socket associated with a unique client
-        let alloc_sock = find_socket(sock_map, &client_addr).unwrap_or({
-            info!("[udp]{} => {}", &client_addr, &remote_addr);
+        let alloc_sock = match find_socket(sock_map, &client_addr) {
+            Some(x) => x,
+            None => {
+                info!("[udp]{} => {}", &client_addr, &remote_addr);
 
-            let socket = socket::new_socket(
-                socket::Type::DGRAM,
-                &remote_addr,
-                &conn_opts,
-            )?;
+                let socket = socket::new_socket(
+                    socket::Type::DGRAM,
+                    &remote_addr,
+                    &conn_opts,
+                )?;
 
-            // from_std panics only when tokio runtime not setup
-            let new_sock = UdpSocket::from_std(socket.into()).unwrap();
+                // from_std panics only when tokio runtime not setup
+                let new_sock =
+                    Arc::new(UdpSocket::from_std(socket.into()).unwrap());
 
-            let new_sock_ref: UdpSocketRef = (&new_sock).into();
+                tokio::spawn(send_back(
+                    sock_map.into(),
+                    client_addr,
+                    listen_sock.into(),
+                    new_sock.clone(),
+                    timeout,
+                ));
 
-            tokio::spawn(send_back(
-                sock_map.into(),
-                client_addr,
-                listen_sock.into(),
-                new_sock,
-                timeout,
-            ));
-
-            insert_socket(sock_map, client_addr, new_sock_ref);
-            new_sock_ref
-        });
+                insert_socket(sock_map, client_addr, new_sock.clone());
+                new_sock
+            }
+        };
 
         alloc_sock.send_to(&buf[..n], &remote_addr).await?;
     }
@@ -75,7 +77,7 @@ async fn send_back(
     sock_map: SockMapRef,
     client_addr: SocketAddr,
     listen_sock: UdpSocketRef,
-    alloc_sock: UdpSocket,
+    alloc_sock: Arc<UdpSocket>,
     timeout: usize,
 ) {
     let mut buf = vec![0u8; BUF_SIZE];
@@ -114,7 +116,7 @@ async fn send_back(
 fn find_socket(
     sock_map: &SockMap,
     client_addr: &SocketAddr,
-) -> Option<UdpSocketRef> {
+) -> Option<Arc<UdpSocket>> {
     // fetch the lock
 
     let alloc_sock = sock_map.read().unwrap();
@@ -128,7 +130,7 @@ fn find_socket(
 fn insert_socket(
     sock_map: &SockMap,
     client_addr: SocketAddr,
-    new_sock: UdpSocketRef,
+    new_sock: Arc<UdpSocket>,
 ) {
     // fetch the lock
 

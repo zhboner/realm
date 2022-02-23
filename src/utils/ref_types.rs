@@ -48,13 +48,13 @@ ptr_wrap!(ConnectOpts, ConnectOptsRef);
 
 cfg_if! {
     if #[cfg(feature = "udp")] {
-        use std::sync::RwLock;
+        use std::sync::{Arc,RwLock};
         use std::collections::HashMap;
         use std::net::SocketAddr;
         use tokio::net::UdpSocket;
 
         // client <--> allocated socket
-        pub type SockMap = RwLock<HashMap<SocketAddr, UdpSocketRef>>;
+        pub type SockMap = RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>;
 
         ptr_wrap!(UdpSocket, UdpSocketRef);
         ptr_wrap!(SockMap, SockMapRef);
