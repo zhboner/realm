@@ -5,18 +5,18 @@ use std::collections::HashMap;
 
 use log::{debug, info, error};
 
+use tokio::net::UdpSocket;
+
 use crate::utils::DEFAULT_BUF_SIZE;
 
-use crate::utils::RemoteAddr;
-use crate::utils::ConnectOptsRef;
+use crate::utils::{Ref, RemoteAddr, ConnectOpts};
 
 use crate::utils::timeoutfut;
 use crate::utils::socket;
 
 // client <--> allocated socket
-use tokio::net::UdpSocket;
-use crate::utils::UdpSocketRef;
-use crate::utils::{SockMap, SockMapRef};
+
+type SockMap = RwLock<HashMap<SocketAddr, Arc<UdpSocket>>>;
 
 const BUF_SIZE: usize = DEFAULT_BUF_SIZE;
 
@@ -28,7 +28,7 @@ pub async fn associate_and_relay(
     sock_map: &SockMap,
     listen_sock: &UdpSocket,
     remote_addr: &RemoteAddr,
-    conn_opts: ConnectOptsRef,
+    conn_opts: Ref<ConnectOpts>,
 ) -> Result<()> {
     let timeout = conn_opts.udp_timeout;
     let mut buf = vec![0u8; BUF_SIZE];
@@ -74,9 +74,9 @@ pub async fn associate_and_relay(
 }
 
 async fn send_back(
-    sock_map: SockMapRef,
+    sock_map: Ref<SockMap>,
     client_addr: SocketAddr,
-    listen_sock: UdpSocketRef,
+    listen_sock: Ref<UdpSocket>,
     alloc_sock: Arc<UdpSocket>,
     timeout: usize,
 ) {

@@ -4,8 +4,7 @@ use futures::future::join_all;
 mod tcp;
 use tcp::TcpListener;
 
-use crate::utils::Endpoint;
-use crate::utils::{EndpointRef, RemoteAddrRef, ConnectOptsRef};
+use crate::utils::{Ref, Endpoint, RemoteAddr, ConnectOpts};
 
 pub async fn run(endpoints: Vec<Endpoint>) {
     let mut workers = Vec::with_capacity(compute_workers(&endpoints));
@@ -19,7 +18,7 @@ pub async fn run(endpoints: Vec<Endpoint>) {
     join_all(workers).await;
 }
 
-pub async fn run_tcp(endpoint: EndpointRef) {
+pub async fn run_tcp(endpoint: Ref<Endpoint>) {
     let Endpoint {
         listen,
         remote,
@@ -27,8 +26,8 @@ pub async fn run_tcp(endpoint: EndpointRef) {
         ..
     } = endpoint.as_ref();
 
-    let remote: RemoteAddrRef = remote.into();
-    let opts: ConnectOptsRef = opts.into();
+    let remote: Ref<RemoteAddr> = remote.into();
+    let opts: Ref<ConnectOpts> = opts.into();
 
     let lis = TcpListener::bind(*listen)
         .await
@@ -66,7 +65,7 @@ pub async fn run_tcp(endpoint: EndpointRef) {
 mod udp;
 
 #[cfg(feature = "udp")]
-pub async fn run_udp(endpoint: EndpointRef) {
+pub async fn run_udp(endpoint: Ref<Endpoint>) {
     use tokio::net::UdpSocket;
 
     let Endpoint {
