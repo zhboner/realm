@@ -27,6 +27,7 @@ pub fn new_sockaddr_v6() -> SocketAddr {
     SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0)
 }
 
+#[cfg(all(target_os = "linux", feature = "zero-copy"))]
 pub fn set_pipe_cap(cap: usize) {
     unsafe { consts::CUSTOM_PIPE_CAP = cap };
 }
