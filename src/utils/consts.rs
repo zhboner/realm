@@ -24,6 +24,9 @@ pub const DEFAULT_BUF_SIZE: usize = if cfg!(target_os = "espidf") {
 #[cfg(all(target_os = "linux", feature = "zero-copy"))]
 pub const DEFAULT_PIPE_CAP: usize = 16 * 4096;
 
+#[cfg(all(target_os = "linux", feature = "zero-copy"))]
+pub static mut CUSTOM_PIPE_CAP: usize = DEFAULT_PIPE_CAP;
+
 // features
 macro_rules! def_feat {
     ($fet: ident, $name: expr) => {

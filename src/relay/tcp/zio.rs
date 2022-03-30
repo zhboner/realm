@@ -289,6 +289,7 @@ mod zero_copy {
     use std::os::unix::io::{RawFd, AsRawFd};
     use tokio::io::Interest;
     use crate::utils::DEFAULT_PIPE_CAP;
+    use crate::utils::CUSTOM_PIPE_CAP;
 
     pub struct Pipe(RawFd, RawFd);
 
@@ -308,10 +309,17 @@ mod zero_copy {
             unsafe {
                 if libc::pipe2(pipe.as_mut_ptr() as *mut c_int, O_NONBLOCK) < 0
                 {
-                    Err(Error::last_os_error())
-                } else {
-                    Ok(Pipe(pipe.assume_init()[0], pipe.assume_init()[1]))
+                    return Err(Error::last_os_error());
                 }
+
+                let [rd, wr] = pipe.assume_init();
+
+                // ignore errno
+                if CUSTOM_PIPE_CAP != DEFAULT_PIPE_CAP {
+                    libc::fcntl(wr, libc::F_SETPIPE_SZ, CUSTOM_PIPE_CAP);
+                }
+
+                Ok(Pipe(rd, wr))
             }
         }
     }

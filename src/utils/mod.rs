@@ -27,6 +27,10 @@ pub fn new_sockaddr_v6() -> SocketAddr {
     SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0)
 }
 
+pub fn set_pipe_cap(cap: usize) {
+    unsafe { consts::CUSTOM_PIPE_CAP = cap };
+}
+
 #[cfg(unix)]
 pub fn daemonize() {
     use std::env::current_dir;

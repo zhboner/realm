@@ -85,6 +85,18 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         }
     }
 
+    #[cfg(all(target_os = "linux", feature = "zero-copy"))]
+    {
+        use crate::utils::set_pipe_cap;
+
+        if let Some(page) = matches.value_of("pipe_page") {
+            if let Ok(page) = page.parse::<usize>() {
+                set_pipe_cap(page * 0x1000);
+                println!("pipe capacity: {}", page * 0x1000);
+            }
+        }
+    }
+
     let opts = parse_global_opts(&matches);
 
     if let Some(config) = matches.value_of("config") {

@@ -52,41 +52,48 @@ pub fn add_options(app: Command) -> Command {
             .value_name("limit")
             .takes_value(true)
             .display_order(0),
+        Arg::new("pipe_page")
+            .short('p')
+            .long("page")
+            .help("set pipe capacity")
+            .value_name("number")
+            .takes_value(true)
+            .display_order(1),
         Arg::new("config")
             .short('c')
             .long("config")
             .help("use config file")
             .value_name("path")
             .takes_value(true)
-            .display_order(1),
+            .display_order(2),
         Arg::new("local")
             .short('l')
             .long("listen")
             .help("listen address")
             .value_name("address")
             .takes_value(true)
-            .display_order(2),
+            .display_order(3),
         Arg::new("remote")
             .short('r')
             .long("remote")
             .help("remote address")
             .value_name("address")
             .takes_value(true)
-            .display_order(3),
+            .display_order(4),
         Arg::new("through")
             .short('x')
             .long("through")
             .help("send through ip or address")
             .value_name("address")
             .takes_value(true)
-            .display_order(4),
+            .display_order(5),
         Arg::new("interface")
             .short('i')
             .long("interface")
             .help("bind to interface")
             .value_name("device")
             .takes_value(true)
-            .display_order(5),
+            .display_order(6),
     ])
 }
 
