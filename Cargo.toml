@@ -31,6 +31,9 @@ trust-dns-resolver = { version = "0.20", optional = true }
 pin-project = "1"
 lazy_static = "1"
 
+# transport
+kaminari = { version = "0.4.1", optional = true }
+
 # tfo
 tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.9", optional = true }
 
@@ -51,6 +54,7 @@ jemallocator = {version = "0.3", optional = true }
 [target.'cfg(unix)'.dependencies]
 daemonize = "0.4"
 
+
 [profile.release]
 opt-level = 3
 lto = true
@@ -60,11 +64,12 @@ panic = "abort"
 opt-level = 0
 
 [features]
-default = ["udp", "zero-copy", "trust-dns", "multi-thread", "proxy-protocol"]
+default = ["udp", "zero-copy", "trust-dns", "multi-thread", "proxy-protocol", "transport"]
 udp = []
 tfo = ["tokio-tfo"]
 zero-copy = []
 trust-dns = ["trust-dns-resolver"]
+transport = ["kaminari"]
 proxy-protocol = ["haproxy"]
 multi-thread = ["tokio/rt-multi-thread"]
 jemalloc = ["jemallocator"]

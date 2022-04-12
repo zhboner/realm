@@ -42,6 +42,7 @@ cargo build --release
 - udp *(enabled by default)*
 - trust-dns *(enabled by default)*
 - zero-copy *(enabled on linux)*
+- transport *(enabled by default)*
 - multi-thread *(enabled by default)*
 - tfo
 - mi-malloc
