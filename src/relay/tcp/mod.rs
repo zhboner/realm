@@ -36,6 +36,8 @@ pub async fn connect_and_relay(
         send_through,
         bind_interface,
         haproxy_opts,
+        #[cfg(feature = "transport")]
+        transport,
         ..
     } = conn_opts.as_ref();
 
@@ -68,19 +70,46 @@ pub async fn connect_and_relay(
         .await?;
     }
 
-    #[cfg(all(target_os = "linux", feature = "zero-copy"))]
-    let res = if *zero_copy {
-        zio::bidi_copy_pipe(&mut inbound, &mut outbound).await
-    } else {
-        zio::bidi_copy_buffer(&mut inbound, &mut outbound).await
+    let res = {
+        #[cfg(feature = "transport")]
+        {
+            use kaminari::{AsyncAccept, AsyncConnect};
+            use kaminari::mix::{MixClientStream, MixServerStream};
+            type Inbound = MixServerStream<TcpStream>;
+            type Outbound = MixClientStream<TcpStream>;
+            if let Some((ac, cc)) = transport {
+                let mut inbound: Inbound = ac.accept(inbound).await?;
+                let mut outbound: Outbound = cc.connect(outbound).await?;
+                tokio::io::copy_bidirectional(&mut inbound, &mut outbound)
+                    .await
+                    .map(|_| ())
+            } else {
+                relay_plain(&mut inbound, &mut outbound, *zero_copy).await
+            }
+        }
+        #[cfg(not(feature = "transport"))]
+        relay_plain(&mut inbound, &mut outbound, *zero_copy).await
     };
-
-    #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
-    let res = zio::bidi_copy_buffer(&mut inbound, &mut outbound).await;
 
     if let Err(e) = res {
         debug!("[tcp]forward error: {}, ignored", e);
     }
-
     Ok(())
+}
+
+#[inline]
+async fn relay_plain(
+    inbound: &mut TcpStream,
+    outbound: &mut TcpStream,
+    zero_copy: bool,
+) -> Result<()> {
+    #[cfg(all(target_os = "linux", feature = "zero-copy"))]
+    if zero_copy {
+        zio::bidi_copy_pipe(inbound, outbound).await
+    } else {
+        zio::bidi_copy_buffer(inbound, outbound).await
+    }
+
+    #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
+    zio::bidi_copy_buffer(&mut inbound, &mut outbound).await;
 }

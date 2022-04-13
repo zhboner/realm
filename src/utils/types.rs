@@ -3,6 +3,7 @@ use std::fmt::{Formatter, Display};
 use std::net::SocketAddr;
 
 use crate::dns;
+use kaminari::mix::{MixAccept, MixConnect};
 
 #[derive(Clone)]
 pub enum RemoteAddr {
@@ -28,6 +29,8 @@ pub struct ConnectOpts {
     pub haproxy_opts: HaproxyOpts,
     pub send_through: Option<SocketAddr>,
     pub bind_interface: Option<String>,
+    #[cfg(feature = "transport")]
+    pub transport: Option<(MixAccept, MixConnect)>,
 }
 
 #[derive(Clone)]
