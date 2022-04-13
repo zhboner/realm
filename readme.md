@@ -15,7 +15,11 @@ Realm is a simple, high performance relay server written in rust.
 - Concurrency. Bidirectional concurrent traffic leads to high performance.
 - Low resources cost.
 
-## Build
+## Transports
+
+With `transport` feature, Realm is able to handle [ws/tls/wss] on both sides. This is powered by [libkaminari](https://github.com/zephyrchien/kaminari).
+
+## Build Guides
 
 Install rust toolchains with [rustup](https://rustup.rs/).
 
@@ -37,7 +41,7 @@ git submodule sync && git submodule update --init --recursive
 cargo build --release
 ```
 
-### Build options
+### Build Options
 
 - udp *(enabled by default)*
 - trust-dns *(enabled by default)*
@@ -60,7 +64,7 @@ cargo build --release --no-default-features
 cargo build --release --no-default-features --features udp, tfo, zero-copy, trust-dns
 ```
 
-### Cross compile
+### Cross Compile
 
 Please refer to [https://rust-lang.github.io/rustup/cross-compilation.html](https://rust-lang.github.io/rustup/cross-compilation.html). You may need to install cross-compilers or other SDKs, and specify them when building the project.
 
@@ -84,13 +88,15 @@ FLAGS:
     -z, --splice     force enable tcp zero copy
 
 OPTIONS:
-    -n, --nofile <limit>        set nofile limit
-    -p, --page <number>         set pipe capacity
-    -c, --config <path>         use config file
-    -l, --listen <address>      listen address
-    -r, --remote <address>      remote address
-    -x, --through <address>     send through ip or address
-    -i, --interface <device>    bind to interface
+    -n, --nofile <limit>                set nofile limit
+    -p, --page <number>                 set pipe capacity
+    -c, --config <path>                 use config file
+    -l, --listen <address>              listen address
+    -r, --remote <address>              remote address
+    -x, --through <address>             send through ip or address
+    -i, --interface <device>            bind to interface
+    -a, --listen-transport <options>    listen transport
+    -b, --remote-transport <options>    remote transport
 
 LOG OPTIONS:
         --log-level <level>    override log level
@@ -116,7 +122,6 @@ TIMEOUT OPTIONS:
 
 SUBCOMMANDS:
     convert    convert your legacy configuration into an advanced one
-
 ```
 
 Start from command line arguments:
@@ -439,6 +444,18 @@ Supported formats:
 #### endpoint.interface: string
 
 Bind to a specific interface
+
+#### endpoint.listen_transport: string
+
+Require the `transport` feature
+
+See [Kaminari Options](https://github.com/zephyrchien/kaminari#options)
+
+#### endpoint.remote_transport: string
+
+Require the `transport` feature
+
+See [Kaminari Options](https://github.com/zephyrchien/kaminari#options)
 
 #### endpoint.network
 
