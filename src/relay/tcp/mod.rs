@@ -88,7 +88,9 @@ pub async fn connect_and_relay(
             }
         }
         #[cfg(not(feature = "transport"))]
-        relay_plain(&mut inbound, &mut outbound, *zero_copy).await
+        {
+            relay_plain(&mut inbound, &mut outbound, *zero_copy).await
+        }
     };
 
     if let Err(e) = res {
@@ -111,5 +113,5 @@ async fn relay_plain(
     }
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
-    zio::bidi_copy_buffer(&mut inbound, &mut outbound).await;
+    zio::bidi_copy_buffer(inbound, outbound).await
 }

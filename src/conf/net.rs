@@ -86,6 +86,8 @@ impl Config for NetConf {
             // from endpoint
             send_through: None,
             bind_interface: None,
+
+            #[cfg(feature = "transport")]
             transport: None,
 
             haproxy_opts: HaproxyOpts {
