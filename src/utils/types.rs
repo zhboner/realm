@@ -3,6 +3,8 @@ use std::fmt::{Formatter, Display};
 use std::net::SocketAddr;
 
 use crate::dns;
+
+#[cfg(feature = "transport")]
 use kaminari::mix::{MixAccept, MixConnect};
 
 #[derive(Clone)]
@@ -141,9 +143,18 @@ impl Display for ConnectOpts {
 
         write!(
             f,
-            "tcp-timeout={}s, udp-timeout={}s",
+            "tcp-timeout={}s, udp-timeout={}s; ",
             self.tcp_timeout, self.udp_timeout
-        )
+        )?;
+
+        #[cfg(feature = "transport")]
+        if self.transport.is_some() {
+            write!(f, "transport=kaminari")?;
+        } else {
+            write!(f, "transport=none")?;
+        }
+
+        Ok(())
     }
 }
 

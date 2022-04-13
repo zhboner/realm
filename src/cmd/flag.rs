@@ -94,6 +94,20 @@ pub fn add_options(app: Command) -> Command {
             .value_name("device")
             .takes_value(true)
             .display_order(6),
+        Arg::new("listen_transport")
+            .short('a')
+            .long("listen-transport")
+            .help("listen transport")
+            .value_name("options")
+            .takes_value(true)
+            .display_order(7),
+        Arg::new("remote_transport")
+            .short('b')
+            .long("remote-transport")
+            .help("remote transport")
+            .value_name("options")
+            .takes_value(true)
+            .display_order(8),
     ])
 }
 

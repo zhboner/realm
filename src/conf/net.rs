@@ -86,6 +86,7 @@ impl Config for NetConf {
             // from endpoint
             send_through: None,
             bind_interface: None,
+            transport: None,
 
             haproxy_opts: HaproxyOpts {
                 send_proxy,

@@ -84,6 +84,8 @@ impl From<LegacyConf> for FullConf {
                 remote,
                 through: None,
                 interface: None,
+                listen_transport: None,
+                remote_transport: None,
                 network: Default::default(),
             })
             .collect();

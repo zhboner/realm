@@ -19,6 +19,13 @@ pub use endpoint::EndpointConf;
 mod legacy;
 pub use legacy::LegacyConf;
 
+/// Conig Architecture
+/// cmd | file => LogConf => { level, output }
+/// cmd | file => DnsConf => { resolve cinfig, opts }
+/// cmd | file => NetConf
+///                      \
+/// cmd | file => EndpointConf => { [local, remote, conn_opts] }
+
 pub trait Config {
     type Output;
 
