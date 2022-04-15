@@ -1,4 +1,4 @@
 [submodule "tokio-tfo"]
 	path = tokio-tfo
-	url = git@github.com:zephyrchien/tokio-tfo.git
+	url = https://github.com/zephyrchien/tokio-tfo.git
 	branch = main
