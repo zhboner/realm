@@ -1,0 +1,14 @@
+{
+  "endpoints": [
+    {
+      "listen": "127.0.0.1:10000",
+      "remote": "127.0.0.1:20000",
+      "remote_transport": "tls;sni=example.com;insecure"
+    },
+    {
+      "listen": "127.0.0.1:20000",
+      "remote": "127.0.0.1:30000",
+      "listen_transport": "tls;servername=example.com"
+    }
+  ]
+}

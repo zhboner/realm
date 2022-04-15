@@ -1,0 +1,54 @@
+## log
+### level
+### output
+## dns
+### mode
+### protocol
+### nameservers
+### min_ttl
+### max_ttl
+### cache_size
+## network
+### use_udp
+### zero_copy
+### fast_open
+### tcp_timeout
+### udp_timeout
+### send_proxy
+### send_proxy_version
+### accept_proxy
+### accept_proxy_timeout
+## endpoints
+### listen
+### remote
+### through
+### interface
+### network
+
+
+├── log
+│   ├── level
+│   └── output
+├── dns
+│   ├── mode
+│   ├── protocol
+│   ├── nameservers
+│   ├── min_ttl
+│   ├── max_ttl
+│   └── cache_size
+├── network
+│   ├── use_udp
+│   ├── zero_copy
+│   ├── fast_open
+│   ├── tcp_timeout
+│   ├── udp_timeout
+│   ├── send_proxy
+│   ├── send_proxy_version
+│   ├── accept_proxy
+│   └── accept_proxy_timeout
+└── endpoints
+    ├── listen
+    ├── remote
+    ├── through
+    ├── interface
+    └── network

@@ -1,16 +1,80 @@
 [package]
 name = "realm"
-version = "1.5.0"
+version = "2.1.0"
 authors = ["zhboner <zhboner@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "realm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "realm"
+path = "src/bin.rs"
 
 [dependencies]
-libc = "0.2"
-tokio = { version = "1.8.1", features = ["full"] }
-trust-dns-resolver = "0.20"
+cfg-if = "1"
 futures = "0.3"
-structopt = "0.3"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+log = "0.4"
+libc = "0.2"
+bytes = "1"
+socket2 = "0.4"
+
+clap = "3.1"
+toml = "0.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+tokio = { version = "1", features = ["rt", "io-util", "net", "time"] }
+trust-dns-resolver = { version = "0.20", optional = true }
+
+pin-project = "1"
+lazy_static = "1"
+
+# transport
+kaminari = { version = "0.4.2", optional = true }
+
+# tfo
+tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.9", optional = true }
+
+# logger
+chrono = "0.4"
+fern = "0.6"
+
+# haproxy proxy-protocol
+haproxy = { package = "proxy-protocol", version = "0.5", optional = true }
+
+# malloc
+mimalloc = { version = "0.1", optional = true }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = {version = "0.3", optional = true }
+
+# deamon
+[target.'cfg(unix)'.dependencies]
+daemonize = "0.4"
+
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+
+[features]
+default = ["udp", "zero-copy", "trust-dns", "multi-thread", "proxy-protocol", "transport"]
+udp = []
+tfo = ["tokio-tfo"]
+zero-copy = []
+trust-dns = ["trust-dns-resolver"]
+transport = ["kaminari"]
+proxy-protocol = ["haproxy"]
+multi-thread = ["tokio/rt-multi-thread"]
+jemalloc = ["jemallocator"]
+mi-malloc = ["mimalloc"]
+
+[dev-dependencies]
+env_logger = "0.9"
+tokio = {version = "1", features = ["macros"]}

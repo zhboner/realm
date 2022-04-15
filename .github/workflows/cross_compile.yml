@@ -1,0 +1,101 @@
+name: compile
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-corss:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            output: realm
+          - target: x86_64-unknown-linux-musl
+            output: realm
+          - target: x86_64-linux-android
+            output: realm
+          - target: x86_64-pc-windows-gnu
+            output: realm.exe
+          - target: aarch64-unknown-linux-gnu
+            output: realm
+          - target: aarch64-unknown-linux-musl
+            output: realm
+          - target: aarch64-linux-android
+            output: realm
+    steps:
+      - uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+      - name: compile
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: realm-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ matrix.output }}
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+      - name: compile
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: false
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: realm-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/realm.exe
+  build-apple:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - aarch64-apple-ios
+    steps:
+      - uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+      - name: compile
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: realm-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/realm

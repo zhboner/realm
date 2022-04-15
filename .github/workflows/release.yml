@@ -1,0 +1,118 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release-corss:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            output: realm
+          - target: x86_64-unknown-linux-musl
+            output: realm
+          - target: x86_64-linux-android
+            output: realm
+          - target: x86_64-pc-windows-gnu
+            output: realm.exe
+          - target: aarch64-unknown-linux-gnu
+            output: realm
+          - target: aarch64-unknown-linux-musl
+            output: realm
+          - target: aarch64-linux-android
+            output: realm
+    steps:
+      - uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+      - name: compile
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: pack
+        run: |
+          mkdir -p release-${{ matrix.target }}
+          cd release-${{ matrix.target }}
+          tar -C ../target/${{ matrix.target }}/release -zcf realm-${{ matrix.target }}.tar.gz ${{ matrix.output }}
+          sha256sum realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
+      - name: release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-${{ matrix.target }}/*
+  release-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+      - name: compile
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: pack
+        run: |
+          mkdir -p release-${{ matrix.target }}
+          cd release-${{ matrix.target }}
+          tar -C ../target/${{ matrix.target }}/release/ -zcf realm-${{ matrix.target }}.tar.gz realm
+          openssl dgst -sha256 -r realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
+      - name: release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-${{ matrix.target }}/*
+  release-apple:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - aarch64-apple-ios
+    steps:
+      - uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+      - name: compile
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: pack
+        run: |
+          mkdir -p release-${{ matrix.target }}
+          cd release-${{ matrix.target }}
+          tar -C ../target/${{ matrix.target }}/release/ -zcf realm-${{ matrix.target }}.tar.gz realm
+          shasum -a 256 realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
+      - name: release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-${{ matrix.target }}/*
