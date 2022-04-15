@@ -214,7 +214,7 @@ remote = "www.google.com:443"
 
 [See other examples here](./examples)
 
-## global
+## Overview
 
 ```shell
 ├── log
@@ -242,6 +242,8 @@ remote = "www.google.com:443"
     ├── remote
     ├── through
     ├── interface
+    ├── listen_transport
+    ├── remote_transport
     └── network
 ```
 

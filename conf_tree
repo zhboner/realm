@@ -23,6 +23,8 @@
 ### remote
 ### through
 ### interface
+### listen_transport
+### remote_transport
 ### network
 
 
@@ -51,4 +53,6 @@
     ├── remote
     ├── through
     ├── interface
+    ├── listen_transport
+    ├── remote_transport
     └── network
