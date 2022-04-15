@@ -1,5 +1,6 @@
-![realm](../../workflows/ci/badge.svg)
-![realm](../../workflows/release/badge.svg)
+[![realm](https://github.com/zhboner/realm/workflows/ci/badge.svg)](https://github.com/zhboner/realm/actions)
+[![realm](https://github.com/zhboner/realm/workflows/compile/badge.svg)](https://github.com/zhboner/realm/actions/workflows/cross_compile.yml)
+[![realm](https://github.com/zhboner/realm/workflows/release/badge.svg)](https://github.com/zhboner/realm/releases)
 
 [中文说明](https://zhb.me/realm)
 
@@ -30,7 +31,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 Clone this repository
 
 ```shell
-git clone https://github.com/zephyrchien/realm
+git clone https://github.com/zhboner/realm
 ```
 
 Enter the directory and build
