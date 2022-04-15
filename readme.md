@@ -1,6 +1,7 @@
 [![realm](https://github.com/zhboner/realm/workflows/ci/badge.svg)](https://github.com/zhboner/realm/actions)
 [![realm](https://github.com/zhboner/realm/workflows/compile/badge.svg)](https://github.com/zhboner/realm/actions/workflows/cross_compile.yml)
 [![realm](https://github.com/zhboner/realm/workflows/release/badge.svg)](https://github.com/zhboner/realm/releases)
+[![downloads](https://img.shields.io/github/downloads/zhboner/realm/total?color=green)](https://github.com/zhboner/realm/releases)
 
 [中文说明](https://zhb.me/realm)
 
