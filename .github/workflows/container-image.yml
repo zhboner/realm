@@ -18,10 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install latest stable
+      - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           target: x86_64-unknown-linux-musl
           override: true
           components: rustfmt, clippy
