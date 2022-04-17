@@ -9,7 +9,7 @@ on:
     tags:
       - v*
 
-name: realm Container Image Build
+name: container
 
 jobs:
   build:
