@@ -42,6 +42,7 @@ def_feat!(FEATURE_PROXY_PROTOCOL, "proxy-protocol");
 def_feat!(FEATURE_MIMALLOC, "mi-malloc");
 def_feat!(FEATURE_JEMALLOC, "jemalloc");
 def_feat!(FEATURE_MULTI_THREAD, "multi-thread");
+def_feat!(FEATURE_TRANSPORT, "transport");
 
 pub struct Features {
     pub udp: bool,
@@ -52,6 +53,7 @@ pub struct Features {
     pub jemalloc: bool,
     pub multi_thread: bool,
     pub proxy_protocol: bool,
+    pub transport: bool,
 }
 
 pub const FEATURES: Features = Features {
@@ -63,6 +65,7 @@ pub const FEATURES: Features = Features {
     jemalloc: FEATURE_JEMALLOC,
     multi_thread: FEATURE_MULTI_THREAD,
     proxy_protocol: FEATURE_PROXY_PROTOCOL,
+    transport: FEATURE_TRANSPORT,
 };
 
 impl Display for Features {
@@ -79,6 +82,7 @@ impl Display for Features {
         disp_feat!(zero_copy, "zero-copy");
         disp_feat!(trust_dns, "trust-dns");
         disp_feat!(proxy_protocol, "proxy-protocol");
+        disp_feat!(transport, "transport");
         disp_feat!(multi_thread, "multi-thread");
         disp_feat!(mimalloc, "mimalloc");
         disp_feat!(jemalloc, "jemalloc");

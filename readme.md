@@ -79,7 +79,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.0.0 [udp][zero-copy][trust-dns][proxy-protocol][multi-thread]
+Realm 2.x [udp][zero-copy][trust-dns][proxy-protocol][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:
