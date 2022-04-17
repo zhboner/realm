@@ -19,7 +19,7 @@ Realm is a simple, high performance relay server written in rust.
 
 ## Transports
 
-With `transport` feature, Realm is able to handle [ws/tls/wss] on both sides. This is powered by [libkaminari](https://github.com/zephyrchien/kaminari), which is dramatically faster in comparison to other tools. [Here are some benchmark results](https://github.com/zephyrchien/boring-relay-bench).
+With `transport` feature, Realm is able to handle [ws/tls/wss] on both sides. This is powered by [libkaminari](https://github.com/zephyrchien/kaminari), which is dramatically faster in comparison to other implements. [Here are some benchmark results](https://github.com/zephyrchien/boring-relay-bench).
 
 ## Container
 
