@@ -16,7 +16,7 @@ cfg_if! {
 }
 
 use std::io::Result;
-
+use futures::try_join;
 use log::debug;
 
 use tokio::net::TcpSocket;
@@ -74,12 +74,10 @@ pub async fn connect_and_relay(
         #[cfg(feature = "transport")]
         {
             use kaminari::{AsyncAccept, AsyncConnect};
-            use kaminari::mix::{MixClientStream, MixServerStream};
-            type Inbound = MixServerStream<TcpStream>;
-            type Outbound = MixClientStream<TcpStream>;
+
             if let Some((ac, cc)) = transport {
-                let mut inbound: Inbound = ac.accept(inbound).await?;
-                let mut outbound: Outbound = cc.connect(outbound).await?;
+                let (mut inbound, mut outbound) =
+                    try_join!(ac.accept(inbound), cc.connect(outbound))?;
                 tokio::io::copy_bidirectional(&mut inbound, &mut outbound)
                     .await
                     .map(|_| ())
