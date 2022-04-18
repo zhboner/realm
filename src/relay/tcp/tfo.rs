@@ -70,6 +70,11 @@ impl TcpStream {
     ) -> Result<R> {
         inner!(self).try_io(interest, f)
     }
+
+    #[allow(unused)]
+    pub async fn peek(&self, buf: &mut [u8]) -> Result<usize> {
+        inner!(self).peek(buf).await
+    }
 }
 
 impl From<TfoStream> for TcpStream {
