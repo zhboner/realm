@@ -103,11 +103,11 @@ impl EndpointConf {
         ) {
             None
         } else {
-            let ac = MixAccept::new(MixServerConf {
+            let ac = MixAccept::new_shared(MixServerConf {
                 ws: listen_ws,
                 tls: listen_tls,
             });
-            let cc = MixConnect::new(MixClientConf {
+            let cc = MixConnect::new_shared(MixClientConf {
                 ws: remote_ws,
                 tls: remote_tls,
             });
