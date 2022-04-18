@@ -9,7 +9,7 @@ use realm::utils::{Endpoint, ConnectOpts, HaproxyOpts};
 use realm::utils::timeoutfut;
 
 #[tokio::test]
-async fn proxy_v1() {
+async fn proxy_v2() {
     env_logger::init();
 
     let endpoint1 = Endpoint {

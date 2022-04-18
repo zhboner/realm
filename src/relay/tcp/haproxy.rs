@@ -16,8 +16,9 @@ use crate::utils;
 use crate::utils::HaproxyOpts;
 use crate::utils::timeoutfut;
 
-// client -> relay -> server
+// TODO: replace the "proxy-protocol" crate, and then avoid heap allocation.
 
+// client -> relay -> server
 pub async fn handle_proxy_protocol(
     src: &mut TcpStream,
     dst: &mut TcpStream,
@@ -43,34 +44,39 @@ pub async fn handle_proxy_protocol(
     // may not get src and dst addr
     if accept_proxy {
         let buf = buf.write(BytesMut::with_capacity(256));
+        buf.resize(256, 0);
 
         // FIXME: may not read the entire header
 
         // The receiver may apply a short timeout and decide to
         // abort the connection if the protocol header is not seen
         // within a few seconds (at least 3 seconds to cover a TCP retransmit).
-        let n = timeoutfut(src.read_buf(buf), accept_proxy_timeout).await??;
+        let peek_n = timeoutfut(src.peek(buf), accept_proxy_timeout).await??;
 
-        let _ = buf.split_off(n);
-        debug!("[tcp]recv initial {} bytes: {:#x}", n, buf);
+        buf.truncate(peek_n);
+        debug!("[tcp]peek initial {} bytes: {:#x}", peek_n, buf);
 
-        let header = parse(buf).map_err(|e| Error::new(ErrorKind::Other, e))?;
-        debug!("[tcp]proxy-protocol parsed, {} bytes left", buf.remaining());
+        let mut slice = buf.as_ref();
 
+        // slice is advanced
+        let header =
+            parse(&mut slice).map_err(|e| Error::new(ErrorKind::Other, e))?;
+        let parsed_n = peek_n - slice.remaining();
+        debug!("[tcp]proxy-protocol parsed, {} bytes", parsed_n);
+
+        // handle parsed header, and print log
         if let Some((src, dst)) = handle_header(header) {
             client_addr.write(src);
             server_addr.write(dst);
             fwd_hdr = true;
         }
 
-        // header has been parsed
+        // header has been parsed, remove these bytes from sock buffer.
+        buf.truncate(parsed_n);
+        src.read_exact(buf).await?;
+
         // do not send header to server
         if !send_proxy {
-            // write left bytes
-            if !buf.is_empty() {
-                debug!("[tcp]send left {} bytes: {:#x}", buf.len(), buf);
-                dst.write_all(buf).await?;
-            }
             return Ok(());
         }
     }
@@ -98,16 +104,6 @@ pub async fn handle_proxy_protocol(
             .map_err(|e| Error::new(ErrorKind::Other, e))?;
     debug!("[tcp]send initial {} bytes: {:#x}", header.len(), &header);
     dst.write_all(&header).await?;
-
-    // write left bytes
-    // Safety: buf is initialized, filled with PROXY header
-    if accept_proxy {
-        let buf = unsafe { buf.assume_init() };
-        if !buf.is_empty() {
-            debug!("[tcp]send left {} bytes: {:?}", buf.len(), &buf);
-            dst.write_all(&buf).await?;
-        }
-    }
 
     Ok(())
 }
