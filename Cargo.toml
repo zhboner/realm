@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.1.0"
+version = "2.1.1"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -59,7 +59,10 @@ daemonize = "0.4"
 [profile.release]
 opt-level = 3
 lto = true
+codegen-units = 1
+incremental = false
 panic = "abort"
+strip = true
 
 [profile.dev]
 opt-level = 0
