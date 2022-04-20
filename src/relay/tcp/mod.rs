@@ -4,6 +4,9 @@ use cfg_if::cfg_if;
 #[cfg(feature = "proxy-protocol")]
 mod haproxy;
 
+#[cfg(feature = "transport")]
+mod transport;
+
 cfg_if! {
     if #[cfg(feature = "tfo")] {
         mod tfo;
@@ -16,7 +19,6 @@ cfg_if! {
 }
 
 use std::io::Result;
-use futures::try_join;
 use log::debug;
 
 use tokio::net::TcpSocket;
@@ -73,16 +75,11 @@ pub async fn connect_and_relay(
     let res = {
         #[cfg(feature = "transport")]
         {
-            use kaminari::{AsyncAccept, AsyncConnect};
-
+            use transport::relay_transport;
             if let Some((ac, cc)) = transport {
-                let (mut inbound, mut outbound) =
-                    try_join!(ac.accept(inbound), cc.connect(outbound))?;
-                tokio::io::copy_bidirectional(&mut inbound, &mut outbound)
-                    .await
-                    .map(|_| ())
+                relay_transport(inbound, outbound, ac, cc).await
             } else {
-                relay_plain(&mut inbound, &mut outbound, *zero_copy).await
+                relay_plain(inbound, outbound, *zero_copy).await
             }
         }
         #[cfg(not(feature = "transport"))]
@@ -99,17 +96,17 @@ pub async fn connect_and_relay(
 
 #[inline]
 async fn relay_plain(
-    inbound: &mut TcpStream,
-    outbound: &mut TcpStream,
+    mut inbound: TcpStream,
+    mut outbound: TcpStream,
     zero_copy: bool,
 ) -> Result<()> {
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     if zero_copy {
-        zio::bidi_copy_pipe(inbound, outbound).await
+        zio::bidi_copy_pipe(&mut inbound, &mut outbound).await
     } else {
-        zio::bidi_copy_buffer(inbound, outbound).await
+        zio::bidi_copy_buffer(&mut inbound, &mut outbound).await
     }
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
-    zio::bidi_copy_buffer(inbound, outbound).await
+    zio::bidi_copy_buffer(&mut inbound, &mut outbound).await
 }

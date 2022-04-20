@@ -49,16 +49,19 @@ cargo build --release
 
 ### Build Options
 
-- udp *(enabled by default)*
-- trust-dns *(enabled by default)*
-- zero-copy *(enabled on linux)*
-- transport *(enabled by default)*
-- multi-thread *(enabled by default)*
-- tfo
-- mi-malloc
-- jemalloc
+- udp: enable udp relay.
+- trust-dns: enable trust-dns's async dns resolver.
+- zero-copy: enable zero-copy on linux.
+- transport: enable ws/tls/wss.
+- transport-boost: enable optimizations for transport, at the cost of increasing binary size.
+- multi-thread: enable tokio's multi-threaded IO scheduler.
+- tfo: enable tcp-fast-open.
+- mi-malloc: custom memory allocator.
+- jemalloc: custom memory allocator.
 
-See also: `Cargo.toml`
+Default: udp + trust-dns + zero-copy + multi-thread + transport + transport-boost.
+
+See also: `Cargo.toml`.
 
 Examples:
 
@@ -67,7 +70,7 @@ Examples:
 cargo build --release --no-default-features
 
 # enable other options
-cargo build --release --no-default-features --features udp, tfo, zero-copy, trust-dns
+cargo build --release --no-default-features --features udp,tfo,zero-copy,trust-dns..
 ```
 
 ### Cross Compile
