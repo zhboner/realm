@@ -13,7 +13,7 @@ async fn zero_copy() {
     let endpoint = Endpoint {
         listen: "127.0.0.1:10000".parse().unwrap(),
         remote: "127.0.0.1:20000".parse::<SocketAddr>().unwrap().into(),
-        opts: ConnectOpts {
+        conn_opts: ConnectOpts {
             zero_copy: true,
             ..Default::default()
         },

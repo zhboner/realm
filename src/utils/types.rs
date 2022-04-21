@@ -39,7 +39,7 @@ pub struct ConnectOpts {
 pub struct Endpoint {
     pub listen: SocketAddr,
     pub remote: RemoteAddr,
-    pub opts: ConnectOpts,
+    pub conn_opts: ConnectOpts,
 }
 
 impl RemoteAddr {
@@ -88,12 +88,12 @@ impl Endpoint {
     pub fn new(
         listen: SocketAddr,
         remote: RemoteAddr,
-        opts: ConnectOpts,
+        conn_opts: ConnectOpts,
     ) -> Self {
         Endpoint {
             listen,
             remote,
-            opts,
+            conn_opts,
         }
     }
 }
@@ -163,7 +163,7 @@ impl Display for Endpoint {
         write!(
             f,
             "{} -> {}; options: {}",
-            &self.listen, &self.remote, &self.opts
+            &self.listen, &self.remote, &self.conn_opts
         )
     }
 }

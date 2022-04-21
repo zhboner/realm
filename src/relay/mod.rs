@@ -10,7 +10,7 @@ pub async fn run(endpoints: Vec<Endpoint>) {
     let mut workers = Vec::with_capacity(compute_workers(&endpoints));
     for endpoint in endpoints.iter() {
         #[cfg(feature = "udp")]
-        if endpoint.opts.use_udp {
+        if endpoint.conn_opts.use_udp {
             workers.push(tokio::spawn(run_udp(endpoint.into())))
         }
         workers.push(tokio::spawn(run_tcp(endpoint.into())));
@@ -22,12 +22,12 @@ pub async fn run_tcp(endpoint: Ref<Endpoint>) {
     let Endpoint {
         listen,
         remote,
-        opts,
+        conn_opts,
         ..
     } = endpoint.as_ref();
 
     let remote: Ref<RemoteAddr> = remote.into();
-    let opts: Ref<ConnectOpts> = opts.into();
+    let conn_opts: Ref<ConnectOpts> = conn_opts.into();
 
     let lis = TcpListener::bind(*listen)
         .await
@@ -53,7 +53,7 @@ pub async fn run_tcp(endpoint: Ref<Endpoint>) {
         }
 
         tokio::spawn(async move {
-            match tcp::connect_and_relay(stream, remote, opts).await {
+            match tcp::connect_and_relay(stream, remote, conn_opts).await {
                 Ok(..) => debug!("[tcp]{}, finish", msg),
                 Err(e) => error!("[tcp]{}, error: {}", msg, e),
             }
@@ -71,7 +71,7 @@ pub async fn run_udp(endpoint: Ref<Endpoint>) {
     let Endpoint {
         listen,
         remote,
-        opts,
+        conn_opts,
         ..
     } = endpoint.as_ref();
 
@@ -85,7 +85,7 @@ pub async fn run_udp(endpoint: Ref<Endpoint>) {
             &sock_map,
             &listen_sock,
             remote,
-            opts.into(),
+            conn_opts.into(),
         )
         .await
         {
@@ -106,5 +106,5 @@ fn compute_workers(workers: &[Endpoint]) -> usize {
     }
     workers
         .iter()
-        .fold(0, |total, x| total + num!(x.opts.use_udp))
+        .fold(0, |total, x| total + num!(x.conn_opts.use_udp))
 }

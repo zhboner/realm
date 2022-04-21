@@ -13,7 +13,7 @@ async fn tcp() {
     let endpoint = Endpoint {
         listen: "127.0.0.1:10000".parse().unwrap(),
         remote: "127.0.0.1:20000".parse::<SocketAddr>().unwrap().into(),
-        opts: Default::default(),
+        conn_opts: Default::default(),
     };
 
     tokio::spawn(async {

@@ -15,7 +15,7 @@ async fn proxy_v2() {
     let endpoint1 = Endpoint {
         listen: "127.0.0.1:10000".parse().unwrap(),
         remote: "127.0.0.1:15000".parse::<SocketAddr>().unwrap().into(),
-        opts: ConnectOpts {
+        conn_opts: ConnectOpts {
             haproxy_opts: HaproxyOpts {
                 send_proxy: true,
                 send_proxy_version: 2,
@@ -28,7 +28,7 @@ async fn proxy_v2() {
     let endpoint2 = Endpoint {
         listen: "127.0.0.1:15000".parse().unwrap(),
         remote: "127.0.0.1:20000".parse::<SocketAddr>().unwrap().into(),
-        opts: ConnectOpts {
+        conn_opts: ConnectOpts {
             haproxy_opts: HaproxyOpts {
                 accept_proxy: true,
                 accept_proxy_timeout: 5,
