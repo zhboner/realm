@@ -4,16 +4,17 @@ use std::marker::PhantomData;
 
 use tokio::io::{AsyncRead, AsyncWrite};
 
-pub struct CopyBuffer<B, S> {
+pub struct CopyBuffer<B, SR, SW> {
     pub(crate) read_done: bool,
     pub(crate) need_flush: bool,
     pub(crate) pos: usize,
     pub(crate) cap: usize,
     pub(crate) buf: B,
-    _marker: PhantomData<S>,
+    _marker: PhantomData<SR>,
+    __marker: PhantomData<SW>,
 }
 
-impl<B, S> CopyBuffer<B, S> {
+impl<B, SR, SW> CopyBuffer<B, SR, SW> {
     pub const fn new(buf: B) -> Self {
         Self {
             read_done: false,
@@ -22,43 +23,46 @@ impl<B, S> CopyBuffer<B, S> {
             cap: 0,
             buf,
             _marker: PhantomData,
+            __marker: PhantomData,
         }
     }
 }
 
 pub trait AsyncIOBuf {
-    type Stream: AsyncRead + AsyncWrite + Unpin;
+    type StreamR: AsyncRead + AsyncWrite + Unpin;
+    type StreamW: AsyncRead + AsyncWrite + Unpin;
 
     fn poll_read_buf(
         &mut self,
         cx: &mut Context<'_>,
-        stream: &mut Self::Stream,
+        stream: &mut Self::StreamR,
     ) -> Poll<Result<usize>>;
 
     fn poll_write_buf(
         &mut self,
         cx: &mut Context<'_>,
-        stream: &mut Self::Stream,
+        stream: &mut Self::StreamW,
     ) -> Poll<Result<usize>>;
 
     fn poll_flush_buf(
         &mut self,
         cx: &mut Context<'_>,
-        stream: &mut Self::Stream,
+        stream: &mut Self::StreamW,
     ) -> Poll<Result<()>>;
 }
 
-impl<B, S> CopyBuffer<B, S>
+impl<B, SR, SW> CopyBuffer<B, SR, SW>
 where
     B: Unpin,
-    S: AsyncRead + AsyncWrite + Unpin,
-    CopyBuffer<B, S>: AsyncIOBuf,
+    SR: AsyncRead + AsyncWrite + Unpin,
+    SW: AsyncRead + AsyncWrite + Unpin,
+    CopyBuffer<B, SR, SW>: AsyncIOBuf,
 {
     pub fn poll_copy(
         &mut self,
         cx: &mut Context<'_>,
-        r: &mut <CopyBuffer<B, S> as AsyncIOBuf>::Stream,
-        w: &mut <CopyBuffer<B, S> as AsyncIOBuf>::Stream,
+        r: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamR,
+        w: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamW,
         amt: &mut u64,
     ) -> Poll<Result<()>> {
         loop {

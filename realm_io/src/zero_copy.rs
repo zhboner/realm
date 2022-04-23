@@ -7,6 +7,7 @@ use tokio::io::Interest;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 use super::{CopyBuffer, AsyncIOBuf};
+use super::bidi_copy_buf;
 
 pub struct Pipe(RawFd, RawFd);
 
@@ -50,16 +51,18 @@ pub trait AsyncRawIO: AsyncRead + AsyncWrite + AsRawFd {
     ) -> Result<R>;
 }
 
-impl<S> AsyncIOBuf for CopyBuffer<Pipe, S>
+impl<SR, SW> AsyncIOBuf for CopyBuffer<Pipe, SR, SW>
 where
-    S: AsyncRawIO + Unpin,
+    SR: AsyncRawIO + Unpin,
+    SW: AsyncRawIO + Unpin,
 {
-    type Stream = S;
+    type StreamR = SR;
+    type StreamW = SW;
 
     fn poll_read_buf(
         &mut self,
         cx: &mut Context<'_>,
-        stream: &mut Self::Stream,
+        stream: &mut Self::StreamR,
     ) -> Poll<Result<usize>> {
         loop {
             ready!(stream.x_poll_read_ready(cx))?;
@@ -81,7 +84,7 @@ where
     fn poll_write_buf(
         &mut self,
         cx: &mut Context<'_>,
-        stream: &mut Self::Stream,
+        stream: &mut Self::StreamW,
     ) -> Poll<Result<usize>> {
         loop {
             ready!(stream.x_poll_write_ready(cx)?);
@@ -107,7 +110,7 @@ where
     fn poll_flush_buf(
         &mut self,
         cx: &mut Context<'_>,
-        stream: &mut Self::Stream,
+        stream: &mut Self::StreamW,
     ) -> Poll<Result<()>> {
         Pin::new(stream).poll_flush(cx)
     }
@@ -179,4 +182,23 @@ mod tokio_net {
 
     delegate!(TcpStream);
     delegate!(UnixStream);
+}
+
+pub async fn bidi_zero_copy<A, B>(
+    a: &mut A,
+    b: &mut B,
+) -> (Result<()>, u64, u64)
+where
+    A: AsyncRawIO + Unpin,
+    B: AsyncRawIO + Unpin,
+{
+    let a_to_b_buf = CopyBuffer::new(match Pipe::new() {
+        Ok(x) => x,
+        Err(e) => return (Err(e), 0, 0),
+    });
+    let b_to_a_buf = CopyBuffer::new(match Pipe::new() {
+        Ok(x) => x,
+        Err(e) => return (Err(e), 0, 0),
+    });
+    bidi_copy_buf(a, b, a_to_b_buf, b_to_a_buf).await
 }
