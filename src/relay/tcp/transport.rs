@@ -1,7 +1,10 @@
 use std::io::Result;
 use futures::try_join;
+
 use kaminari::{AsyncAccept, AsyncConnect, IOStream};
 use kaminari::mix::{MixAccept, MixConnect};
+
+use realm_io::{CopyBuffer, bidi_copy_buf, buf_size};
 
 pub async fn relay_transport<S: IOStream>(
     src: S,
@@ -55,8 +58,15 @@ where
     AC: AsyncAccept<S>,
     CC: AsyncConnect<S>,
 {
-    let (mut src, mut dst) = try_join!(ac.accept(src), cc.connect(dst))?;
+    let mut buf1 = vec![0; buf_size()];
+    let mut buf2 = vec![0; buf_size()];
 
-    let _ = realm_io::bidi_copy(&mut src, &mut dst).await;
+    let (mut src, mut dst) =
+        try_join!(ac.accept(src, &mut buf1), cc.connect(dst, &mut buf2))?;
+
+    let buf1 = CopyBuffer::new(buf1);
+    let buf2 = CopyBuffer::new(buf2);
+
+    let _ = bidi_copy_buf(&mut src, &mut dst, buf1, buf2).await;
     Ok(())
 }
