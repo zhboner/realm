@@ -16,6 +16,11 @@ name = "realm"
 path = "src/bin.rs"
 
 [dependencies]
+# realm
+realm_io = { path = "realm_io" }
+kaminari = { version = "0.6.0", optional = true }
+
+# common
 cfg-if = "1"
 futures = "0.3"
 log = "0.4"
@@ -33,10 +38,6 @@ trust-dns-resolver = { version = "0.20", optional = true }
 
 pin-project = "1"
 lazy_static = "1"
-
-# transport
-kaminari = { version = "0.6.0", optional = true }
-
 
 # tfo
 tokio-tfo = { git = "https://github.com/zephyrchien/tokio-tfo", branch = "main", version = "0.1.9", optional = true }
@@ -57,9 +58,6 @@ jemallocator = {version = "0.3", optional = true }
 # deamon
 [target.'cfg(unix)'.dependencies]
 daemonize = "0.4"
-
-# realm
-realm_io = { path = "realm_io" }
 
 [profile.release]
 opt-level = 3

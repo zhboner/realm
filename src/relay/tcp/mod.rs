@@ -111,5 +111,9 @@ async fn relay_plain(
     }
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
-    realm_io::bidi_copy(&mut inbound, &mut outbound).await
+    {
+        let (res, _, _) =
+            realm_io::bidi_copy(&mut inbound, &mut outbound).await;
+        res
+    }
 }
