@@ -1,8 +1,11 @@
 [package]
 name = "realm"
-version = "2.1.1"
+version = "2.1.2"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
+
+[workspace]
+members = ["realm_io"]
 
 [lib]
 name = "realm"
@@ -55,6 +58,8 @@ jemallocator = {version = "0.3", optional = true }
 [target.'cfg(unix)'.dependencies]
 daemonize = "0.4"
 
+# realm
+realm_io = { path = "realm_io" }
 
 [profile.release]
 opt-level = 3

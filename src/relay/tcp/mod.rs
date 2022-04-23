@@ -1,4 +1,3 @@
-mod zio;
 use cfg_if::cfg_if;
 
 #[cfg(feature = "proxy-protocol")]
@@ -102,11 +101,15 @@ async fn relay_plain(
 ) -> Result<()> {
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     if zero_copy {
-        zio::bidi_copy_pipe(&mut inbound, &mut outbound).await
+        let (res, _, _) =
+            realm_io::bidi_zero_copy(&mut inbound, &mut outbound).await;
+        res
     } else {
-        zio::bidi_copy_buffer(&mut inbound, &mut outbound).await
+        let (res, _, _) =
+            realm_io::bidi_copy(&mut inbound, &mut outbound).await;
+        res
     }
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
-    zio::bidi_copy_buffer(&mut inbound, &mut outbound).await
+    realm_io::bidi_copy(&mut inbound, &mut outbound).await
 }

@@ -1,6 +1,5 @@
 use std::io::Result;
 use futures::try_join;
-use tokio::io::copy_bidirectional;
 use kaminari::{AsyncAccept, AsyncConnect, IOStream};
 use kaminari::mix::{MixAccept, MixConnect};
 
@@ -58,5 +57,6 @@ where
 {
     let (mut src, mut dst) = try_join!(ac.accept(src), cc.connect(dst))?;
 
-    copy_bidirectional(&mut src, &mut dst).await.map(|_| ())
+    let _ = realm_io::bidi_copy(&mut src, &mut dst).await;
+    Ok(())
 }

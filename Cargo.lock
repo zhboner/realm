@@ -823,7 +823,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "bytes",
  "cfg-if",
@@ -841,6 +841,7 @@ dependencies = [
  "mimalloc",
  "pin-project",
  "proxy-protocol",
+ "realm_io",
  "serde",
  "serde_json",
  "socket2 0.4.4",
@@ -848,6 +849,14 @@ dependencies = [
  "tokio-tfo",
  "toml",
  "trust-dns-resolver",
+]
+
+[[package]]
+name = "realm_io"
+version = "0.2.1"
+dependencies = [
+ "libc",
+ "tokio",
 ]
 
 [[package]]
