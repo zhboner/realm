@@ -465,9 +465,9 @@ dependencies = [
 
 [[package]]
 name = "kaminari"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c916164c17dac1db5b54b4a17050474f895ca3676d81ec9fb074292f7ef64d33"
+checksum = "e61016796e12b5c49fae513e18b92b6cd722f6ad5b0f2c65efbf6fb7b98897a7"
 dependencies = [
  "lazy_static",
  "lightws",
@@ -501,9 +501,9 @@ dependencies = [
 
 [[package]]
 name = "lightws"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94010c166164a0e47aceb5bba8d2b62ed5a29578826c419c40c3f47191d9036a"
+checksum = "52355f151b7652f070b36ca2ab766f2f85c42e1c417507e982dd7dacf11465b0"
 dependencies = [
  "base64 0.20.0-alpha.1",
  "cfg-if",
