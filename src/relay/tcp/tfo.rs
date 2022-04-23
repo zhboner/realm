@@ -133,4 +133,9 @@ mod linux_ext {
             self.0.as_raw_fd()
         }
     }
+
+    use realm_io::AsyncRawIO;
+    use realm_io::delegate_impl;
+
+    delegate_impl!(TcpStream);
 }
