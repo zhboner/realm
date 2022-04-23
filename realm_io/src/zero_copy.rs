@@ -151,7 +151,8 @@ mod tokio_net {
     use super::AsyncRawIO;
     use super::*;
 
-    macro_rules! delegate {
+    #[macro_export]
+    macro_rules! delegate_impl {
         ($stream: ident) => {
             impl AsyncRawIO for $stream {
                 #[inline]
@@ -182,8 +183,8 @@ mod tokio_net {
         };
     }
 
-    delegate!(TcpStream);
-    delegate!(UnixStream);
+    delegate_impl!(TcpStream);
+    delegate_impl!(UnixStream);
 }
 
 pub async fn bidi_zero_copy<A, B>(
