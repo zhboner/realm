@@ -1,0 +1,18 @@
+[package]
+name = "realm_io"
+version = "0.1.0"
+authors = ["zephyr <i@zephyr.moe>"]
+description = "Realm's high performance IO collections"
+repository = "https://github.com/zhboner/realm/realm_io"
+readme = "README.md"
+documentation = "https://docs.rs/realm_io"
+keywords = ["network", "zero-copy", "relay"]
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+libc = "0.2"
+tokio = "1.9"
+
+[target.'cfg(unix)'.dependencies]
+tokio = { version = "1.9", features = ["net"] }
