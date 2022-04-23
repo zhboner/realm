@@ -9,7 +9,7 @@ mod zero_copy;
 
 pub use buf::{AsyncIOBuf, CopyBuffer};
 pub use bidi_copy::bidi_copy_buf;
-pub use mem_copy::bidi_copy;
+pub use mem_copy::{bidi_copy, buf_size, set_buf_size};
 
 #[cfg(target_os = "linux")]
-pub use zero_copy::{Pipe, AsyncRawIO, bidi_zero_copy};
+pub use zero_copy::{Pipe, AsyncRawIO, bidi_zero_copy, pipe_size, set_pipe_size};

@@ -53,7 +53,24 @@ where
     A: AsyncRead + AsyncWrite + Unpin,
     B: AsyncRead + AsyncWrite + Unpin,
 {
-    let a_to_b_buf = CopyBuffer::new(vec![0u8; 0x2000]);
-    let b_to_a_buf = CopyBuffer::new(vec![0u8; 0x2000]);
+    let a_to_b_buf = CopyBuffer::new(vec![0u8; buf_size()].into_boxed_slice());
+    let b_to_a_buf = CopyBuffer::new(vec![0u8; buf_size()].into_boxed_slice());
     bidi_copy_buf(a, b, a_to_b_buf, b_to_a_buf).await
 }
+
+mod buf_ctl {
+    pub const DF_BUF_SIZE: usize = 0x2000;
+    static mut BUF_SIZE: usize = DF_BUF_SIZE;
+
+    #[inline]
+    pub fn buf_size() -> usize {
+        unsafe { BUF_SIZE }
+    }
+
+    #[inline]
+    pub fn set_buf_size(n: usize) {
+        unsafe { BUF_SIZE = n }
+    }
+}
+
+pub use buf_ctl::{buf_size, set_buf_size};

@@ -14,6 +14,8 @@ pub struct Pipe(RawFd, RawFd);
 impl Pipe {
     pub fn new() -> Result<Self> {
         use libc::{c_int, O_NONBLOCK};
+        use pipe_ctl::DF_PIPE_SIZE;
+
         let mut pipe = std::mem::MaybeUninit::<[c_int; 2]>::uninit();
         unsafe {
             if libc::pipe2(pipe.as_mut_ptr() as *mut c_int, O_NONBLOCK) < 0 {
@@ -23,9 +25,9 @@ impl Pipe {
             let [rd, wr] = pipe.assume_init();
 
             // ignore errno
-            // if CUSTOM_PIPE_CAP != DEFAULT_PIPE_CAP {
-            //     libc::fcntl(wr, libc::F_SETPIPE_SZ, CUSTOM_PIPE_CAP);
-            // }
+            if pipe_size() != DF_PIPE_SIZE {
+                libc::fcntl(wr, libc::F_SETPIPE_SZ, pipe_size());
+            }
 
             Ok(Pipe(rd, wr))
         }
@@ -202,3 +204,20 @@ where
     });
     bidi_copy_buf(a, b, a_to_b_buf, b_to_a_buf).await
 }
+
+mod pipe_ctl {
+    pub const DF_PIPE_SIZE: usize = 16 * 0x1000;
+    static mut PIPE_SIZE: usize = DF_PIPE_SIZE;
+
+    #[inline]
+    pub fn pipe_size() -> usize {
+        unsafe { PIPE_SIZE }
+    }
+
+    #[inline]
+    pub fn set_pipe_size(n: usize) {
+        unsafe { PIPE_SIZE = n }
+    }
+}
+
+pub use pipe_ctl::{pipe_size, set_pipe_size};
