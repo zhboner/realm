@@ -87,11 +87,11 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
 
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     {
-        use crate::utils::set_pipe_cap;
+        use realm_io::set_pipe_size;
 
         if let Some(page) = matches.value_of("pipe_page") {
             if let Ok(page) = page.parse::<usize>() {
-                set_pipe_cap(page * 0x1000);
+                set_pipe_size(page * 0x1000);
                 println!("pipe capacity: {}", page * 0x1000);
             }
         }
