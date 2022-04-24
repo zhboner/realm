@@ -2,6 +2,7 @@ use std::io::{Error, Result};
 use libc::{rlimit, rlim_t, RLIMIT_NOFILE};
 
 /// Set nofile limitation.
+/// 
 /// `CAP_NET_ADMIN` privilege is required if exceeds hard limitation.
 /// 
 /// Reference:

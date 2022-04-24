@@ -1,6 +1,8 @@
 use std::env::current_dir;
 use daemonize::Daemonize;
 
+/// Daemonize.
+/// 
 /// Fork the process in the background,
 /// disassociate from process group and the control terminal.
 /// 

@@ -1,7 +1,14 @@
 use std::io::Result;
 use socket2::{Socket, Domain, Type};
 
-/// Create a new socket. 
+/// Create a new non-blocking socket.
+/// 
+/// On unix-like platforms, [`SOCK_NONBLOCK`](libc::SOCK_NONBLOCK) and
+/// [`SOCK_CLOEXEC`](libc::SOCK_CLOEXEC) are assigned
+/// when creating a new socket, which saves a [`fcntl`](libc::fcntl) syscall.
+/// 
+/// On other platforms, a socket is created without extra flags
+/// then set to `non_blocking`.
 #[cfg(any(
     target_os = "android",
     target_os = "dragonfly",
