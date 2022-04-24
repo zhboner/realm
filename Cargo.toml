@@ -5,7 +5,10 @@ authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
 [workspace]
-members = ["realm_io"]
+members = [
+    "realm_io",
+    "realm_syscall"
+]
 
 [lib]
 name = "realm"

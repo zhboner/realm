@@ -1,0 +1,18 @@
+[package]
+name = "realm_syscall"
+version = "0.1.0"
+authors = ["zephyr <i@zephyr.moe>"]
+description = "Realm's convenient syscall collections"
+repository = "https://github.com/zhboner/realm/realm_syscall"
+readme = "README.md"
+documentation = "https://docs.rs/realm_syscall"
+keywords = ["network", "syscall"]
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+libc = "0.2"
+socket2 = "0.4"
+
+[target.'cfg(unix)'.dependencies]
+daemonize = "0.4"
