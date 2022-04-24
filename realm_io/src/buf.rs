@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 
 use tokio::io::{AsyncRead, AsyncWrite};
 
+/// A wrapper of its underlying buffer(array, vector, unix pipe...).
 pub struct CopyBuffer<B, SR, SW> {
     pub(crate) read_done: bool,
     pub(crate) need_flush: bool,
@@ -15,6 +16,7 @@ pub struct CopyBuffer<B, SR, SW> {
 }
 
 impl<B, SR, SW> CopyBuffer<B, SR, SW> {
+    /// Constructor, take the provided buffer.
     pub const fn new(buf: B) -> Self {
         Self {
             read_done: false,
@@ -28,6 +30,7 @@ impl<B, SR, SW> CopyBuffer<B, SR, SW> {
     }
 }
 
+/// Type traits of [`CopyBuffer`].
 pub trait AsyncIOBuf {
     type StreamR: AsyncRead + AsyncWrite + Unpin;
     type StreamW: AsyncRead + AsyncWrite + Unpin;
@@ -58,6 +61,7 @@ where
     SW: AsyncRead + AsyncWrite + Unpin,
     CopyBuffer<B, SR, SW>: AsyncIOBuf,
 {
+    /// Copy data from reader to writer via buffer, asynchronously.
     pub fn poll_copy(
         &mut self,
         cx: &mut Context<'_>,

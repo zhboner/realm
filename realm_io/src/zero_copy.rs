@@ -9,6 +9,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use super::{CopyBuffer, AsyncIOBuf};
 use super::bidi_copy_buf;
 
+/// Unix pipe.
 pub struct Pipe(RawFd, RawFd);
 
 impl Pipe {
@@ -43,6 +44,7 @@ impl Drop for Pipe {
     }
 }
 
+/// Type traits of those can be zero-copied.
 pub trait AsyncRawIO: AsyncRead + AsyncWrite + AsRawFd {
     fn x_poll_read_ready(&self, cx: &mut Context<'_>) -> Poll<Result<()>>;
     fn x_poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<Result<()>>;
@@ -151,6 +153,7 @@ mod tokio_net {
     use super::AsyncRawIO;
     use super::*;
 
+    /// Impl [`AsyncRawIO`], delegates to required functions.
     #[macro_export]
     macro_rules! delegate_impl {
         ($stream: ident) => {
@@ -187,6 +190,9 @@ mod tokio_net {
     delegate_impl!(UnixStream);
 }
 
+/// Copy data bidirectionally between two streams via `unix pipe`.
+///
+/// Return transferred bytes no matter this operation succeeds or fails.
 pub async fn bidi_zero_copy<A, B>(
     a: &mut A,
     b: &mut B,
@@ -210,11 +216,13 @@ mod pipe_ctl {
     pub const DF_PIPE_SIZE: usize = 16 * 0x1000;
     static mut PIPE_SIZE: usize = DF_PIPE_SIZE;
 
+    /// Get current pipe capacity.
     #[inline]
     pub fn pipe_size() -> usize {
         unsafe { PIPE_SIZE }
     }
 
+    /// Set pipe capacity.
     #[inline]
     pub fn set_pipe_size(n: usize) {
         unsafe { PIPE_SIZE = n }
