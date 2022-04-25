@@ -85,8 +85,8 @@ where
     B: Unpin,
     SL: AsyncRead + AsyncWrite + Unpin,
     SR: AsyncRead + AsyncWrite + Unpin,
-    CopyBuffer<B, SL, SR>: AsyncIOBuf + Unpin,
-    CopyBuffer<B, SR, SL>: AsyncIOBuf + Unpin,
+    CopyBuffer<B, SL, SR>: AsyncIOBuf,
+    CopyBuffer<B, SR, SL>: AsyncIOBuf,
 {
     a: &'a mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamR,
     b: &'a mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamW,
@@ -142,8 +142,8 @@ where
     B: Unpin,
     SR: AsyncRead + AsyncWrite + Unpin,
     SW: AsyncRead + AsyncWrite + Unpin,
-    CopyBuffer<B, SR, SW>: AsyncIOBuf + Unpin,
-    CopyBuffer<B, SW, SR>: AsyncIOBuf + Unpin,
+    CopyBuffer<B, SR, SW>: AsyncIOBuf,
+    CopyBuffer<B, SW, SR>: AsyncIOBuf,
 {
     let a_to_b = TransferState::Running(a_to_b_buf);
     let b_to_a = TransferState::Running(b_to_a_buf);
