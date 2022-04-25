@@ -2,9 +2,9 @@ use std::io::{Error, Result};
 use libc::{rlimit, rlim_t, RLIMIT_NOFILE};
 
 /// Set nofile limitation.
-/// 
+///
 /// `CAP_NET_ADMIN` privilege is required if exceeds hard limitation.
-/// 
+///
 /// Reference:
 /// - [man](https://man7.org/linux/man-pages/man2/setrlimit.2.html)
 /// - [shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust/blob/master/crates/shadowsocks-service/src/sys/unix/mod.rs)
@@ -23,7 +23,7 @@ pub fn set_nofile_limit(nofile: u64) -> Result<()> {
 }
 
 /// Get current nofile limitation.
-/// 
+///
 /// Reference: [man](https://man7.org/linux/man-pages/man2/setrlimit.2.html).
 #[cfg(all(unix, not(target_os = "android")))]
 pub fn get_nofile_limit() -> Result<(u64, u64)> {

@@ -3,11 +3,11 @@ use std::net::SocketAddr;
 use socket2::{Socket, Domain, Type};
 
 /// Create a new non-blocking socket.
-/// 
+///
 /// On unix-like platforms, [`SOCK_NONBLOCK`](libc::SOCK_NONBLOCK) and
 /// [`SOCK_CLOEXEC`](libc::SOCK_CLOEXEC) are assigned
 /// when creating a new socket, which saves a [`fcntl`](libc::fcntl) syscall.
-/// 
+///
 /// On other platforms, a socket is created without extra flags
 /// then set to `non_blocking`.
 #[cfg(any(
@@ -57,11 +57,11 @@ pub fn new_socket(domain: Domain, ty: Type) -> Result<Socket> {
 }
 
 /// Create a new non-blocking TCP socket.
-/// 
+///
 /// On unix-like platforms, [`SOCK_NONBLOCK`](libc::SOCK_NONBLOCK) and
 /// [`SOCK_CLOEXEC`](libc::SOCK_CLOEXEC) are assigned
 /// when creating a new socket, which saves a [`fcntl`](libc::fcntl) syscall.
-/// 
+///
 /// On other platforms, a socket is created without extra flags
 /// then set to `non_blocking`.
 #[inline]
@@ -74,11 +74,11 @@ pub fn new_tcp_socket(addr: &SocketAddr) -> Result<Socket> {
 }
 
 /// Create a new non-blocking UDP socket.
-/// 
+///
 /// On unix-like platforms, [`SOCK_NONBLOCK`](libc::SOCK_NONBLOCK) and
 /// [`SOCK_CLOEXEC`](libc::SOCK_CLOEXEC) are assigned
 /// when creating a new socket, which saves a [`fcntl`](libc::fcntl) syscall.
-/// 
+///
 /// On other platforms, a socket is created without extra flags
 /// then set to `non_blocking`.
 #[inline]
@@ -90,11 +90,10 @@ pub fn new_udp_socket(addr: &SocketAddr) -> Result<Socket> {
     new_socket(domain, Type::DGRAM)
 }
 
-
 /// Bind a socket to a specific network interface.
-/// 
+///
 /// It seems `SO_BINDTODEVICE` is not supported on BSDs, we should use `IP_SENDIF` instead.
-/// 
+///
 /// Reference:
 /// - [shadowsocks-rust](https://docs.rs/shadowsocks/1.13.1/src/shadowsocks/net/sys/unix/linux/mod.rs.html#256-276).
 /// - [freebsd](https://lists.freebsd.org/pipermail/freebsd-net/2012-April/032064.html).
