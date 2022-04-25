@@ -1,5 +1,7 @@
 #![feature(ready_macro)]
 
+//! Realm's high performance IO collections. 
+
 mod buf;
 mod mem_copy;
 mod bidi_copy;

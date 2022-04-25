@@ -1,8 +1,8 @@
 [package]
 name = "realm_io"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["zephyr <i@zephyr.moe>"]
-description = "Realm's high performance IO collections"
+description = "Realm's high performance IO collections."
 repository = "https://github.com/zhboner/realm/realm_io"
 readme = "README.md"
 documentation = "https://docs.rs/realm_io"
