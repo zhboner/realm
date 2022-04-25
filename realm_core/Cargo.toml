@@ -12,8 +12,8 @@ license = "MIT"
 
 [dependencies]
 # realm
-realm_io = { path = "../realm_io" }
-realm_syscall = { path = "../realm_syscall" }
+realm_io = "0.2.5"
+realm_syscall = "0.1.3"
 
 # other
 log = "0.4"
