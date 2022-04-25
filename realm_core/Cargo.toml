@@ -1,0 +1,23 @@
+[package]
+name = "realm_core"
+version = "0.1.0"
+authors = ["Realm Contributors"]
+description = "Realm's core facilities."
+repository = "https://github.com/zhboner/realm/realm_core"
+readme = "README.md"
+documentation = "https://docs.rs/realm_core"
+keywords = ["network", "relay", "zero-copy", "websocket", "tls"]
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+# realm
+realm_io = { path = "../realm_io" }
+realm_syscall = { path = "../realm_syscall" }
+
+# other
+log = "0.4"
+lazy_static = "1"
+pin-project = "1"
+trust-dns-resolver = "0.21"
+tokio = { version = "1", features = ["rt", "net", "time"] }
