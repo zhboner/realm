@@ -10,8 +10,10 @@ use crate::endpoint::Endpoint;
 use sockmap::SockMap;
 use middle::associate_and_relay;
 
+/// UDP Buffer size.
 pub const BUF_SIZE: usize = 2048;
 
+/// Launch a udp relay.
 pub async fn run_udp(endpoint: Ref<Endpoint>) {
     let Endpoint {
         laddr,

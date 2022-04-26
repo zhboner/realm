@@ -888,7 +888,7 @@ dependencies = [
  "mimalloc",
  "pin-project",
  "proxy-protocol",
- "realm_io 0.2.6",
+ "realm_io 0.2.7",
  "serde",
  "serde_json",
  "socket2 0.4.4",
@@ -923,7 +923,7 @@ dependencies = [
 
 [[package]]
 name = "realm_io"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "libc",
  "tokio",
