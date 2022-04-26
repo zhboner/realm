@@ -5,8 +5,11 @@ mod middle;
 mod plain;
 
 use std::io::Result;
+
 use crate::trick::Ref;
 use crate::endpoint::Endpoint;
+
+use middle::connect_and_relay;
 
 /// Launch a tcp relay.
 pub async fn run_tcp(endpoint: Ref<Endpoint>) -> Result<()> {
@@ -37,7 +40,7 @@ pub async fn run_tcp(endpoint: Ref<Endpoint>) -> Result<()> {
         let _ = stream.set_nodelay(true);
 
         tokio::spawn(async move {
-            match middle::connect_and_relay(stream, remote, conn_opts).await {
+            match connect_and_relay(stream, remote, conn_opts).await {
                 Ok(..) => log::debug!("[tcp]{}, finish", link_info),
                 Err(e) => log::error!("[tcp]{}, error: {}", link_info, e),
             }

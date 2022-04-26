@@ -1,8 +1,9 @@
-//! Arguments for relay.
+//! Relay endpoint.
 
 use std::fmt::{Display, Formatter};
 use std::net::SocketAddr;
 
+/// Remote address.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RemoteAddr {
     SocketAddr(SocketAddr),
@@ -19,6 +20,7 @@ impl Display for RemoteAddr {
     }
 }
 
+/// Connect or associate options.
 #[derive(Debug, Clone)]
 pub struct ConnectOpts {
     pub connect_timeout: usize,
@@ -27,6 +29,7 @@ pub struct ConnectOpts {
     pub bind_interface: Option<String>,
 }
 
+/// Relay endpoint.
 #[derive(Debug, Clone)]
 pub struct Endpoint {
     pub listen: SocketAddr,
