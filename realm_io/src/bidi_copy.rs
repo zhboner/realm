@@ -131,7 +131,7 @@ where
         {
             if a_to_b.is_ready() || b_to_a.is_ready() {
                 Poll::Ready(Ok(()))
-            }else {
+            } else {
                 Poll::Pending
             }
         }
