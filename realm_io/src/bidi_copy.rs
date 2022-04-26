@@ -59,10 +59,8 @@ where
     CopyBuffer<B, SR, SL>: AsyncIOBuf,
 {
     // type equality constraints will save this (one day)!
-    let r: &mut <CopyBuffer<B, SR, SL> as AsyncIOBuf>::StreamR =
-        unsafe { std::mem::transmute(r) };
-    let w: &mut <CopyBuffer<B, SR, SL> as AsyncIOBuf>::StreamW =
-        unsafe { std::mem::transmute(w) };
+    let r: &mut <CopyBuffer<B, SR, SL> as AsyncIOBuf>::StreamR = unsafe { std::mem::transmute(r) };
+    let w: &mut <CopyBuffer<B, SR, SL> as AsyncIOBuf>::StreamW = unsafe { std::mem::transmute(w) };
     loop {
         match state {
             TransferState::Running(buf) => {

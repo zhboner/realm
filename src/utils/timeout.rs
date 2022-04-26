@@ -57,8 +57,5 @@ pub fn timeoutfut<F: Future>(future: F, timeout: usize) -> Timeout<F> {
         0 => Delay::None,
         x => Delay::Some(sleep(Duration::from_secs(x as u64))),
     };
-    Timeout {
-        value: future,
-        delay,
-    }
+    Timeout { value: future, delay }
 }

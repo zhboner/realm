@@ -96,10 +96,7 @@ pub fn get_nofile_limit() -> Option<(u64, u64)> {
 // should use IP_SENDIF instead
 // ref: https://lists.freebsd.org/pipermail/freebsd-net/2012-April/032064.html
 #[cfg(target_os = "linux")]
-pub fn bind_to_device<T: std::os::unix::io::AsRawFd>(
-    socket: &T,
-    iface: &str,
-) -> std::io::Result<()> {
+pub fn bind_to_device<T: std::os::unix::io::AsRawFd>(socket: &T, iface: &str) -> std::io::Result<()> {
     let iface_bytes = iface.as_bytes();
 
     if unsafe {

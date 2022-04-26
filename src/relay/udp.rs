@@ -46,15 +46,10 @@ pub async fn associate_and_relay(
             None => {
                 info!("[udp]{} => {}", &client_addr, &remote_addr);
 
-                let socket = socket::new_socket(
-                    socket::Type::DGRAM,
-                    &remote_addr,
-                    &conn_opts,
-                )?;
+                let socket = socket::new_socket(socket::Type::DGRAM, &remote_addr, &conn_opts)?;
 
                 // from_std panics only when tokio runtime not setup
-                let new_sock =
-                    Arc::new(UdpSocket::from_std(socket.into()).unwrap());
+                let new_sock = Arc::new(UdpSocket::from_std(socket.into()).unwrap());
 
                 tokio::spawn(send_back(
                     sock_map.into(),
@@ -83,14 +78,13 @@ async fn send_back(
     let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
-        let res =
-            match timeoutfut(alloc_sock.recv_from(&mut buf), timeout).await {
-                Ok(x) => x,
-                Err(_) => {
-                    debug!("[udp]association for {} timeout", &client_addr);
-                    break;
-                }
-            };
+        let res = match timeoutfut(alloc_sock.recv_from(&mut buf), timeout).await {
+            Ok(x) => x,
+            Err(_) => {
+                debug!("[udp]association for {} timeout", &client_addr);
+                break;
+            }
+        };
 
         let (n, remote_addr) = match res {
             Ok(x) => x,
@@ -113,10 +107,7 @@ async fn send_back(
 }
 
 #[inline]
-fn find_socket(
-    sock_map: &SockMap,
-    client_addr: &SocketAddr,
-) -> Option<Arc<UdpSocket>> {
+fn find_socket(sock_map: &SockMap, client_addr: &SocketAddr) -> Option<Arc<UdpSocket>> {
     // fetch the lock
 
     let alloc_sock = sock_map.read().unwrap();
@@ -127,11 +118,7 @@ fn find_socket(
 }
 
 #[inline]
-fn insert_socket(
-    sock_map: &SockMap,
-    client_addr: SocketAddr,
-    new_sock: Arc<UdpSocket>,
-) {
+fn insert_socket(sock_map: &SockMap, client_addr: SocketAddr, new_sock: Arc<UdpSocket>) {
     // fetch the lock
 
     sock_map.write().unwrap().insert(client_addr, new_sock);

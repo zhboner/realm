@@ -6,12 +6,7 @@ use kaminari::mix::{MixAccept, MixConnect};
 
 use realm_io::{CopyBuffer, bidi_copy_buf, buf_size};
 
-pub async fn relay_transport<S: IOStream>(
-    src: S,
-    dst: S,
-    ac: &MixAccept,
-    cc: &MixConnect,
-) -> Result<()> {
+pub async fn relay_transport<S: IOStream>(src: S, dst: S, ac: &MixAccept, cc: &MixConnect) -> Result<()> {
     macro_rules! hs_relay {
         ($ac: expr, $cc: expr) => {
             handshake_and_relay(src, dst, $ac, $cc).await
@@ -47,12 +42,7 @@ pub async fn relay_transport<S: IOStream>(
     hs_relay!(ac, cc)
 }
 
-pub async fn handshake_and_relay<S, AC, CC>(
-    src: S,
-    dst: S,
-    ac: &AC,
-    cc: &CC,
-) -> Result<()>
+pub async fn handshake_and_relay<S, AC, CC>(src: S, dst: S, ac: &AC, cc: &CC) -> Result<()>
 where
     S: IOStream,
     AC: AsyncAccept<S>,
@@ -61,8 +51,7 @@ where
     let mut buf1 = vec![0; buf_size()];
     let mut buf2 = vec![0; buf_size()];
 
-    let (mut src, mut dst) =
-        try_join!(ac.accept(src, &mut buf1), cc.connect(dst, &mut buf2))?;
+    let (mut src, mut dst) = try_join!(ac.accept(src, &mut buf1), cc.connect(dst, &mut buf2))?;
 
     let buf1 = CopyBuffer::new(buf1);
     let buf2 = CopyBuffer::new(buf2);

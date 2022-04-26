@@ -17,10 +17,7 @@ pub fn bind(laddr: &SocketAddr) -> Result<UdpSocket> {
     UdpSocket::from_std(socket.into())
 }
 
-pub async fn associate(
-    raddr: &SocketAddr,
-    conn_opts: &ConnectOpts,
-) -> Result<UdpSocket> {
+pub async fn associate(raddr: &SocketAddr, conn_opts: &ConnectOpts) -> Result<UdpSocket> {
     let ConnectOpts {
         bind_address,
         bind_interface,

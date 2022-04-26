@@ -46,10 +46,7 @@ pub async fn run_tcp(endpoint: Ref<Endpoint>) {
         info!("[tcp]{}", &msg);
 
         if let Err(e) = stream.set_nodelay(true) {
-            warn!(
-                "[tcp]failed to set no_delay option for incoming stream: {}",
-                e
-            );
+            warn!("[tcp]failed to set no_delay option for incoming stream: {}", e);
         }
 
         tokio::spawn(async move {
@@ -81,14 +78,7 @@ pub async fn run_udp(endpoint: Ref<Endpoint>) {
         .unwrap_or_else(|e| panic!("[udp]unable to bind {}: {}", &listen, e));
 
     loop {
-        if let Err(e) = udp::associate_and_relay(
-            &sock_map,
-            &listen_sock,
-            remote,
-            conn_opts.into(),
-        )
-        .await
-        {
+        if let Err(e) = udp::associate_and_relay(&sock_map, &listen_sock, remote, conn_opts.into()).await {
             error!("[udp]error: {}", e);
         }
     }
@@ -104,7 +94,5 @@ fn compute_workers(workers: &[Endpoint]) -> usize {
             }
         };
     }
-    workers
-        .iter()
-        .fold(0, |total, x| total + num!(x.conn_opts.use_udp))
+    workers.iter().fold(0, |total, x| total + num!(x.conn_opts.use_udp))
 }

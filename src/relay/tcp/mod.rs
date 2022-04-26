@@ -63,12 +63,7 @@ pub async fn connect_and_relay(
     // after connected
     #[cfg(feature = "proxy-protocol")]
     if haproxy_opts.send_proxy || haproxy_opts.accept_proxy {
-        haproxy::handle_proxy_protocol(
-            &mut inbound,
-            &mut outbound,
-            *haproxy_opts,
-        )
-        .await?;
+        haproxy::handle_proxy_protocol(&mut inbound, &mut outbound, *haproxy_opts).await?;
     }
 
     let res = {
@@ -94,26 +89,19 @@ pub async fn connect_and_relay(
 }
 
 #[inline]
-async fn relay_plain(
-    mut inbound: TcpStream,
-    mut outbound: TcpStream,
-    zero_copy: bool,
-) -> Result<()> {
+async fn relay_plain(mut inbound: TcpStream, mut outbound: TcpStream, zero_copy: bool) -> Result<()> {
     #[cfg(all(target_os = "linux", feature = "zero-copy"))]
     if zero_copy {
-        let (res, _, _) =
-            realm_io::bidi_zero_copy(&mut inbound, &mut outbound).await;
+        let (res, _, _) = realm_io::bidi_zero_copy(&mut inbound, &mut outbound).await;
         res
     } else {
-        let (res, _, _) =
-            realm_io::bidi_copy(&mut inbound, &mut outbound).await;
+        let (res, _, _) = realm_io::bidi_copy(&mut inbound, &mut outbound).await;
         res
     }
 
     #[cfg(not(all(target_os = "linux", feature = "zero-copy")))]
     {
-        let (res, _, _) =
-            realm_io::bidi_copy(&mut inbound, &mut outbound).await;
+        let (res, _, _) = realm_io::bidi_copy(&mut inbound, &mut outbound).await;
         res
     }
 }

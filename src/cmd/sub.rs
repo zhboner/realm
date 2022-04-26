@@ -21,11 +21,7 @@ pub fn add_convert(app: Command) -> Command {
                 .default_value("toml")
                 .display_order(0),
         )
-        .arg(
-            clap::arg!(-o --output <path>)
-                .required(false)
-                .display_order(1),
-        );
+        .arg(clap::arg!(-o --output <path>).required(false).display_order(1));
 
     app.subcommand(cvt)
 }

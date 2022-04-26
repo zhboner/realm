@@ -103,9 +103,7 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         return CmdInput::Config(String::from(config), opts);
     }
 
-    if matches.value_of("local").is_some()
-        && matches.value_of("remote").is_some()
-    {
+    if matches.value_of("local").is_some() && matches.value_of("remote").is_some() {
         let ep = EndpointConf::from_cmd_args(&matches);
         return CmdInput::Endpoint(ep, opts);
     }

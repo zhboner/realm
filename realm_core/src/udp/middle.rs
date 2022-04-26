@@ -33,15 +33,9 @@ pub async fn associate_and_relay(
         let remote = match sockmap.find(&laddr) {
             Some(x) => x,
             None => {
-                log::info!(
-                    "[udp]new association {} => {} as {}",
-                    &laddr,
-                    raddr,
-                    &addr
-                );
+                log::info!("[udp]new association {} => {} as {}", &laddr, raddr, &addr);
 
-                let remote =
-                    Arc::new(socket::associate(&addr, conn_opts).await?);
+                let remote = Arc::new(socket::associate(&addr, conn_opts).await?);
 
                 sockmap.insert(laddr, remote.clone());
 
@@ -72,16 +66,13 @@ async fn send_back(
     let mut buf = vec![0u8; BUF_SIZE];
 
     loop {
-        let res =
-            match timeoutfut(remote.recv_from(&mut buf), associate_timeout)
-                .await
-            {
-                Ok(x) => x,
-                Err(_) => {
-                    log::debug!("[udp]association for {} timeout", &laddr);
-                    break;
-                }
-            };
+        let res = match timeoutfut(remote.recv_from(&mut buf), associate_timeout).await {
+            Ok(x) => x,
+            Err(_) => {
+                log::debug!("[udp]association for {} timeout", &laddr);
+                break;
+            }
+        };
 
         let (n, raddr) = match res {
             Ok(x) => x,

@@ -24,27 +24,15 @@ pub struct LegacyConf {
 fn flatten_ports(ports: Vec<String>) -> Vec<u16> {
     ports
         .into_iter()
-        .flat_map(|range| {
-            match (range.split('-').next(), range.split('-').nth(1)) {
-                (Some(start), Some(end)) => {
-                    start.parse::<u16>().unwrap()
-                        ..end.parse::<u16>().unwrap() + 1
-                }
-                (Some(start), None) => {
-                    start.parse::<u16>().unwrap()
-                        ..start.parse::<u16>().unwrap() + 1
-                }
-                _ => panic!("failed to parse ports"),
-            }
+        .flat_map(|range| match (range.split('-').next(), range.split('-').nth(1)) {
+            (Some(start), Some(end)) => start.parse::<u16>().unwrap()..end.parse::<u16>().unwrap() + 1,
+            (Some(start), None) => start.parse::<u16>().unwrap()..start.parse::<u16>().unwrap() + 1,
+            _ => panic!("failed to parse ports"),
         })
         .collect()
 }
 
-fn join_addr_port(
-    addrs: Vec<String>,
-    ports: Vec<u16>,
-    len: usize,
-) -> Vec<String> {
+fn join_addr_port(addrs: Vec<String>, ports: Vec<u16>, len: usize) -> Vec<String> {
     use std::iter::repeat;
 
     let port0 = ports[0];
@@ -150,8 +138,7 @@ mod tests {
 
         let addrs = strvec!["a.com", "b.com", "c.com"];
         let ports = vec![1, 2, 3];
-        let result =
-            vec!["a.com:1", "b.com:2", "c.com:3", "a.com:1", "a.com:1"];
+        let result = vec!["a.com:1", "b.com:2", "c.com:3", "a.com:1", "a.com:1"];
         assert_eq!(super::join_addr_port(addrs, ports, 5), result);
     }
 }

@@ -37,13 +37,8 @@ impl TcpListener {
 }
 
 impl TcpStream {
-    pub async fn connect_with_socket(
-        socket: TcpSocket,
-        addr: SocketAddr,
-    ) -> Result<TcpStream> {
-        TfoStream::connect_with_socket(socket, addr)
-            .await
-            .map(TcpStream)
+    pub async fn connect_with_socket(socket: TcpSocket, addr: SocketAddr) -> Result<TcpStream> {
+        TfoStream::connect_with_socket(socket, addr).await.map(TcpStream)
     }
 
     pub fn peer_addr(&self) -> Result<SocketAddr> {
@@ -63,11 +58,7 @@ impl TcpStream {
     }
 
     #[allow(unused)]
-    pub fn try_io<R>(
-        &self,
-        interest: Interest,
-        f: impl FnOnce() -> Result<R>,
-    ) -> Result<R> {
+    pub fn try_io<R>(&self, interest: Interest, f: impl FnOnce() -> Result<R>) -> Result<R> {
         inner!(self).try_io(interest, f)
     }
 
@@ -90,35 +81,21 @@ impl From<tokio::net::TcpStream> for TcpStream {
 }
 
 impl AsyncRead for TcpStream {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<std::io::Result<()>> {
+    fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.get_mut().0).poll_read(cx, buf)
     }
 }
 
 impl AsyncWrite for TcpStream {
-    fn poll_write(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<Result<usize>> {
+    fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<Result<usize>> {
         Pin::new(&mut self.get_mut().0).poll_write(cx, buf)
     }
 
-    fn poll_flush(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<()>> {
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
         Pin::new(&mut self.get_mut().0).poll_flush(cx)
     }
 
-    fn poll_shutdown(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<()>> {
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
         Pin::new(&mut self.get_mut().0).poll_shutdown(cx)
     }
 }

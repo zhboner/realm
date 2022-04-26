@@ -85,9 +85,7 @@ pub async fn resolve_addr(addr: &RemoteAddr) -> Result<LookupRemoteAddr<'_>> {
     use LookupRemoteAddr::*;
     match addr {
         SocketAddr(addr) => Ok(NoLookup(addr)),
-        DomainName(ip, port) => {
-            resolve_ip(ip).await.map(|ip| Dolookup(ip, *port))
-        }
+        DomainName(ip, port) => resolve_ip(ip).await.map(|ip| Dolookup(ip, *port)),
     }
 }
 
@@ -102,12 +100,8 @@ impl LookupRemoteAddr<'_> {
     pub fn iter(&self) -> LookupRemoteAddrIter {
         use LookupRemoteAddr::*;
         match self {
-            NoLookup(addr) => {
-                LookupRemoteAddrIter::NoLookup(std::iter::once(addr))
-            }
-            Dolookup(ip, port) => {
-                LookupRemoteAddrIter::DoLookup(ip.iter(), *port)
-            }
+            NoLookup(addr) => LookupRemoteAddrIter::NoLookup(std::iter::once(addr)),
+            Dolookup(ip, port) => LookupRemoteAddrIter::DoLookup(ip.iter(), *port),
         }
     }
 }
@@ -125,9 +119,7 @@ impl Iterator for LookupRemoteAddrIter<'_> {
         use LookupRemoteAddrIter::*;
         match self {
             NoLookup(addr) => addr.next().copied(),
-            DoLookup(ip, port) => {
-                ip.next().map(|ip| SocketAddr::new(ip, *port))
-            }
+            DoLookup(ip, port) => ip.next().map(|ip| SocketAddr::new(ip, *port)),
         }
     }
 }

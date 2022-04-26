@@ -24,13 +24,7 @@ pub fn new_socket(domain: Domain, ty: Type) -> Result<Socket> {
     use std::os::unix::prelude::FromRawFd;
     use libc::{SOCK_NONBLOCK, SOCK_CLOEXEC};
 
-    let fd = unsafe {
-        libc::socket(
-            domain.into(),
-            libc::c_int::from(ty) | SOCK_NONBLOCK | SOCK_CLOEXEC,
-            0,
-        )
-    };
+    let fd = unsafe { libc::socket(domain.into(), libc::c_int::from(ty) | SOCK_NONBLOCK | SOCK_CLOEXEC, 0) };
 
     if fd < 0 {
         Err(std::io::Error::last_os_error())
@@ -98,10 +92,7 @@ pub fn new_udp_socket(addr: &SocketAddr) -> Result<Socket> {
 /// - [shadowsocks-rust](https://docs.rs/shadowsocks/1.13.1/src/shadowsocks/net/sys/unix/linux/mod.rs.html#256-276).
 /// - [freebsd](https://lists.freebsd.org/pipermail/freebsd-net/2012-April/032064.html).
 #[cfg(target_os = "linux")]
-pub fn bind_to_device<T: std::os::unix::io::AsRawFd>(
-    socket: &T,
-    iface: &str,
-) -> std::io::Result<()> {
+pub fn bind_to_device<T: std::os::unix::io::AsRawFd>(socket: &T, iface: &str) -> std::io::Result<()> {
     let iface_bytes = iface.as_bytes();
 
     if unsafe {

@@ -32,7 +32,7 @@ pub struct ConnectOpts {
 /// Relay endpoint.
 #[derive(Debug, Clone)]
 pub struct Endpoint {
-    pub listen: SocketAddr,
-    pub remote: RemoteAddr,
+    pub laddr: SocketAddr,
+    pub raddr: RemoteAddr,
     pub conn_opts: ConnectOpts,
 }

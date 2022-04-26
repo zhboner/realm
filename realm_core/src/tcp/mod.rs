@@ -14,19 +14,18 @@ use middle::connect_and_relay;
 /// Launch a tcp relay.
 pub async fn run_tcp(endpoint: Ref<Endpoint>) -> Result<()> {
     let Endpoint {
-        listen,
-        remote,
+        laddr,
+        raddr,
         conn_opts,
     } = endpoint.as_ref();
 
-    let remote = Ref::new(remote);
+    let raddr = Ref::new(raddr);
     let conn_opts = Ref::new(conn_opts);
 
-    let lis = socket::bind(listen)
-        .unwrap_or_else(|e| panic!("[tcp]failed to bind {}: {}", listen, e));
+    let lis = socket::bind(laddr).unwrap_or_else(|e| panic!("[tcp]failed to bind {}: {}", laddr, e));
 
     loop {
-        let (stream, addr) = match lis.accept().await {
+        let (local, addr) = match lis.accept().await {
             Ok(x) => x,
             Err(e) => {
                 log::error!("[tcp]failed to accept: {}", e);
@@ -34,13 +33,13 @@ pub async fn run_tcp(endpoint: Ref<Endpoint>) -> Result<()> {
             }
         };
 
-        let link_info = format!("{} => {}", &addr, remote.as_ref());
+        let link_info = format!("{} => {}", &addr, raddr.as_ref());
         log::info!("[tcp]{}", &link_info);
 
-        let _ = stream.set_nodelay(true);
+        let _ = local.set_nodelay(true);
 
         tokio::spawn(async move {
-            match connect_and_relay(stream, remote, conn_opts).await {
+            match connect_and_relay(local, raddr, conn_opts).await {
                 Ok(..) => log::debug!("[tcp]{}, finish", link_info),
                 Err(e) => log::error!("[tcp]{}, error: {}", link_info, e),
             }

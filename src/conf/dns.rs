@@ -236,14 +236,11 @@ impl Config for DnsConf {
         let opts = if empty![mode, min_ttl, max_ttl, cache_size] {
             None
         } else {
-            let ip_strategy: LookupIpStrategy =
-                mode.map(|x| x.into()).unwrap_or_default();
+            let ip_strategy: LookupIpStrategy = mode.map(|x| x.into()).unwrap_or_default();
 
-            let positive_min_ttl =
-                min_ttl.map(|x| Duration::from_secs(x as u64));
+            let positive_min_ttl = min_ttl.map(|x| Duration::from_secs(x as u64));
 
-            let positive_max_ttl =
-                max_ttl.map(|x| Duration::from_secs(x as u64));
+            let positive_max_ttl = max_ttl.map(|x| Duration::from_secs(x as u64));
 
             let cache_size = cache_size.unwrap_or({
                 let ResolverOpts { cache_size, .. } = Default::default();
@@ -275,8 +272,7 @@ impl Config for DnsConf {
             None => {
                 use crate::dns::DnsConf as TrustDnsConf;
                 let TrustDnsConf { conf, .. } = TrustDnsConf::default();
-                let mut addrs: Vec<std::net::SocketAddr> =
-                    conf.name_servers().iter().map(|x| x.socket_addr).collect();
+                let mut addrs: Vec<std::net::SocketAddr> = conf.name_servers().iter().map(|x| x.socket_addr).collect();
                 addrs.dedup();
                 addrs
             }
@@ -323,21 +319,13 @@ impl Config for DnsConf {
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
         let mode = matches.value_of("dns_mode").map(|x| String::from(x).into());
 
-        let min_ttl = matches
-            .value_of("dns_min_ttl")
-            .map(|x| x.parse::<u32>().unwrap());
+        let min_ttl = matches.value_of("dns_min_ttl").map(|x| x.parse::<u32>().unwrap());
 
-        let max_ttl = matches
-            .value_of("dns_max_ttl")
-            .map(|x| x.parse::<u32>().unwrap());
+        let max_ttl = matches.value_of("dns_max_ttl").map(|x| x.parse::<u32>().unwrap());
 
-        let cache_size = matches
-            .value_of("dns_cache_size")
-            .map(|x| x.parse::<usize>().unwrap());
+        let cache_size = matches.value_of("dns_cache_size").map(|x| x.parse::<usize>().unwrap());
 
-        let protocol = matches
-            .value_of("dns_protocol")
-            .map(|x| String::from(x).into());
+        let protocol = matches.value_of("dns_protocol").map(|x| String::from(x).into());
 
         let nameservers = matches
             .value_of("dns_servers")

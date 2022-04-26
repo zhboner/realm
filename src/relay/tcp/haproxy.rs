@@ -19,11 +19,7 @@ use crate::utils::timeoutfut;
 // TODO: replace the "proxy-protocol" crate, and then avoid heap allocation.
 
 // client -> relay -> server
-pub async fn handle_proxy_protocol(
-    src: &mut TcpStream,
-    dst: &mut TcpStream,
-    opts: HaproxyOpts,
-) -> Result<()> {
+pub async fn handle_proxy_protocol(src: &mut TcpStream, dst: &mut TcpStream, opts: HaproxyOpts) -> Result<()> {
     let HaproxyOpts {
         send_proxy,
         accept_proxy,
@@ -59,8 +55,7 @@ pub async fn handle_proxy_protocol(
         let mut slice = buf.as_ref();
 
         // slice is advanced
-        let header =
-            parse(&mut slice).map_err(|e| Error::new(ErrorKind::Other, e))?;
+        let header = parse(&mut slice).map_err(|e| Error::new(ErrorKind::Other, e))?;
         let parsed_n = peek_n - slice.remaining();
         debug!("[tcp]proxy-protocol parsed, {} bytes", parsed_n);
 
@@ -99,9 +94,8 @@ pub async fn handle_proxy_protocol(
     let server_addr = unsafe { server_addr.assume_init() };
 
     // write header
-    let header =
-        encode(make_header(client_addr, server_addr, send_proxy_version))
-            .map_err(|e| Error::new(ErrorKind::Other, e))?;
+    let header = encode(make_header(client_addr, server_addr, send_proxy_version))
+        .map_err(|e| Error::new(ErrorKind::Other, e))?;
     debug!("[tcp]send initial {} bytes: {:#x}", header.len(), &header);
     dst.write_all(&header).await?;
 
@@ -123,11 +117,7 @@ macro_rules! unpack {
     };
 }
 
-fn make_header(
-    client_addr: SocketAddr,
-    server_addr: SocketAddr,
-    send_proxy_version: usize,
-) -> ProxyHeader {
+fn make_header(client_addr: SocketAddr, server_addr: SocketAddr, send_proxy_version: usize) -> ProxyHeader {
     match send_proxy_version {
         2 => make_header_v2(client_addr, server_addr),
         1 => make_header_v1(client_addr, server_addr),
@@ -135,14 +125,8 @@ fn make_header(
     }
 }
 
-fn make_header_v1(
-    client_addr: SocketAddr,
-    server_addr: SocketAddr,
-) -> ProxyHeader {
-    debug!(
-        "[tcp]send proxy-protocol-v1: {} => {}",
-        &client_addr, &server_addr
-    );
+fn make_header_v1(client_addr: SocketAddr, server_addr: SocketAddr) -> ProxyHeader {
+    debug!("[tcp]send proxy-protocol-v1: {} => {}", &client_addr, &server_addr);
 
     if client_addr.is_ipv4() {
         ProxyHeader::Version1 {
@@ -161,14 +145,8 @@ fn make_header_v1(
     }
 }
 
-fn make_header_v2(
-    client_addr: SocketAddr,
-    server_addr: SocketAddr,
-) -> ProxyHeader {
-    debug!(
-        "[tcp]send proxy-protocol-v2: {} => {}",
-        &client_addr, &server_addr
-    );
+fn make_header_v2(client_addr: SocketAddr, server_addr: SocketAddr) -> ProxyHeader {
+    debug!("[tcp]send proxy-protocol-v2: {} => {}", &client_addr, &server_addr);
 
     ProxyHeader::Version2 {
         command: v2::ProxyCommand::Proxy,
@@ -203,33 +181,19 @@ fn handle_header(header: ProxyHeader) -> Option<(SocketAddr, SocketAddr)> {
     }
 }
 
-fn handle_header_v1(
-    addr: v1::ProxyAddresses,
-) -> Option<(SocketAddr, SocketAddr)> {
+fn handle_header_v1(addr: v1::ProxyAddresses) -> Option<(SocketAddr, SocketAddr)> {
     use v1::ProxyAddresses::*;
     match addr {
         Unknown => {
             info!("[tcp]accept proxy-protocol-v1: unknown");
             None
         }
-        Ipv4 {
-            source,
-            destination,
-        } => {
-            info!(
-                "[tcp]accept proxy-protocol-v1: {} => {}",
-                &source, &destination
-            );
+        Ipv4 { source, destination } => {
+            info!("[tcp]accept proxy-protocol-v1: {} => {}", &source, &destination);
             Some((SocketAddr::V4(source), SocketAddr::V4(destination)))
         }
-        Ipv6 {
-            source,
-            destination,
-        } => {
-            info!(
-                "[tcp]accept proxy-protocol-v1: {} => {}",
-                &source, &destination
-            );
+        Ipv6 { source, destination } => {
+            info!("[tcp]accept proxy-protocol-v1: {} => {}", &source, &destination);
             Some((SocketAddr::V6(source), SocketAddr::V6(destination)))
         }
     }
@@ -268,30 +232,16 @@ fn handle_header_v2(
     }
 
     match addr {
-        Address::Ipv4 {
-            source,
-            destination,
-        } => {
-            info!(
-                "[tcp]accept proxy-protocol-v2: {} => {}",
-                &source, &destination
-            );
+        Address::Ipv4 { source, destination } => {
+            info!("[tcp]accept proxy-protocol-v2: {} => {}", &source, &destination);
             Some((SocketAddr::V4(source), SocketAddr::V4(destination)))
         }
-        Address::Ipv6 {
-            source,
-            destination,
-        } => {
-            info!(
-                "[tcp]accept proxy-protocol-v2: {} => {}",
-                &source, &destination
-            );
+        Address::Ipv6 { source, destination } => {
+            info!("[tcp]accept proxy-protocol-v2: {} => {}", &source, &destination);
             Some((SocketAddr::V6(source), SocketAddr::V6(destination)))
         }
         Address::Unspec => {
-            info!(
-                "[tcp]accept proxy-protocol-v2: af_family = AF_UNSPEC, ignore"
-            );
+            info!("[tcp]accept proxy-protocol-v2: af_family = AF_UNSPEC, ignore");
             None
         }
         Address::Unix { .. } => {

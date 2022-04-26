@@ -8,16 +8,12 @@ use crate::trick::Ref;
 use crate::endpoint::{RemoteAddr, ConnectOpts};
 
 #[allow(unused_variables)]
-pub async fn connect_and_relay(
-    local: TcpStream,
-    remote: Ref<RemoteAddr>,
-    conn_opts: Ref<ConnectOpts>,
-) -> Result<()> {
+pub async fn connect_and_relay(local: TcpStream, raddr: Ref<RemoteAddr>, conn_opts: Ref<ConnectOpts>) -> Result<()> {
     // before connect
     // ..
 
     // connect!
-    let remote = socket::connect(remote.as_ref(), conn_opts.as_ref()).await?;
+    let remote = socket::connect(raddr.as_ref(), conn_opts.as_ref()).await?;
 
     // after connected
     let res = plain::run_relay(local, remote).await;

@@ -67,9 +67,7 @@ impl EndpointConf {
             Err(_) => {
                 let mut ipstr = String::from(through);
                 ipstr.retain(|c| c != '[' && c != ']');
-                ipstr
-                    .parse::<IpAddr>()
-                    .map_or(None, |ip| Some(SocketAddr::new(ip, 0)))
+                ipstr.parse::<IpAddr>().map_or(None, |ip| Some(SocketAddr::new(ip, 0)))
             }
         }
     }
@@ -88,14 +86,10 @@ impl EndpointConf {
         } = self;
 
         let listen_ws = listen_transport.as_ref().and_then(|s| get_ws_conf(s));
-        let listen_tls = listen_transport
-            .as_ref()
-            .and_then(|s| get_tls_server_conf(s));
+        let listen_tls = listen_transport.as_ref().and_then(|s| get_tls_server_conf(s));
 
         let remote_ws = remote_transport.as_ref().and_then(|s| get_ws_conf(s));
-        let remote_tls = remote_transport
-            .as_ref()
-            .and_then(|s| get_tls_client_conf(s));
+        let remote_tls = remote_transport.as_ref().and_then(|s| get_tls_client_conf(s));
 
         if matches!(
             (&listen_ws, &listen_tls, &remote_ws, &remote_tls),
@@ -157,10 +151,8 @@ impl Config for EndpointConf {
         let remote = matches.value_of("remote").unwrap().to_string();
         let through = matches.value_of("through").map(String::from);
         let interface = matches.value_of("interface").map(String::from);
-        let listen_transport =
-            matches.value_of("listen_transport").map(String::from);
-        let remote_transport =
-            matches.value_of("remote_transport").map(String::from);
+        let listen_transport = matches.value_of("listen_transport").map(String::from);
+        let remote_transport = matches.value_of("remote_transport").map(String::from);
 
         EndpointConf {
             listen,

@@ -32,9 +32,7 @@ fn main() {
         match cmd::scan() {
             CmdInput::Endpoint(ep, opts) => {
                 let mut conf = FullConf::default();
-                conf.add_endpoint(ep)
-                    .apply_global_opts()
-                    .apply_cmd_opts(opts);
+                conf.add_endpoint(ep).apply_global_opts().apply_cmd_opts(opts);
                 conf
             }
             CmdInput::Config(conf, opts) => {

@@ -20,10 +20,7 @@ pub fn bind(laddr: &SocketAddr) -> Result<TcpListener> {
     TcpListener::from_std(socket.into())
 }
 
-pub async fn connect(
-    raddr: &RemoteAddr,
-    conn_opts: &ConnectOpts,
-) -> Result<TcpStream> {
+pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpStream> {
     let ConnectOpts {
         connect_timeout,
         bind_address,
@@ -59,23 +56,12 @@ pub async fn connect(
                 return Ok(stream);
             }
             Ok(Err(e)) => {
-                log::warn!(
-                    "[tcp]connect to {} as {}: {}, try next ip",
-                    raddr,
-                    &addr,
-                    &e
-                );
+                log::warn!("[tcp]connect to {} as {}: {}, try next ip", raddr, &addr, &e);
                 last_err = Some(e);
             }
-            Err(_) => log::warn!(
-                "[tcp]connect to {} as {} timeout, try next ip",
-                raddr,
-                &addr
-            ),
+            Err(_) => log::warn!("[tcp]connect to {} as {} timeout, try next ip", raddr, &addr),
         }
     }
 
-    Err(last_err.unwrap_or_else(|| {
-        Error::new(ErrorKind::InvalidInput, "could not resolve to any address")
-    }))
+    Err(last_err.unwrap_or_else(|| Error::new(ErrorKind::InvalidInput, "could not resolve to any address")))
 }

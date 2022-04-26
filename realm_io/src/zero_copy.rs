@@ -48,11 +48,7 @@ impl Drop for Pipe {
 pub trait AsyncRawIO: AsyncRead + AsyncWrite + AsRawFd {
     fn x_poll_read_ready(&self, cx: &mut Context<'_>) -> Poll<Result<()>>;
     fn x_poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<Result<()>>;
-    fn x_try_io<R>(
-        &self,
-        interest: Interest,
-        f: impl FnOnce() -> Result<R>,
-    ) -> Result<R>;
+    fn x_try_io<R>(&self, interest: Interest, f: impl FnOnce() -> Result<R>) -> Result<R>;
 }
 
 impl<SR, SW> AsyncIOBuf for CopyBuffer<Pipe, SR, SW>
@@ -63,11 +59,7 @@ where
     type StreamR = SR;
     type StreamW = SW;
 
-    fn poll_read_buf(
-        &mut self,
-        cx: &mut Context<'_>,
-        stream: &mut Self::StreamR,
-    ) -> Poll<Result<usize>> {
+    fn poll_read_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamR) -> Poll<Result<usize>> {
         loop {
             ready!(stream.x_poll_read_ready(cx))?;
 
@@ -85,21 +77,13 @@ where
         }
     }
 
-    fn poll_write_buf(
-        &mut self,
-        cx: &mut Context<'_>,
-        stream: &mut Self::StreamW,
-    ) -> Poll<Result<usize>> {
+    fn poll_write_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamW) -> Poll<Result<usize>> {
         loop {
             ready!(stream.x_poll_write_ready(cx)?);
 
             let mut is_wouldblock = false;
             let res = stream.x_try_io(Interest::WRITABLE, || {
-                match splice_n(
-                    self.buf.0,
-                    stream.as_raw_fd(),
-                    self.cap - self.pos,
-                ) {
+                match splice_n(self.buf.0, stream.as_raw_fd(), self.cap - self.pos) {
                     x if x >= 0 => Ok(x as usize),
                     _ => Err(handle_wouldblock(&mut is_wouldblock)),
                 }
@@ -111,11 +95,7 @@ where
         }
     }
 
-    fn poll_flush_buf(
-        &mut self,
-        cx: &mut Context<'_>,
-        stream: &mut Self::StreamW,
-    ) -> Poll<Result<()>> {
+    fn poll_flush_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamW) -> Poll<Result<()>> {
         Pin::new(stream).poll_flush(cx)
     }
 }
@@ -159,27 +139,17 @@ mod tokio_net {
         ($stream: ident) => {
             impl AsyncRawIO for $stream {
                 #[inline]
-                fn x_poll_read_ready(
-                    &self,
-                    cx: &mut Context<'_>,
-                ) -> Poll<Result<()>> {
+                fn x_poll_read_ready(&self, cx: &mut Context<'_>) -> Poll<Result<()>> {
                     self.poll_read_ready(cx)
                 }
 
                 #[inline]
-                fn x_poll_write_ready(
-                    &self,
-                    cx: &mut Context<'_>,
-                ) -> Poll<Result<()>> {
+                fn x_poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<Result<()>> {
                     self.poll_write_ready(cx)
                 }
 
                 #[inline]
-                fn x_try_io<R>(
-                    &self,
-                    interest: Interest,
-                    f: impl FnOnce() -> Result<R>,
-                ) -> Result<R> {
+                fn x_try_io<R>(&self, interest: Interest, f: impl FnOnce() -> Result<R>) -> Result<R> {
                     self.try_io(interest, f)
                 }
             }
@@ -193,10 +163,7 @@ mod tokio_net {
 /// Copy data bidirectionally between two streams via `unix pipe`.
 ///
 /// Return transferred bytes no matter this operation succeeds or fails.
-pub async fn bidi_zero_copy<A, B>(
-    a: &mut A,
-    b: &mut B,
-) -> (Result<()>, u64, u64)
+pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> (Result<()>, u64, u64)
 where
     A: AsyncRawIO + Unpin,
     B: AsyncRawIO + Unpin,

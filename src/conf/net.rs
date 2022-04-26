@@ -69,12 +69,10 @@ impl Config for NetConf {
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
         let send_proxy = unbox!(send_proxy);
-        let send_proxy_version =
-            unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
+        let send_proxy_version = unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
 
         let accept_proxy = unbox!(accept_proxy);
-        let accept_proxy_timeout =
-            unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
+        let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
 
         ConnectOpts {
             use_udp,

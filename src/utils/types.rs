@@ -85,11 +85,7 @@ impl From<SocketAddr> for RemoteAddr {
 }
 
 impl Endpoint {
-    pub fn new(
-        listen: SocketAddr,
-        remote: RemoteAddr,
-        conn_opts: ConnectOpts,
-    ) -> Self {
+    pub fn new(listen: SocketAddr, remote: RemoteAddr, conn_opts: ConnectOpts) -> Self {
         Endpoint {
             listen,
             remote,
@@ -138,7 +134,10 @@ impl Display for ConnectOpts {
         write!(
             f,
             "send-proxy={0}, send-proxy-version={2}, accept-proxy={1}, accept-proxy-timeout={3}s; ",
-            on_off(self.haproxy_opts.send_proxy), on_off(self.haproxy_opts.accept_proxy), self.haproxy_opts.send_proxy_version, self.haproxy_opts.accept_proxy_timeout
+            on_off(self.haproxy_opts.send_proxy),
+            on_off(self.haproxy_opts.accept_proxy),
+            self.haproxy_opts.send_proxy_version,
+            self.haproxy_opts.accept_proxy_timeout
         )?;
 
         write!(
@@ -160,10 +159,6 @@ impl Display for ConnectOpts {
 
 impl Display for Endpoint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} -> {}; options: {}",
-            &self.listen, &self.remote, &self.conn_opts
-        )
+        write!(f, "{} -> {}; options: {}", &self.listen, &self.remote, &self.conn_opts)
     }
 }

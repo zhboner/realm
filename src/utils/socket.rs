@@ -19,9 +19,7 @@ mod detail {
 
         let ty = libc::c_int::from(ty) | SOCK_NONBLOCK | SOCK_CLOEXEC;
 
-        let fd = unsafe {
-            libc::socket(domain.into(), ty | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)
-        };
+        let fd = unsafe { libc::socket(domain.into(), ty | SOCK_NONBLOCK | SOCK_CLOEXEC, 0) };
 
         if fd < 0 {
             Err(std::io::Error::last_os_error())
@@ -55,11 +53,7 @@ use super::ConnectOpts;
 
 pub use socket2::{Type, Domain};
 
-pub fn new_socket(
-    ty: Type,
-    addr: &SocketAddr,
-    opts: &ConnectOpts,
-) -> Result<Socket> {
+pub fn new_socket(ty: Type, addr: &SocketAddr, opts: &ConnectOpts) -> Result<Socket> {
     let domain = match addr {
         SocketAddr::V4(..) => Domain::IPV4,
         SocketAddr::V6(..) => Domain::IPV6,
@@ -81,10 +75,7 @@ pub fn new_socket(
     );
 
     if ty == Type::STREAM {
-        try_opt!(
-            socket.set_nodelay(true),
-            "failed to set no_delay option for new socket"
-        );
+        try_opt!(socket.set_nodelay(true), "failed to set no_delay option for new socket");
     }
 
     #[cfg(target_os = "linux")]

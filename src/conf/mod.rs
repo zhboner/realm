@@ -70,12 +70,7 @@ pub struct FullConf {
 
 impl FullConf {
     #[allow(unused)]
-    pub fn new(
-        log: LogConf,
-        dns: DnsConf,
-        network: NetConf,
-        endpoints: Vec<EndpointConf>,
-    ) -> Self {
+    pub fn new(log: LogConf, dns: DnsConf, network: NetConf, endpoints: Vec<EndpointConf>) -> Self {
         FullConf {
             log,
             dns,
@@ -85,8 +80,7 @@ impl FullConf {
     }
 
     pub fn from_conf_file(file: &str) -> Self {
-        let conf = fs::read_to_string(file)
-            .unwrap_or_else(|e| panic!("unable to open {}: {}", file, &e));
+        let conf = fs::read_to_string(file).unwrap_or_else(|e| panic!("unable to open {}: {}", file, &e));
         match Self::from_conf_str(&conf) {
             Ok(x) => x,
             Err(e) => panic!("failed to parse {}: {}", file, &e),
