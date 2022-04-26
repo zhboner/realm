@@ -86,6 +86,7 @@ transport = ["kaminari"]
 transport-boost = []
 proxy-protocol = ["haproxy"]
 multi-thread = ["tokio/rt-multi-thread"]
+brutal-shutdown = ["realm_io/brutal-shutdown"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
 
