@@ -33,15 +33,13 @@ pub async fn run_tcp(endpoint: Ref<Endpoint>) -> Result<()> {
             }
         };
 
-        let link_info = format!("{} => {}", &addr, raddr.as_ref());
-        log::info!("[tcp]{}", &link_info);
-
+        // ignore error
         let _ = local.set_nodelay(true);
 
         tokio::spawn(async move {
             match connect_and_relay(local, raddr, conn_opts).await {
-                Ok(..) => log::debug!("[tcp]{}, finish", link_info),
-                Err(e) => log::error!("[tcp]{}, error: {}", link_info, e),
+                Ok(..) => log::debug!("[tcp]{} => {}, finish", addr, raddr.as_ref()),
+                Err(e) => log::error!("[tcp]{} => {}, error: {}", addr, raddr.as_ref(), e),
             }
         });
     }
