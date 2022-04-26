@@ -60,6 +60,7 @@ RUSTFLAGS='-C target_cpu=native' cargo build --release
 - transport: enable ws/tls/wss.
 - transport-boost: enable optimizations for transport, at the cost of increasing binary size.
 - multi-thread: enable tokio's multi-threaded IO scheduler.
+- brutal-shutdown: see [realm_io/brutal-shutdown](realm_io/README.md#about-brutal-shutdown).
 - tfo: enable tcp-fast-open.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
