@@ -888,6 +888,7 @@ dependencies = [
  "mimalloc",
  "pin-project",
  "proxy-protocol",
+ "realm_core",
  "realm_io 0.2.7",
  "serde",
  "serde_json",
@@ -903,6 +904,7 @@ name = "realm_core"
 version = "0.1.3"
 dependencies = [
  "bytes",
+ "env_logger",
  "futures",
  "kaminari",
  "lazy_static",

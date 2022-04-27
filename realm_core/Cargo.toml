@@ -28,6 +28,10 @@ proxy-protocol = { version = "0.5", optional = true }
 
 [features]
 default = ["proxy", "transport", "transport-boost"]
-proxy = ["proxy-protocol", "bytes"]
+proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
 transport = ["kaminari"]
 transport-boost = []
+
+[dev-dependencies]
+env_logger = "0.9"
+tokio = { version = "1", features = ["macros"] }

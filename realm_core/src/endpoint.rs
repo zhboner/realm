@@ -24,7 +24,7 @@ impl Display for RemoteAddr {
 }
 
 /// Connect or associate options.
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ConnectOpts {
     pub connect_timeout: usize,
     pub associate_timeout: usize,
