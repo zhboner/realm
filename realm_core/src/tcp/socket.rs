@@ -8,6 +8,7 @@ use crate::dns::resolve_addr;
 use crate::time::timeoutfut;
 use crate::endpoint::{RemoteAddr, ConnectOpts};
 
+#[allow(clippy::clone_on_copy)]
 pub fn bind(laddr: &SocketAddr) -> Result<TcpListener> {
     let socket = new_tcp_socket(laddr)?;
 

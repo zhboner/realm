@@ -6,6 +6,7 @@ use realm_syscall::new_udp_socket;
 
 use crate::endpoint::ConnectOpts;
 
+#[allow(clippy::clone_on_copy)]
 pub fn bind(laddr: &SocketAddr) -> Result<UdpSocket> {
     let socket = new_udp_socket(laddr)?;
 
@@ -24,7 +25,7 @@ pub async fn associate(raddr: &SocketAddr, conn_opts: &ConnectOpts) -> Result<Ud
         ..
     } = conn_opts;
 
-    let socket = new_udp_socket(&raddr)?;
+    let socket = new_udp_socket(raddr)?;
 
     // ignore error
     let _ = socket.set_reuse_address(true);
