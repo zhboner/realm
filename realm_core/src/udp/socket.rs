@@ -21,6 +21,8 @@ pub fn bind(laddr: &SocketAddr) -> Result<UdpSocket> {
 pub async fn associate(raddr: &SocketAddr, conn_opts: &ConnectOpts) -> Result<UdpSocket> {
     let ConnectOpts {
         bind_address,
+        
+        #[cfg(target_os = "linux")]
         bind_interface,
         ..
     } = conn_opts;
