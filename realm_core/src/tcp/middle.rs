@@ -5,14 +5,25 @@ use tokio::net::TcpStream;
 use super::socket;
 use super::plain;
 
+#[cfg(feature = "proxy")]
+use super::proxy;
+
 #[cfg(feature = "transport")]
 use super::transport;
 
 use crate::trick::Ref;
 use crate::endpoint::{RemoteAddr, ConnectOpts};
 
-pub async fn connect_and_relay(local: TcpStream, raddr: Ref<RemoteAddr>, conn_opts: Ref<ConnectOpts>) -> Result<()> {
+#[allow(unused)]
+pub async fn connect_and_relay(
+    mut local: TcpStream,
+    raddr: Ref<RemoteAddr>,
+    conn_opts: Ref<ConnectOpts>,
+) -> Result<()> {
     let ConnectOpts {
+        #[cfg(feature = "proxy-protocol")]
+        proxy_opts,
+
         #[cfg(feature = "transport")]
         transport,
         ..
@@ -22,7 +33,7 @@ pub async fn connect_and_relay(local: TcpStream, raddr: Ref<RemoteAddr>, conn_op
     // ..
 
     // connect!
-    let remote = socket::connect(raddr.as_ref(), conn_opts.as_ref()).await?;
+    let mut remote = socket::connect(raddr.as_ref(), conn_opts.as_ref()).await?;
     log::info!(
         "[tcp]{} => {} as {}",
         local.peer_addr().unwrap(),
@@ -32,6 +43,10 @@ pub async fn connect_and_relay(local: TcpStream, raddr: Ref<RemoteAddr>, conn_op
 
     // after connected
     // ..
+    #[cfg(feature = "proxy")]
+    if proxy_opts.enabled() {
+        proxy::handle_proxy(&mut local, &mut remote, *proxy_opts).await?;
+    }
 
     // relay
     let res = {

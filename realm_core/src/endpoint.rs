@@ -31,6 +31,9 @@ pub struct ConnectOpts {
     pub bind_address: Option<SocketAddr>,
     pub bind_interface: Option<String>,
 
+    #[cfg(feature = "proxy-protocol")]
+    pub proxy_opts: ProxyOpts,
+
     #[cfg(feature = "transport")]
     pub transport: Option<(MixAccept, MixConnect)>,
 }
@@ -41,4 +44,22 @@ pub struct Endpoint {
     pub laddr: SocketAddr,
     pub raddr: RemoteAddr,
     pub conn_opts: ConnectOpts,
+}
+
+/// Proxy protocol options.
+#[allow(unused)]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ProxyOpts {
+    pub send_proxy: bool,
+    pub accept_proxy: bool,
+    pub send_proxy_version: usize,
+    pub accept_proxy_timeout: usize,
+}
+
+#[allow(unused)]
+impl ProxyOpts {
+    #[inline]
+    pub(crate) const fn enabled(&self) -> bool {
+        self.send_proxy || self.accept_proxy
+    }
 }

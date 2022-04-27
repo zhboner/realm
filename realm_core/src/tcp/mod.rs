@@ -4,6 +4,9 @@ mod socket;
 mod middle;
 mod plain;
 
+#[cfg(feature = "proxy")]
+mod proxy;
+
 #[cfg(feature = "transport")]
 mod transport;
 

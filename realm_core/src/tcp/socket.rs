@@ -25,7 +25,7 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
     let ConnectOpts {
         connect_timeout,
         bind_address,
-        
+
         #[cfg(target_os = "linux")]
         bind_interface,
         ..
