@@ -3,6 +3,9 @@
 use std::fmt::{Display, Formatter};
 use std::net::SocketAddr;
 
+#[cfg(feature = "transport")]
+use kaminari::mix::{MixAccept, MixConnect};
+
 /// Remote address.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RemoteAddr {
@@ -27,6 +30,9 @@ pub struct ConnectOpts {
     pub associate_timeout: usize,
     pub bind_address: Option<SocketAddr>,
     pub bind_interface: Option<String>,
+
+    #[cfg(feature = "transport")]
+    pub transport: Option<(MixAccept, MixConnect)>,
 }
 
 /// Relay endpoint.

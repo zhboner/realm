@@ -4,11 +4,20 @@ use tokio::net::TcpStream;
 
 use super::socket;
 use super::plain;
+
+#[cfg(feature = "transport")]
+use super::transport;
+
 use crate::trick::Ref;
 use crate::endpoint::{RemoteAddr, ConnectOpts};
 
-#[allow(unused_variables)]
 pub async fn connect_and_relay(local: TcpStream, raddr: Ref<RemoteAddr>, conn_opts: Ref<ConnectOpts>) -> Result<()> {
+    let ConnectOpts {
+        #[cfg(feature = "transport")]
+        transport,
+        ..
+    } = conn_opts.as_ref();
+
     // before connect
     // ..
 
@@ -22,7 +31,23 @@ pub async fn connect_and_relay(local: TcpStream, raddr: Ref<RemoteAddr>, conn_op
     );
 
     // after connected
-    let res = plain::run_relay(local, remote).await;
+    // ..
+
+    // relay
+    let res = {
+        #[cfg(feature = "transport")]
+        {
+            if let Some((ac, cc)) = transport {
+                transport::run_relay(local, remote, ac, cc).await
+            } else {
+                plain::run_relay(local, remote).await
+            }
+        }
+        #[cfg(not(feature = "transport"))]
+        {
+            plain::run_relay(local, remote).await
+        }
+    };
 
     // ignore relay error
     if let Err(e) = res {

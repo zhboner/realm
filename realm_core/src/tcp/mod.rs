@@ -4,6 +4,9 @@ mod socket;
 mod middle;
 mod plain;
 
+#[cfg(feature = "transport")]
+mod transport;
+
 use std::io::Result;
 
 use crate::trick::Ref;
