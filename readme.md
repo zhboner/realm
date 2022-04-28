@@ -398,7 +398,7 @@ This is **connect** timeout. An attempt to connect to a remote peer fails after 
 
 To disable timeout, you need to explicitly set timeout value to 0.
 
-default: 300
+default: 5
 
 #### network.udp_timeout: unsigned int
 

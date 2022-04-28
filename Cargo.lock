@@ -812,7 +812,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "cfg-if",
  "chrono",
