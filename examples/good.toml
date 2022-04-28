@@ -3,8 +3,8 @@ level = "warn"
 output = "/var/log/realm.log"
 
 [network]
+no_tcp = false
 use_udp = true
-zero_copy = true
 
 [[endpoints]]
 listen = "0.0.0.0:5000"

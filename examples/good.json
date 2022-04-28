@@ -4,8 +4,8 @@
     "output": "/var/log/realm.log"
   },
   "network": {
-    "use_udp": true,
-    "zero_copy": true
+    "no_tcp": false,
+    "use_udp": true
   },
   "endpoints": [
     {

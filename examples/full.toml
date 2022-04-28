@@ -11,10 +11,9 @@ max_ttl = 3600
 cache_size = 256
 
 [network]
+no_tcp = false
 use_udp = true
-zero_copy = true
-fast_open = true
-tcp_timeout = 300
+tcp_timeout = 5
 udp_timeout = 30
 send_proxy = true
 send_proxy_version = 2
