@@ -13,13 +13,21 @@ pub enum RemoteAddr {
     DomainName(String, u16),
 }
 
-impl Display for RemoteAddr {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use RemoteAddr::*;
-        match self {
-            SocketAddr(addr) => write!(f, "{}", addr),
-            DomainName(host, port) => write!(f, "{}:{}", host, port),
-        }
+/// Proxy protocol options.
+#[cfg(feature = "proxy")]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ProxyOpts {
+    pub send_proxy: bool,
+    pub accept_proxy: bool,
+    pub send_proxy_version: usize,
+    pub accept_proxy_timeout: usize,
+}
+
+#[cfg(feature = "proxy")]
+impl ProxyOpts {
+    #[inline]
+    pub(crate) const fn enabled(&self) -> bool {
+        self.send_proxy || self.accept_proxy
     }
 }
 
@@ -31,7 +39,7 @@ pub struct ConnectOpts {
     pub bind_address: Option<SocketAddr>,
     pub bind_interface: Option<String>,
 
-    #[cfg(feature = "proxy-protocol")]
+    #[cfg(feature = "proxy")]
     pub proxy_opts: ProxyOpts,
 
     #[cfg(feature = "transport")]
@@ -46,20 +54,73 @@ pub struct Endpoint {
     pub conn_opts: ConnectOpts,
 }
 
-/// Proxy protocol options.
-#[allow(unused)]
-#[derive(Debug, Default, Clone, Copy)]
-pub struct ProxyOpts {
-    pub send_proxy: bool,
-    pub accept_proxy: bool,
-    pub send_proxy_version: usize,
-    pub accept_proxy_timeout: usize,
+// display impl below
+
+impl Display for RemoteAddr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use RemoteAddr::*;
+        match self {
+            SocketAddr(addr) => write!(f, "{}", addr),
+            DomainName(host, port) => write!(f, "{}:{}", host, port),
+        }
+    }
 }
 
-#[allow(unused)]
-impl ProxyOpts {
-    #[inline]
-    pub(crate) const fn enabled(&self) -> bool {
-        self.send_proxy || self.accept_proxy
+impl Display for Endpoint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} -> {}; options: {}", &self.laddr, &self.raddr, &self.conn_opts)
+    }
+}
+
+impl Display for ConnectOpts {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let ConnectOpts {
+            connect_timeout,
+            associate_timeout,
+            bind_address,
+            bind_interface,
+
+            #[cfg(feature = "proxy")]
+            proxy_opts,
+
+            #[cfg(feature = "transport")]
+            transport,
+        } = self;
+
+        if let Some(iface) = bind_interface {
+            write!(f, "bind-iface={}, ", iface)?;
+        }
+
+        if let Some(send_through) = bind_address {
+            write!(f, "send-through={}; ", send_through)?;
+        }
+
+        #[cfg(feature = "proxy")]
+        {
+            let ProxyOpts {
+                send_proxy,
+                accept_proxy,
+                send_proxy_version,
+                accept_proxy_timeout,
+            } = proxy_opts;
+            write!(
+                f,
+                "send-proxy={0}, send-proxy-version={2}, accept-proxy={1}, accept-proxy-timeout={3}s; ",
+                send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout
+            )?;
+        }
+
+        write!(
+            f,
+            "connect-timeout={}s, associate-timeout={}s; ",
+            connect_timeout, associate_timeout
+        )?;
+
+        #[cfg(feature = "transport")]
+        if let Some((ac, cc)) = transport {
+            write!(f, "transport={}||{}", ac, cc)?
+        }
+
+        Ok(())
     }
 }

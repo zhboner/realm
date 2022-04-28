@@ -4,6 +4,8 @@ mod socket;
 mod sockmap;
 mod middle;
 
+use std::io::Result;
+
 use crate::trick::Ref;
 use crate::endpoint::Endpoint;
 
@@ -14,7 +16,7 @@ use middle::associate_and_relay;
 pub const BUF_SIZE: usize = 2048;
 
 /// Launch a udp relay.
-pub async fn run_udp(endpoint: Ref<Endpoint>) {
+pub async fn run_udp(endpoint: Ref<Endpoint>) -> Result<()> {
     let Endpoint {
         laddr,
         raddr,
