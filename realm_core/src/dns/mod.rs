@@ -6,9 +6,10 @@ use std::sync::Mutex;
 
 use trust_dns_resolver as resolver;
 use resolver::TokioAsyncResolver;
-use resolver::config::{ResolverConfig, ResolverOpts};
 use resolver::system_conf::read_system_conf;
 use resolver::lookup_ip::{LookupIp, LookupIpIter};
+pub use resolver::config;
+use config::{ResolverOpts, ResolverConfig};
 
 use lazy_static::lazy_static;
 
