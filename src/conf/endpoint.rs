@@ -53,7 +53,7 @@ impl EndpointConf {
             let port = iter.next().unwrap().parse::<u16>().unwrap();
             let addr = iter.next().unwrap().to_string();
             // test addr
-            let _ = addr.to_socket_addrs().unwrap().next().unwrap();
+            remote.to_socket_addrs().unwrap().next().unwrap();
             RemoteAddr::DomainName(addr, port)
         }
     }
