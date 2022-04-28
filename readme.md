@@ -2,12 +2,20 @@
 
 A simple, high performance relay server written in rust.
 
-<p align="center"><img src="https://raw.githubusercontent.com/zhboner/realm/master/assets/realm.png"/></p>
+<p><img src="https://raw.githubusercontent.com/zhboner/realm/master/assets/realm.png"/></p>
 
 [![realm](https://github.com/zhboner/realm/workflows/ci/badge.svg)](https://github.com/zhboner/realm/actions)
 [![realm](https://github.com/zhboner/realm/workflows/build/badge.svg)](https://github.com/zhboner/realm/actions/workflows/cross_compile.yml)
 [![downloads](https://img.shields.io/github/downloads/zhboner/realm/total?color=green)](https://github.com/zhboner/realm/releases)
 <!-- [中文说明](https://zhb.me/realm) -->
+
+## Libs
+
+| lib | doc |
+| ----- | ----- |
+| realm-core | [![crates.io](https://img.shields.io/crates/v/realm_core.svg)](https://crates.io/crates/realm_core) [![Released API docs](https://docs.rs/realm_core/badge.svg)](https://docs.rs/realm_core) |
+| realm-io | [![crates.io](https://img.shields.io/crates/v/realm_io.svg)](https://crates.io/crates/realm_io) [![Released API docs](https://docs.rs/realm_io/badge.svg)](https://docs.rs/realm_io) |
+| realm-syscall | [![crates.io](https://img.shields.io/crates/v/realm_syscall.svg)](https://crates.io/crates/realm_syscall) [![Released API docs](https://docs.rs/realm_syscall/badge.svg)](https://docs.rs/realm_syscall) |
 
 ## Features
 
