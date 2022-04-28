@@ -2,7 +2,6 @@
 
 use std::io::{Result, Error, ErrorKind};
 use std::net::SocketAddr;
-use std::sync::Mutex;
 
 use trust_dns_resolver as resolver;
 use resolver::TokioAsyncResolver;
@@ -11,7 +10,7 @@ use resolver::lookup_ip::{LookupIp, LookupIpIter};
 pub use resolver::config;
 use config::{ResolverOpts, ResolverConfig};
 
-use lazy_static::lazy_static;
+use once_cell::unsync::{OnceCell, Lazy};
 
 use crate::endpoint::RemoteAddr;
 
@@ -36,48 +35,38 @@ impl Default for DnsConf {
     }
 }
 
-impl DnsConf {
-    /// Set resolver config.
-    pub fn set_conf(&mut self, conf: ResolverConfig) {
-        self.conf = conf;
-    }
+static mut DNS_CONF: OnceCell<DnsConf> = OnceCell::new();
 
-    /// Set resolver options.
-    pub fn set_opts(&mut self, opts: ResolverOpts) {
-        self.opts = opts;
-    }
-}
+static mut DNS: Lazy<TokioAsyncResolver> = Lazy::new(|| {
+    let DnsConf { conf, opts } = unsafe { DNS_CONF.take().unwrap() };
+    TokioAsyncResolver::tokio(conf, opts).unwrap()
+});
 
-lazy_static! {
-    static ref DNS_CONF: Mutex<DnsConf> = Mutex::new(DnsConf::default());
-    static ref DNS: TokioAsyncResolver = {
-        let DnsConf { conf, opts } = DNS_CONF.lock().unwrap().clone();
-        TokioAsyncResolver::tokio(conf, opts).unwrap()
-    };
-}
-
-/// Configure global dns resolver.
-pub fn configure(conf: Option<ResolverConfig>, opts: Option<ResolverOpts>) {
-    lazy_static::initialize(&DNS_CONF);
+/// Setup global dns resolver. This is not thread-safe!
+pub fn build(conf: Option<ResolverConfig>, opts: Option<ResolverOpts>) {
+    let mut dns_conf = DnsConf::default();
 
     if let Some(conf) = conf {
-        DNS_CONF.lock().unwrap().set_conf(conf);
+        dns_conf.conf = conf;
     }
-    if let Some(opts) = opts {
-        DNS_CONF.lock().unwrap().set_opts(opts);
-    }
-}
 
-/// Setup global dns resolver.
-pub fn build() {
-    lazy_static::initialize(&DNS);
+    if let Some(opts) = opts {
+        dns_conf.opts = opts;
+    }
+
+    unsafe {
+        DNS_CONF.set(dns_conf).unwrap();
+        Lazy::force(&DNS);
+    }
 }
 
 /// Lookup ip with global dns resolver.
 pub async fn resolve_ip(ip: &str) -> Result<LookupIp> {
-    DNS.lookup_ip(ip)
-        .await
-        .map_or_else(|e| Err(Error::new(ErrorKind::Other, e)), Ok)
+    unsafe {
+        DNS.lookup_ip(ip)
+            .await
+            .map_or_else(|e| Err(Error::new(ErrorKind::Other, e)), Ok)
+    }
 }
 
 /// Lookup socketaddr with global dns resolver.

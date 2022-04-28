@@ -91,8 +91,7 @@ fn setup_dns(dns: DnsConf) {
     println!("dns: {}", &dns);
 
     let (conf, opts) = dns.build();
-    dns::configure(conf, opts);
-    dns::build();
+    dns::build(conf, opts);
 }
 
 fn execute(eps: Vec<EndpointInfo>) {

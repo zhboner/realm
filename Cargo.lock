@@ -635,9 +635,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
+checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
 
 [[package]]
 name = "os_str_bytes"
@@ -835,14 +835,14 @@ dependencies = [
 
 [[package]]
 name = "realm_core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "bytes",
  "env_logger",
  "futures",
  "kaminari",
- "lazy_static",
  "log",
+ "once_cell",
  "pin-project",
  "proxy-protocol",
  "realm_io 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
