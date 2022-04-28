@@ -11,10 +11,10 @@ mod dns;
 pub use dns::{DnsMode, DnsProtocol, DnsConf};
 
 mod net;
-pub use net::NetConf;
+pub use net::{NetConf, NetInfo};
 
 mod endpoint;
-pub use endpoint::EndpointConf;
+pub use endpoint::{EndpointConf, EndpointInfo};
 
 mod legacy;
 pub use legacy::LegacyConf;
@@ -34,11 +34,11 @@ pub trait Config {
     fn build(self) -> Self::Output;
 
     // override self if other not empty
-    // usage: cmd argument overrides global and local option
+    // e.g.: cmd argument overrides global and local option
     fn rst_field(&mut self, other: &Self) -> &mut Self;
 
     // take other only if self empty & other not empty
-    // usage: local field takes global option
+    // e.g.: local field takes global option
     fn take_field(&mut self, other: &Self) -> &mut Self;
 
     fn from_cmd_args(matches: &ArgMatches) -> Self;
@@ -170,7 +170,7 @@ macro_rules! take {
 
 #[macro_export]
 macro_rules! empty {
-    ( $this:expr => $( $field: ident ),* ) => {{
+    ( $this: expr => $( $field: ident ),* ) => {{
         let mut res = true;
         $(
             res = res && $this.$field.is_none();

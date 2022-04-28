@@ -1,4 +1,4 @@
-name: compile
+name: build
 on:
   push:
     branches: [ master ]

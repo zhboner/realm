@@ -27,7 +27,7 @@ tokio = { version = "1.9", features = ["rt", "net", "time"] }
 proxy-protocol = { version = "0.5", optional = true }
 
 [features]
-default = ["proxy", "transport", "transport-boost"]
+default = []
 proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
 transport = ["kaminari"]
 transport-boost = []

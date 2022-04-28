@@ -1,10 +1,12 @@
 use serde::{Serialize, Deserialize};
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
-use super::{NetConf, Config};
-use crate::utils::{Endpoint, RemoteAddr};
+
+use realm_core::endpoint::{Endpoint, RemoteAddr};
 
 #[cfg(feature = "transport")]
 use kaminari::mix::{MixAccept, MixConnect};
+
+use super::{Config, NetConf, NetInfo};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EndpointConf {
@@ -51,7 +53,7 @@ impl EndpointConf {
             let port = iter.next().unwrap().parse::<u16>().unwrap();
             let addr = iter.next().unwrap().to_string();
             // test addr
-            let _ = crate::dns::resolve_sync(&addr, 0).unwrap();
+            let _ = addr.to_socket_addrs().unwrap().next().unwrap();
             RemoteAddr::DomainName(addr, port)
         }
     }
@@ -110,23 +112,34 @@ impl EndpointConf {
     }
 }
 
+#[derive(Debug)]
+pub struct EndpointInfo {
+    pub no_tcp: bool,
+    pub use_udp: bool,
+    pub endpoint: Endpoint,
+}
+
 impl Config for EndpointConf {
-    type Output = Endpoint;
+    type Output = EndpointInfo;
 
     fn is_empty(&self) -> bool {
         false
     }
 
     fn build(self) -> Self::Output {
-        let local = self.build_local();
-        let remote = self.build_remote();
+        let laddr = self.build_local();
+        let raddr = self.build_remote();
 
         // build partial conn_opts from netconf
-        let mut conn_opts = self.network.build();
+        let NetInfo {
+            mut conn_opts,
+            no_tcp,
+            use_udp,
+        } = self.network.build();
 
         // build left fields of conn_opts
 
-        conn_opts.send_through = self.build_send_through();
+        conn_opts.bind_address = self.build_send_through();
 
         #[cfg(feature = "transport")]
         {
@@ -135,7 +148,15 @@ impl Config for EndpointConf {
 
         conn_opts.bind_interface = self.interface;
 
-        Endpoint::new(local, remote, conn_opts)
+        EndpointInfo {
+            no_tcp,
+            use_udp,
+            endpoint: Endpoint {
+                laddr,
+                raddr,
+                conn_opts,
+            },
+        }
     }
 
     fn rst_field(&mut self, _: &Self) -> &mut Self {

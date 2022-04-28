@@ -28,4 +28,4 @@ jobs:
           toolchain: nightly
           default: true
           override: true
-      - run: cargo test -v --no-fail-fast
+      - run: cargo test -v --all --no-fail-fast

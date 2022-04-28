@@ -1,15 +1,13 @@
+# Realm
+
+A simple, high performance relay server written in rust.
+
+<p align="center"><img src="https://raw.githubusercontent.com/zhboner/realm/master/assets/realm.png"/></p>
+
 [![realm](https://github.com/zhboner/realm/workflows/ci/badge.svg)](https://github.com/zhboner/realm/actions)
-[![realm](https://github.com/zhboner/realm/workflows/compile/badge.svg)](https://github.com/zhboner/realm/actions/workflows/cross_compile.yml)
-[![realm](https://github.com/zhboner/realm/workflows/release/badge.svg)](https://github.com/zhboner/realm/releases)
+[![realm](https://github.com/zhboner/realm/workflows/build/badge.svg)](https://github.com/zhboner/realm/actions/workflows/cross_compile.yml)
 [![downloads](https://img.shields.io/github/downloads/zhboner/realm/total?color=green)](https://github.com/zhboner/realm/releases)
-
-[中文说明](https://zhb.me/realm)
-
-<p align="center"><img src="https://raw.githubusercontent.com/zhboner/realm/master/realm.png"/></p>
-
-## Introduction
-
-Realm is a simple, high performance relay server written in rust.
+<!-- [中文说明](https://zhb.me/realm) -->
 
 ## Features
 
@@ -27,7 +25,7 @@ Realm can be run in a container with OCI (like Docker, Podman, Kubernetes, etc),
 
 ## Build Guides
 
-Install rust **nightly** toolchains with [rustup](https://rustup.rs/):
+Install **nightly** rust-toolchain with [rustup](https://rustup.rs/):
 
 ```shell
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -42,32 +40,31 @@ git clone https://github.com/zhboner/realm
 Enter the directory and build:
 
 ```shell
-cd realm
-git submodule sync && git submodule update --init --recursive
+cd realm && cargo build --release
+```
 
-# build release
-cargo build --release
+Pass `target_cpu=native` to allow more possible optimizations:
 
-# allow more possible optimizations, make it even faster
+```shell
 RUSTFLAGS='-C target_cpu=native' cargo build --release
 ```
 
 ### Build Options
 
-- udp: enable udp relay.
-- trust-dns: enable trust-dns's async dns resolver.
-- zero-copy: enable zero-copy on linux.
-- transport: enable ws/tls/wss.
-- transport-boost: enable optimizations for transport, at the cost of increasing binary size.
-- multi-thread: enable tokio's multi-threaded IO scheduler.
+- ~~udp: enable udp relay~~ builtin.
+- ~~tfo: enable tcp-fast-open~~ deprecated.
+- ~~trust-dns: enable trust-dns's async dns resolver~~ builtin.
+- ~~zero-copy: enable zero-copy on linux~~ builtin.
 - brutal-shutdown: see [realm_io/brutal-shutdown](realm_io/README.md#about-brutal-shutdown).
-- tfo: enable tcp-fast-open.
+- proxy: enable proxy-protocol.
+- transport: enable ws/tls/wss.
+- multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
 
-Default: udp + trust-dns + zero-copy + multi-thread + transport + transport-boost.
+Default: proxy + transport + multi-thread.
 
-See also: `Cargo.toml`.
+See also: [Cargo.toml](Cargo.toml).
 
 Examples:
 
@@ -76,7 +73,7 @@ Examples:
 cargo build --release --no-default-features
 
 # enable other options
-cargo build --release --no-default-features --features udp,tfo,zero-copy,trust-dns..
+cargo build --release --features 'brutal-shutdown,jemalloc'
 ```
 
 ### Cross Compile
@@ -88,7 +85,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.x [udp][zero-copy][trust-dns][proxy-protocol][transport][multi-thread]
+Realm 2.2.0 [proxy][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:
@@ -99,12 +96,11 @@ FLAGS:
     -v, --version    show version
     -d, --daemon     run as a unix daemon
     -u, --udp        force enable udp forward
-    -f, --tfo        force enable tcp fast open
-    -z, --splice     force enable tcp zero copy
+    -t, --ntcp       force disable tcp forward
+    -f, --tfo        force enable tcp fast open -- deprecated
+    -z, --splice     force enable tcp zero copy -- deprecated
 
 OPTIONS:
-    -n, --nofile <limit>                set nofile limit
-    -p, --page <number>                 set pipe capacity
     -c, --config <path>                 use config file
     -l, --listen <address>              listen address
     -r, --remote <address>              remote address
@@ -112,6 +108,10 @@ OPTIONS:
     -i, --interface <device>            bind to interface
     -a, --listen-transport <options>    listen transport
     -b, --remote-transport <options>    remote transport
+
+SYS OPTIONS:
+    -n, --nofile <limit>        set nofile limit
+    -p, --pipe-page <number>    set pipe capacity
 
 LOG OPTIONS:
         --log-level <level>    override log level
@@ -181,8 +181,8 @@ level = "warn"
 output = "/var/log/realm.log"
 
 [network]
+no_tcp = false
 use_udp = true
-zero_copy = true
 
 [[endpoints]]
 listen = "0.0.0.0:5000"
@@ -205,8 +205,8 @@ remote = "www.google.com:443"
     "output": "/var/log/realm.log"
   },
   "network": {
-    "use_udp": true,
-    "zero_copy": true
+    "no_tcp": false,
+    "use_udp": true
   },
   "endpoints": [
     {
@@ -241,9 +241,8 @@ remote = "www.google.com:443"
 │   ├── max_ttl
 │   └── cache_size
 ├── network
+│   ├── no_tcp
 │   ├── use_udp
-│   ├── zero_copy
-│   ├── fast_open
 │   ├── tcp_timeout
 │   ├── udp_timeout
 │   ├── send_proxy
@@ -257,12 +256,12 @@ remote = "www.google.com:443"
     ├── interface
     ├── listen_transport
     ├── remote_transport
-    └── network
+    └── network->
 ```
 
 You should provide at least [endpoint.listen](#endpointlisten-string) and [endpoint.remote](#endpointremote-string), the left fields will take their default values.
 
-Option priority: cmd override > endpoint config > global config
+Option priority: cmd override > endpoint config > global config.
 
 ### log
 
@@ -333,57 +332,61 @@ Otherwise, use google's public dns(`8.8.8.8:53`, `8.8.4.4:53` and `2001:4860:486
 
 #### dns.min_ttl: unsigned int
 
-The minimum lifetime of a positive dns cache
+The minimum lifetime of a positive dns cache.
 
 default: 0
 
 #### dns.max_ttl: unsigned int
 
-The maximum lifetime of a positive dns cache
+The maximum lifetime of a positive dns cache.
 
 default: 86400 (1 day)
 
 #### dns.cache_size: unsigned int
 
-The maximum count of dns cache
+The maximum count of dns cache.
 
 default: 32
 
 ### network
 
+#### network.no_tcp: bool
+
+Do not start a tcp relay.
+
+default: false
+
 #### network.use_udp: bool
 
-Require the `udp` feature
+~~Require the `udp` feature~~
 
 Start listening on a udp endpoint and forward packets to the remote peer.
 
-It will dynamically allocate local endpoints and establish udp associations. Once timeout, the endpoints will be deallocated and the association will be terminated. See also: [network.udp_timeout](#networkudp_timeout-unsigned-int)
+It will dynamically allocate local endpoints and establish udp associations. Once timeout, the endpoints will be deallocated and the association will be terminated. See also: [network.udp_timeout](#networkudp_timeout-unsigned-int).
 
 Due to the receiver side not limiting access to the association, the relay works like a full-cone NAT.
 
 default: false
 
-#### network.zero_copy: bool
+#### ~~network.zero_copy: bool~~ deprecated
 
-Require the `zero-copy` feature
+~~Require the `zero-copy` feature.~~
 
-Use `splice` instead of `send/recv` while handing tcp connection. This will save a lot of memory copies and context switches.
+~~Use `splice` instead of `send/recv` while handing tcp connection. This will save a lot of memory copies and context switches.~~
 
-default: false
+~~default: false~~
 
-#### network.fast_open: bool
+#### ~~network.fast_open: bool~~ deprecated
 
-Require the `fast-open` feature
+~~Require the `fast-open` feature.~~
 
-It is not recommended to enable this option, see [The Sad Story of TCP Fast Open](https://squeeze.isobar.com/2019/04/11/the-sad-story-of-tcp-fast-open/).
+~~It is not recommended to enable this option, see [The Sad Story of TCP Fast Open](https://squeeze.isobar.com/2019/04/11/the-sad-story-of-tcp-fast-open/).~~
 
-default: false
+~~default: false~~
 
 #### network.tcp_tomeout: unsigned int
 
-Close the connection if the peer does not send any data during `timeout`.
-
-***This option remains unimplemented! (since ce5213)***
+This is **connect** timeout. An attempt to connect to a remote peer fails after waiting for a period of time.
 
 To disable timeout, you need to explicitly set timeout value to 0.
 
@@ -399,7 +402,7 @@ default: 30
 
 #### network.send_proxy: bool
 
-Requires the `proxy-protocol` feature
+Requires the `proxy` feature.
 
 Send haproxy PROXY header once the connection established. Both `v1` and `v2` are supported, see [send_proxy_version](#networksend_proxy_version-unsigned-int).
 
@@ -409,7 +412,7 @@ default: false
 
 #### network.send_proxy_version: unsigned int
 
-Requires the `proxy-protocol` feature
+Requires the `proxy` feature.
 
 This option has no effect unless [send_proxy](#networksend_proxy-bool) is enabled.
 
@@ -422,13 +425,21 @@ default: 2
 
 #### network.accept_proxy: bool
 
-Requires the `proxy-protocol` feature
+Requires the `proxy` feature.
 
-Wait for PROXY header once the connection established.
+Wait for a PROXY header once the connection established.
 
 If the remote sender does not send a `v1` or `v2` header before other contents, the connection will be closed.
 
 default: false
+
+#### network.accept_timeout: unsigned int
+
+Requires the `proxy` feature.
+
+Wait for a PROXY header within a period of time, otherwise close the connection.
+
+default: 5.
 
 ### endpoint
 
@@ -449,9 +460,9 @@ Remote address, supported formats:
 
 #### endpoint.through: string
 
-TCP: Bind a specific `ip` before opening a connection
+TCP: Bind a specific `ip` before opening a connection.
 
-UDP: Bind a specific `ip` or `address` before sending packet
+UDP: Bind a specific `ip` or `address` before sending packet.
 
 Supported formats:
 
@@ -460,19 +471,19 @@ Supported formats:
 
 #### endpoint.interface: string
 
-Bind to a specific interface
+Bind to a specific interface.
 
 #### endpoint.listen_transport: string
 
-Require the `transport` feature
+Require the `transport` feature.
 
-See [Kaminari Options](https://github.com/zephyrchien/kaminari#options)
+See [Kaminari Options](https://github.com/zephyrchien/kaminari#options).
 
 #### endpoint.remote_transport: string
 
-Require the `transport` feature
+Require the `transport` feature.
 
-See [Kaminari Options](https://github.com/zephyrchien/kaminari#options)
+See [Kaminari Options](https://github.com/zephyrchien/kaminari#options).
 
 #### endpoint.network
 

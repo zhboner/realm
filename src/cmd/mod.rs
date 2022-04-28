@@ -5,7 +5,7 @@ use crate::conf::EndpointConf;
 use crate::conf::{Config, LogConf, DnsConf, NetConf};
 
 use crate::VERSION;
-use crate::utils::FEATURES;
+use crate::consts::FEATURES;
 
 mod sub;
 mod flag;
@@ -62,30 +62,29 @@ pub fn scan() -> CmdInput {
 fn handle_matches(matches: ArgMatches) -> CmdInput {
     #[cfg(unix)]
     if matches.is_present("daemon") {
-        crate::utils::daemonize();
+        realm_syscall::daemonize("realm is running in the background");
     }
 
     #[cfg(all(unix, not(target_os = "android")))]
     {
-        use crate::utils::get_nofile_limit;
-        use crate::utils::set_nofile_limit;
-
-        // get
-        if let Some((soft, hard)) = get_nofile_limit() {
-            println!("nofile limit: soft={}, hard={}", soft, hard);
-        }
+        use realm_syscall::{get_nofile_limit, set_nofile_limit};
 
         // set
         if let Some(nofile) = matches.value_of("nofile") {
             if let Ok(nofile) = nofile.parse::<u64>() {
-                set_nofile_limit(nofile);
+                let _ = set_nofile_limit(nofile);
             } else {
                 eprintln!("invalid nofile value: {}", nofile);
             }
         }
+
+        // get
+        if let Ok((soft, hard)) = get_nofile_limit() {
+            println!("nofile limit: soft={}, hard={}", soft, hard);
+        }
     }
 
-    #[cfg(all(target_os = "linux", feature = "zero-copy"))]
+    #[cfg(all(target_os = "linux"))]
     {
         use realm_io::set_pipe_size;
 

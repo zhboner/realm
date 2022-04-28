@@ -2,7 +2,7 @@ use std::fmt::{Formatter, Display};
 use serde::{Serialize, Deserialize};
 use log::LevelFilter;
 use super::Config;
-use crate::utils::DEFAULT_LOG_FILE;
+use crate::consts::DEFAULT_LOG_FILE;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]

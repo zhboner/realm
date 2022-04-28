@@ -1,23 +1,20 @@
 use serde::{Serialize, Deserialize};
+use realm_core::endpoint::{ConnectOpts, ProxyOpts};
+
 use super::Config;
-use crate::utils::{ConnectOpts, HaproxyOpts};
-use crate::utils::{TCP_TIMEOUT, UDP_TIMEOUT};
-use crate::utils::PROXY_PROTOCOL_VERSION;
-use crate::utils::PROXY_PROTOCOL_TIMEOUT;
+use crate::consts::{TCP_TIMEOUT, UDP_TIMEOUT};
+use crate::consts::PROXY_PROTOCOL_VERSION;
+use crate::consts::PROXY_PROTOCOL_TIMEOUT;
 
 #[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
 pub struct NetConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_tcp: Option<bool>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_udp: Option<bool>,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub fast_open: Option<bool>,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub zero_copy: Option<bool>,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -43,11 +40,21 @@ pub struct NetConf {
     pub udp_timeout: Option<usize>,
 }
 
+#[derive(Debug)]
+pub struct NetInfo {
+    pub conn_opts: ConnectOpts,
+    pub no_tcp: bool,
+    pub use_udp: bool,
+}
+
 impl Config for NetConf {
-    type Output = ConnectOpts;
+    type Output = NetInfo;
 
     fn is_empty(&self) -> bool {
-        crate::empty![self => use_udp, fast_open, zero_copy, send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout, tcp_timeout, udp_timeout]
+        crate::empty![self =>
+            send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout,
+            tcp_timeout, udp_timeout
+        ]
     }
 
     fn build(self) -> Self::Output {
@@ -60,10 +67,8 @@ impl Config for NetConf {
             };
         }
 
+        let no_tcp = unbox!(no_tcp);
         let use_udp = unbox!(use_udp);
-
-        let fast_open = unbox!(fast_open);
-        let zero_copy = unbox!(zero_copy);
 
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
@@ -74,26 +79,29 @@ impl Config for NetConf {
         let accept_proxy = unbox!(accept_proxy);
         let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
 
-        ConnectOpts {
-            use_udp,
-            fast_open,
-            zero_copy,
-            tcp_timeout,
-            udp_timeout,
+        let conn_opts = ConnectOpts {
+            connect_timeout: tcp_timeout,
+            associate_timeout: udp_timeout,
 
             // from endpoint
-            send_through: None,
+            bind_address: None,
             bind_interface: None,
 
             #[cfg(feature = "transport")]
             transport: None,
 
-            haproxy_opts: HaproxyOpts {
+            proxy_opts: ProxyOpts {
                 send_proxy,
                 accept_proxy,
                 send_proxy_version,
                 accept_proxy_timeout,
             },
+        };
+
+        NetInfo {
+            conn_opts,
+            no_tcp,
+            use_udp,
         }
     }
 
@@ -101,9 +109,8 @@ impl Config for NetConf {
         use crate::rst;
         let other = *other;
 
+        rst!(self, no_tcp, other);
         rst!(self, use_udp, other);
-        rst!(self, fast_open, other);
-        rst!(self, zero_copy, other);
         rst!(self, tcp_timeout, other);
         rst!(self, udp_timeout, other);
         rst!(self, send_proxy, other);
@@ -117,9 +124,8 @@ impl Config for NetConf {
         use crate::take;
         let other = *other;
 
+        take!(self, no_tcp, other);
         take!(self, use_udp, other);
-        take!(self, fast_open, other);
-        take!(self, zero_copy, other);
         take!(self, tcp_timeout, other);
         take!(self, udp_timeout, other);
         take!(self, send_proxy, other);
@@ -143,9 +149,8 @@ impl Config for NetConf {
             };
         }
 
+        let no_tcp = unpack!("no_tcp");
         let use_udp = unpack!("use_udp");
-        let fast_open = unpack!("fast_open");
-        let zero_copy = unpack!("zero_copy");
 
         let tcp_timeout = unpack!("tcp_timeout", usize);
         let udp_timeout = unpack!("udp_timeout", usize);
@@ -157,9 +162,8 @@ impl Config for NetConf {
         let accept_proxy_timeout = unpack!("accept_proxy_timeout", usize);
 
         Self {
+            no_tcp,
             use_udp,
-            fast_open,
-            zero_copy,
             tcp_timeout,
             udp_timeout,
             send_proxy,

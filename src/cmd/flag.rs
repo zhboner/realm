@@ -30,21 +30,81 @@ pub fn add_flags(app: Command) -> Command {
             .long("udp")
             .help("force enable udp forward")
             .display_order(3),
+        Arg::new("no_tcp")
+            .short('t')
+            .long("ntcp")
+            .help("force disable tcp forward")
+            .display_order(4),
         Arg::new("fast_open")
             .short('f')
             .long("tfo")
-            .help("force enable tcp fast open")
-            .display_order(4),
+            .help("force enable tcp fast open -- deprecated")
+            .display_order(5),
         Arg::new("zero_copy")
             .short('z')
             .long("splice")
-            .help("force enable tcp zero copy")
-            .display_order(5),
+            .help("force enable tcp zero copy -- deprecated")
+            .display_order(6),
     ])
 }
 
 pub fn add_options(app: Command) -> Command {
     app.next_help_heading("OPTIONS").args(&[
+        Arg::new("config")
+            .short('c')
+            .long("config")
+            .help("use config file")
+            .value_name("path")
+            .takes_value(true)
+            .display_order(0),
+        Arg::new("local")
+            .short('l')
+            .long("listen")
+            .help("listen address")
+            .value_name("address")
+            .takes_value(true)
+            .display_order(1),
+        Arg::new("remote")
+            .short('r')
+            .long("remote")
+            .help("remote address")
+            .value_name("address")
+            .takes_value(true)
+            .display_order(2),
+        Arg::new("through")
+            .short('x')
+            .long("through")
+            .help("send through ip or address")
+            .value_name("address")
+            .takes_value(true)
+            .display_order(3),
+        Arg::new("interface")
+            .short('i')
+            .long("interface")
+            .help("bind to interface")
+            .value_name("device")
+            .takes_value(true)
+            .display_order(4),
+        Arg::new("listen_transport")
+            .short('a')
+            .long("listen-transport")
+            .help("listen transport")
+            .value_name("options")
+            .takes_value(true)
+            .display_order(5),
+        Arg::new("remote_transport")
+            .short('b')
+            .long("remote-transport")
+            .help("remote transport")
+            .value_name("options")
+            .takes_value(true)
+            .display_order(6),
+    ])
+}
+
+pub fn add_global_options(app: Command) -> Command {
+    // sys
+    let app = app.next_help_heading("SYS OPTIONS").args(&[
         Arg::new("nofile")
             .short('n')
             .long("nofile")
@@ -54,64 +114,13 @@ pub fn add_options(app: Command) -> Command {
             .display_order(0),
         Arg::new("pipe_page")
             .short('p')
-            .long("page")
+            .long("pipe-page")
             .help("set pipe capacity")
             .value_name("number")
             .takes_value(true)
             .display_order(1),
-        Arg::new("config")
-            .short('c')
-            .long("config")
-            .help("use config file")
-            .value_name("path")
-            .takes_value(true)
-            .display_order(2),
-        Arg::new("local")
-            .short('l')
-            .long("listen")
-            .help("listen address")
-            .value_name("address")
-            .takes_value(true)
-            .display_order(3),
-        Arg::new("remote")
-            .short('r')
-            .long("remote")
-            .help("remote address")
-            .value_name("address")
-            .takes_value(true)
-            .display_order(4),
-        Arg::new("through")
-            .short('x')
-            .long("through")
-            .help("send through ip or address")
-            .value_name("address")
-            .takes_value(true)
-            .display_order(5),
-        Arg::new("interface")
-            .short('i')
-            .long("interface")
-            .help("bind to interface")
-            .value_name("device")
-            .takes_value(true)
-            .display_order(6),
-        Arg::new("listen_transport")
-            .short('a')
-            .long("listen-transport")
-            .help("listen transport")
-            .value_name("options")
-            .takes_value(true)
-            .display_order(7),
-        Arg::new("remote_transport")
-            .short('b')
-            .long("remote-transport")
-            .help("remote transport")
-            .value_name("options")
-            .takes_value(true)
-            .display_order(8),
-    ])
-}
+    ]);
 
-pub fn add_global_options(app: Command) -> Command {
     // log
     let app = app.next_help_heading("LOG OPTIONS").args(&[
         Arg::new("log_level")
