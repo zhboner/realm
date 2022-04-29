@@ -834,6 +834,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "realm_agent"
+version = "0.1.0"
+
+[[package]]
 name = "realm_core"
 version = "0.1.6"
 dependencies = [
@@ -850,6 +854,10 @@ dependencies = [
  "tokio",
  "trust-dns-resolver",
 ]
+
+[[package]]
+name = "realm_ctrl"
+version = "0.1.0"
 
 [[package]]
 name = "realm_io"

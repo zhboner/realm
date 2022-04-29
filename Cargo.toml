@@ -9,7 +9,9 @@ edition = "2021"
 members = [
     "realm_io",
     "realm_core",
-    "realm_syscall"
+    "realm_syscall",
+    "experimental/realm_ctrl",
+    "experimental/realm_agent"
 ]
 
 
