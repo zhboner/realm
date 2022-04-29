@@ -812,7 +812,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.2.2"
+version = "2.2.3"
 dependencies = [
  "cfg-if",
  "chrono",
@@ -835,7 +835,7 @@ dependencies = [
 
 [[package]]
 name = "realm_core"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "bytes",
  "env_logger",

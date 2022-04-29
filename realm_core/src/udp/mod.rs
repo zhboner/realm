@@ -6,7 +6,6 @@ mod middle;
 
 use std::io::Result;
 
-use crate::trick::Ref;
 use crate::endpoint::Endpoint;
 
 use sockmap::SockMap;
@@ -16,20 +15,20 @@ use middle::associate_and_relay;
 pub const BUF_SIZE: usize = 2048;
 
 /// Launch a udp relay.
-pub async fn run_udp(endpoint: Ref<Endpoint>) -> Result<()> {
+pub async fn run_udp(endpoint: Endpoint) -> Result<()> {
     let Endpoint {
         laddr,
         raddr,
         conn_opts,
         ..
-    } = endpoint.as_ref();
+    } = endpoint;
 
     let sockmap = SockMap::new();
 
-    let lis = socket::bind(laddr).unwrap_or_else(|e| panic!("[udp]failed to bind {}: {}", laddr, e));
+    let lis = socket::bind(&laddr).unwrap_or_else(|e| panic!("[udp]failed to bind {}: {}", laddr, e));
 
     loop {
-        if let Err(e) = associate_and_relay(&lis, raddr, conn_opts, &sockmap).await {
+        if let Err(e) = associate_and_relay(&lis, &raddr, &conn_opts, &sockmap).await {
             log::error!("[udp]error: {}", e);
         }
     }

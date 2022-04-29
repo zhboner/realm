@@ -6,7 +6,6 @@ use tokio::time::sleep;
 
 use realm_core::udp::run_udp;
 use realm_core::endpoint::{Endpoint, RemoteAddr};
-use realm_core::trick::Ref;
 
 #[tokio::test]
 async fn udp() {
@@ -20,7 +19,7 @@ async fn udp() {
         conn_opts: Default::default(),
     };
 
-    tokio::spawn(run_udp(Ref::new(&endpoint)));
+    tokio::spawn(run_udp(endpoint));
 
     let task1 = async {
         sleep(Duration::from_millis(500)).await;

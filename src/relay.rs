@@ -1,6 +1,5 @@
 use futures::future::join_all;
 
-use realm_core::trick::Ref;
 use realm_core::tcp::run_tcp;
 use realm_core::udp::run_udp;
 
@@ -13,14 +12,14 @@ pub async fn run(endpoints: Vec<EndpointInfo>) {
         endpoint,
         no_tcp,
         use_udp,
-    } in endpoints.iter()
+    } in endpoints
     {
-        if !*no_tcp {
-            workers.push(tokio::spawn(run_tcp(Ref::new(endpoint))));
+        if use_udp {
+            workers.push(tokio::spawn(run_udp(endpoint.clone())));
         }
 
-        if *use_udp {
-            workers.push(tokio::spawn(run_udp(Ref::new(endpoint))));
+        if !no_tcp {
+            workers.push(tokio::spawn(run_tcp(endpoint)));
         }
     }
 

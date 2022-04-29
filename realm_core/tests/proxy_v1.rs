@@ -7,7 +7,6 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use realm_core::tcp::run_tcp;
 use realm_core::endpoint::{Endpoint, RemoteAddr, ConnectOpts, ProxyOpts};
-use realm_core::trick::Ref;
 
 #[tokio::test]
 async fn proxy_v1() {
@@ -45,8 +44,8 @@ async fn proxy_v1() {
         },
     };
 
-    tokio::spawn(run_tcp(Ref::new(&endpoint1)));
-    tokio::spawn(run_tcp(Ref::new(&endpoint2)));
+    tokio::spawn(run_tcp(endpoint1));
+    tokio::spawn(run_tcp(endpoint2));
 
     let task1 = async {
         sleep(Duration::from_millis(500)).await;

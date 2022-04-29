@@ -18,17 +18,17 @@ use crate::endpoint::Endpoint;
 use middle::connect_and_relay;
 
 /// Launch a tcp relay.
-pub async fn run_tcp(endpoint: Ref<Endpoint>) -> Result<()> {
+pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
     let Endpoint {
         laddr,
         raddr,
         conn_opts,
-    } = endpoint.as_ref();
+    } = endpoint;
 
-    let raddr = Ref::new(raddr);
-    let conn_opts = Ref::new(conn_opts);
+    let raddr = Ref::new(&raddr);
+    let conn_opts = Ref::new(&conn_opts);
 
-    let lis = socket::bind(laddr).unwrap_or_else(|e| panic!("[tcp]failed to bind {}: {}", laddr, e));
+    let lis = socket::bind(&laddr).unwrap_or_else(|e| panic!("[tcp]failed to bind {}: {}", &laddr, e));
 
     loop {
         let (local, addr) = match lis.accept().await {
