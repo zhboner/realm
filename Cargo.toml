@@ -11,7 +11,8 @@ members = [
     "realm_core",
     "realm_syscall",
     "experimental/realm_ctrl",
-    "experimental/realm_agent"
+    "experimental/realm_agent",
+    "experimental/realm_x"
 ]
 
 

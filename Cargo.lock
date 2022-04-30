@@ -332,7 +332,7 @@ checksum = "418d37c8b1d42553c93648be529cb70f920d3baf8ef469b74b9638df426e0b4c"
 dependencies = [
  "cfg-if",
  "libc",
- "wasi",
+ "wasi 0.10.2+wasi-snapshot-preview1",
 ]
 
 [[package]]
@@ -566,14 +566,15 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.7.14"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8067b404fe97c70829f082dec8bcf4f71225d7eaea1d8645349cb76fa06205cc"
+checksum = "52da4364ffb0e4fe33a9841a98a3f3014fb964045ce4f7a45a398243c8d6b0c9"
 dependencies = [
  "libc",
  "log",
  "miow",
  "ntapi",
+ "wasi 0.11.0+wasi-snapshot-preview1",
  "winapi",
 ]
 
@@ -824,7 +825,7 @@ dependencies = [
  "kaminari",
  "log",
  "mimalloc",
- "realm_core",
+ "realm_core 0.1.6",
  "realm_io 0.2.7",
  "realm_syscall 0.1.4",
  "serde",
@@ -856,8 +857,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "realm_core"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a006ee1cef867e956c0c089166d19ef2f5df342a24bb25a39ff97efef57a5a2"
+dependencies = [
+ "futures",
+ "log",
+ "once_cell",
+ "pin-project",
+ "realm_io 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "realm_syscall 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
+ "trust-dns-resolver",
+]
+
+[[package]]
 name = "realm_ctrl"
 version = "0.1.0"
+dependencies = [
+ "realm_core 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "realm_io"
@@ -896,6 +916,10 @@ dependencies = [
  "libc",
  "socket2",
 ]
+
+[[package]]
+name = "realm_x"
+version = "0.1.0"
 
 [[package]]
 name = "redox_syscall"
@@ -1171,16 +1195,18 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.16.1"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c27a64b625de6d309e8c57716ba93021dccf1b3b5c97edd6d3dd2d2135afc0a"
+checksum = "0f48b6d60512a392e34dbf7fd456249fd2de3c83669ab642e021903f4015185b"
 dependencies = [
  "bytes",
  "libc",
  "memchr",
  "mio",
  "num_cpus",
+ "once_cell",
  "pin-project-lite",
+ "socket2",
  "tokio-macros",
  "winapi",
 ]
@@ -1317,6 +1343,12 @@ name = "wasi"
 version = "0.10.2+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
+
+[[package]]
+name = "wasi"
+version = "0.11.0+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "wasm-bindgen"
