@@ -23,6 +23,9 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
         laddr,
         raddr,
         conn_opts,
+
+        #[cfg(feature = "multi-remote")]
+            extra_raddrs: _,
     } = endpoint;
 
     let raddr = Ref::new(&raddr);

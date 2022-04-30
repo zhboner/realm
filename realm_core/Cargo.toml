@@ -31,6 +31,7 @@ default = []
 x = []
 transport = ["kaminari"]
 transport-boost = []
+multi-remote = []
 proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
 
 [dev-dependencies]
