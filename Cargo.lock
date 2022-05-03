@@ -482,6 +482,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "565dbd88872dbe4cc8a46e527f26483c1d1f7afa6b884a3bd6cd893d4f98da74"
 
 [[package]]
+name = "libloading"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efbc0f03f9a775e9f6aed295c6a1ba2253c5757a9e03d55c6caa46a681abcddd"
+dependencies = [
+ "cfg-if",
+ "winapi",
+]
+
+[[package]]
 name = "libmimalloc-sys"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -825,7 +835,7 @@ dependencies = [
  "kaminari",
  "log",
  "mimalloc",
- "realm_core 0.1.6",
+ "realm_core",
  "realm_io 0.2.7",
  "realm_syscall 0.1.4",
  "serde",
@@ -840,7 +850,7 @@ version = "0.1.0"
 
 [[package]]
 name = "realm_core"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "bytes",
  "env_logger",
@@ -857,26 +867,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "realm_core"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a006ee1cef867e956c0c089166d19ef2f5df342a24bb25a39ff97efef57a5a2"
-dependencies = [
- "futures",
- "log",
- "once_cell",
- "pin-project",
- "realm_io 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "realm_syscall 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio",
- "trust-dns-resolver",
-]
-
-[[package]]
 name = "realm_ctrl"
 version = "0.1.0"
+
+[[package]]
+name = "realm_hook"
+version = "0.1.0"
 dependencies = [
- "realm_core 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libloading",
+ "once_cell",
 ]
 
 [[package]]
