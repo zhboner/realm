@@ -1,6 +1,6 @@
 [package]
 name = "realm_core"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Realm Contributors"]
 description = "Realm's core facilities."
 repository = "https://github.com/zhboner/realm/realm_core"
@@ -14,6 +14,7 @@ license = "MIT"
 # realm
 realm_io = "0.2.7"
 realm_syscall = "0.1.4"
+realm_hook = { version = "0.1.2", optional = true }
 kaminari = { version = "0.7.2", optional = true }
 
 # other
@@ -29,9 +30,10 @@ proxy-protocol = { version = "0.5", optional = true }
 [features]
 default = []
 x = []
+multi-remote = []
+hook = ["realm_hook", "multi-remote"]
 transport = ["kaminari"]
 transport-boost = []
-multi-remote = []
 proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
 
 [dev-dependencies]

@@ -4,6 +4,9 @@ mod socket;
 mod middle;
 mod plain;
 
+#[cfg(feature = "hook")]
+mod hook;
+
 #[cfg(feature = "proxy")]
 mod proxy;
 
@@ -25,11 +28,14 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
         conn_opts,
 
         #[cfg(feature = "multi-remote")]
-            extra_raddrs: _,
+        extra_raddrs,
     } = endpoint;
 
     let raddr = Ref::new(&raddr);
     let conn_opts = Ref::new(&conn_opts);
+
+    #[cfg(feature = "multi-remote")]
+    let extra_raddrs = Ref::new(&extra_raddrs);
 
     let lis = socket::bind(&laddr).unwrap_or_else(|e| panic!("[tcp]failed to bind {}: {}", &laddr, e));
 
@@ -46,7 +52,15 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
         let _ = local.set_nodelay(true);
 
         tokio::spawn(async move {
-            match connect_and_relay(local, raddr, conn_opts).await {
+            match connect_and_relay(
+                local,
+                raddr,
+                conn_opts,
+                #[cfg(feature = "multi-remote")]
+                extra_raddrs,
+            )
+            .await
+            {
                 Ok(..) => log::debug!("[tcp]{} => {}, finish", addr, raddr.as_ref()),
                 Err(e) => log::error!("[tcp]{} => {}, error: {}", addr, raddr.as_ref(), e),
             }

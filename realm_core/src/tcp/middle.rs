@@ -5,6 +5,9 @@ use tokio::net::TcpStream;
 use super::socket;
 use super::plain;
 
+#[cfg(feature = "hook")]
+use super::hook;
+
 #[cfg(feature = "proxy")]
 use super::proxy;
 
@@ -19,6 +22,8 @@ pub async fn connect_and_relay(
     mut local: TcpStream,
     raddr: Ref<RemoteAddr>,
     conn_opts: Ref<ConnectOpts>,
+
+    #[cfg(feature = "multi-remote")] extra_raddrs: Ref<Vec<RemoteAddr>>,
 ) -> Result<()> {
     let ConnectOpts {
         #[cfg(feature = "proxy-protocol")]
@@ -31,13 +36,22 @@ pub async fn connect_and_relay(
 
     // before connect
     // ..
+    let raddr = {
+        #[cfg(feature = "hook")]
+        {
+            hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?
+        }
+
+        #[cfg(not(feature = "hook"))]
+        raddr.as_ref()
+    };
 
     // connect!
-    let mut remote = socket::connect(raddr.as_ref(), conn_opts.as_ref()).await?;
+    let mut remote = socket::connect(raddr, conn_opts.as_ref()).await?;
     log::info!(
         "[tcp]{} => {} as {}",
         local.peer_addr().unwrap(),
-        raddr.as_ref(),
+        raddr,
         remote.peer_addr().unwrap()
     );
 
