@@ -1,6 +1,6 @@
 CXX := g++
 CXXFLAGS += -std=c++11
-CXXFLAGS += -s -shared -fPIC
+CXXFLAGS += -s -O2 -shared -fPIC
 
 SRCS := $(wildcard *.cpp)
 DYLIBS := $(SRCS:%.cpp=%.so)

@@ -43,5 +43,5 @@ pub fn first_pkt_len() -> u32 {
 /// idx < 0 means **ban**.
 /// idx = 0 means **default**.
 pub fn decide_remote_idx(buf: *const u8) -> i32 {
-    call_ffi!(b"realm_decide_remote_dix", unsafe extern "C" fn(*const u8) -> i32, buf)
+    call_ffi!(b"realm_decide_remote_idx", unsafe extern "C" fn(*const u8) -> i32, buf)
 }
