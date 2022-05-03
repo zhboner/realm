@@ -15,6 +15,10 @@ pub struct EndpointConf {
     pub remote: String,
 
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub extra_remotes: Vec<String>,
+
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub through: Option<String>,
 
@@ -45,7 +49,10 @@ impl EndpointConf {
     }
 
     fn build_remote(&self) -> RemoteAddr {
-        let Self { remote, .. } = self;
+        Self::build_remote_x(&self.remote)
+    }
+
+    fn build_remote_x(remote: &str) -> RemoteAddr {
         if let Ok(sockaddr) = remote.parse::<SocketAddr>() {
             RemoteAddr::SocketAddr(sockaddr)
         } else {
@@ -130,6 +137,8 @@ impl Config for EndpointConf {
         let laddr = self.build_local();
         let raddr = self.build_remote();
 
+        let extra_raddrs = self.extra_remotes.iter().map(|r| Self::build_remote_x(r)).collect();
+
         // build partial conn_opts from netconf
         let NetInfo {
             mut conn_opts,
@@ -155,6 +164,7 @@ impl Config for EndpointConf {
                 laddr,
                 raddr,
                 conn_opts,
+                extra_raddrs,
             },
         }
     }
@@ -183,6 +193,7 @@ impl Config for EndpointConf {
             listen_transport,
             remote_transport,
             network: Default::default(),
+            extra_remotes: Vec::new(),
         }
     }
 }

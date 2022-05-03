@@ -96,6 +96,15 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         }
     }
 
+    #[cfg(feature = "hook")]
+    {
+        use realm_core::hook::load_dylib;
+        if let Some(path) = matches.value_of("pre_conn_hook") {
+            load_dylib(path);
+            println!("load pre-connect hook from: {}", path);
+        }
+    }
+
     let opts = parse_global_opts(&matches);
 
     if let Some(config) = matches.value_of("config") {

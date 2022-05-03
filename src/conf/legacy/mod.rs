@@ -75,6 +75,7 @@ impl From<LegacyConf> for FullConf {
                 listen_transport: None,
                 remote_transport: None,
                 network: Default::default(),
+                extra_remotes: Vec::new(),
             })
             .collect();
 
