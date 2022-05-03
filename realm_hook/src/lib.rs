@@ -1,4 +1,11 @@
 //! Realm's flexible hooks.
+//!
+//! ## Pre-connect Hook
+//!
+//! [`first_pkt_len`]
+//!
+//! [`decide_remote_idx`]
+//!
 
 use once_cell::unsync::OnceCell;
 use libloading::Library;
