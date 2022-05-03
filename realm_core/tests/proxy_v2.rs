@@ -9,6 +9,7 @@ use realm_core::tcp::run_tcp;
 use realm_core::endpoint::{Endpoint, RemoteAddr, ConnectOpts, ProxyOpts};
 
 #[tokio::test]
+#[cfg(feature = "proxy")]
 async fn proxy_v2() {
     env_logger::init();
 
@@ -26,6 +27,7 @@ async fn proxy_v2() {
             },
             ..Default::default()
         },
+        extra_raddrs: Vec::new(),
     };
 
     let endpoint2 = Endpoint {
@@ -42,6 +44,7 @@ async fn proxy_v2() {
             },
             ..Default::default()
         },
+        extra_raddrs: Vec::new(),
     };
 
     tokio::spawn(run_tcp(endpoint1));

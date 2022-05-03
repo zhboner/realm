@@ -22,8 +22,7 @@ pub async fn connect_and_relay(
     mut local: TcpStream,
     raddr: Ref<RemoteAddr>,
     conn_opts: Ref<ConnectOpts>,
-
-    #[cfg(feature = "multi-remote")] extra_raddrs: Ref<Vec<RemoteAddr>>,
+    extra_raddrs: Ref<Vec<RemoteAddr>>,
 ) -> Result<()> {
     let ConnectOpts {
         #[cfg(feature = "proxy-protocol")]

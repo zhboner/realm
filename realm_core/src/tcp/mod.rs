@@ -26,15 +26,11 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
         laddr,
         raddr,
         conn_opts,
-
-        #[cfg(feature = "multi-remote")]
         extra_raddrs,
     } = endpoint;
 
     let raddr = Ref::new(&raddr);
     let conn_opts = Ref::new(&conn_opts);
-
-    #[cfg(feature = "multi-remote")]
     let extra_raddrs = Ref::new(&extra_raddrs);
 
     let lis = socket::bind(&laddr).unwrap_or_else(|e| panic!("[tcp]failed to bind {}: {}", &laddr, e));
@@ -52,15 +48,7 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
         let _ = local.set_nodelay(true);
 
         tokio::spawn(async move {
-            match connect_and_relay(
-                local,
-                raddr,
-                conn_opts,
-                #[cfg(feature = "multi-remote")]
-                extra_raddrs,
-            )
-            .await
-            {
+            match connect_and_relay(local, raddr, conn_opts, extra_raddrs).await {
                 Ok(..) => log::debug!("[tcp]{} => {}, finish", addr, raddr.as_ref()),
                 Err(e) => log::error!("[tcp]{} => {}, error: {}", addr, raddr.as_ref(), e),
             }

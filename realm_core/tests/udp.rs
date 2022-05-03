@@ -17,6 +17,7 @@ async fn udp() {
             .map(RemoteAddr::SocketAddr)
             .unwrap(),
         conn_opts: Default::default(),
+        extra_raddrs: Vec::new(),
     };
 
     tokio::spawn(run_udp(endpoint));

@@ -52,8 +52,6 @@ pub struct Endpoint {
     pub laddr: SocketAddr,
     pub raddr: RemoteAddr,
     pub conn_opts: ConnectOpts,
-
-    #[cfg(feature = "multi-remote")]
     pub extra_raddrs: Vec<RemoteAddr>,
 }
 
@@ -71,19 +69,11 @@ impl Display for RemoteAddr {
 
 impl Display for Endpoint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        #[cfg(not(feature = "multi-remote"))]
-        write!(f, "{} -> {}; options: {}", &self.laddr, &self.raddr, &self.conn_opts)?;
-
-        #[cfg(feature = "multi-remote")]
-        {
-            write!(f, "{} -> [{}", &self.laddr, &self.raddr)?;
-            for raddr in self.extra_raddrs.iter() {
-                write!(f, "|{}", raddr)?;
-            }
-            write!(f, "]; options: {}", &self.conn_opts)?;
+        write!(f, "{} -> [{}", &self.laddr, &self.raddr)?;
+        for raddr in self.extra_raddrs.iter() {
+            write!(f, "|{}", raddr)?;
         }
-
-        Ok(())
+        write!(f, "]; options: {}", &self.conn_opts)
     }
 }
 
