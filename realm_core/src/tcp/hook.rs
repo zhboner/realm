@@ -22,11 +22,12 @@ pub async fn pre_connect_hook<'a>(
         while local.peek(&mut buf).await? < len {}
     }
 
-    let idx = decide_remote_idx(buf.as_ptr());
+    let mut idx = extra_raddrs.len() as i32;
+    idx = decide_remote_idx(idx, buf.as_ptr());
 
     match idx {
         0 => Ok(raddr),
-        i if i >= 1 && i <= extra_raddrs.len() as i32 => Ok(&extra_raddrs[i as usize - 1]),
+        i if i >= 1 && i <= idx => Ok(&extra_raddrs[i as usize - 1]),
         _ => Err(Error::new(ErrorKind::Other, "rejected by pre-connect hook")),
     }
 }
