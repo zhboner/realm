@@ -15,6 +15,7 @@ A simple, high performance relay server written in rust.
 | ----- | ----- |
 | realm-core | [![crates.io](https://img.shields.io/crates/v/realm_core.svg)](https://crates.io/crates/realm_core) [![Released API docs](https://docs.rs/realm_core/badge.svg)](https://docs.rs/realm_core) |
 | realm-io | [![crates.io](https://img.shields.io/crates/v/realm_io.svg)](https://crates.io/crates/realm_io) [![Released API docs](https://docs.rs/realm_io/badge.svg)](https://docs.rs/realm_io) |
+| realm-hook | [![crates.io](https://img.shields.io/crates/v/realm_hook.svg)](https://crates.io/crates/realm_hook) [![Released API docs](https://docs.rs/realm_hook/badge.svg)](https://docs.rs/realm_hook)|
 | realm-syscall | [![crates.io](https://img.shields.io/crates/v/realm_syscall.svg)](https://crates.io/crates/realm_syscall) [![Released API docs](https://docs.rs/realm_syscall/badge.svg)](https://docs.rs/realm_syscall) |
 
 ## Features
@@ -64,13 +65,14 @@ RUSTFLAGS='-C target_cpu=native' cargo build --release
 - ~~trust-dns: enable trust-dns's async dns resolver~~ builtin.
 - ~~zero-copy: enable zero-copy on linux~~ builtin.
 - brutal-shutdown: see [realm_io/brutal-shutdown](realm_io/README.md#about-brutal-shutdown).
+- hook: see [realm_hook](realm_hook/README.md).
 - proxy: enable proxy-protocol.
 - transport: enable ws/tls/wss.
 - multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
 
-Default: proxy + transport + multi-thread.
+Default: hook + proxy + transport + multi-thread.
 
 See also: [Cargo.toml](Cargo.toml).
 
@@ -93,7 +95,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.2.0 [proxy][transport][multi-thread]
+Realm 2.3.0 [hook][proxy][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:
@@ -118,8 +120,9 @@ OPTIONS:
     -b, --remote-transport <options>    remote transport
 
 SYS OPTIONS:
-    -n, --nofile <limit>        set nofile limit
-    -p, --pipe-page <number>    set pipe capacity
+    -n, --nofile <limit>          set nofile limit
+    -p, --pipe-page <number>      set pipe capacity
+    -j, --pre-conn-hook <path>    set pre-connect hook
 
 LOG OPTIONS:
         --log-level <level>    override log level
@@ -233,7 +236,7 @@ remote = "www.google.com:443"
 </p>
 </details>
 
-[See other examples here](./examples)
+[See more examples here](./examples).
 
 ## Overview
 
