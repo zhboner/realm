@@ -850,7 +850,7 @@ version = "0.1.0"
 
 [[package]]
 name = "realm_core"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "bytes",
  "env_logger",
@@ -860,7 +860,7 @@ dependencies = [
  "once_cell",
  "pin-project",
  "proxy-protocol",
- "realm_hook 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "realm_hook 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_io 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_syscall 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
@@ -873,7 +873,7 @@ version = "0.1.0"
 
 [[package]]
 name = "realm_hook"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "libloading",
  "once_cell",
@@ -881,9 +881,9 @@ dependencies = [
 
 [[package]]
 name = "realm_hook"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f269cb00ff4d73f649ccca5028d7ae496cd39db580509b095e0a18a4035c266"
+checksum = "9fa4467fdf5ece94db02b101a00dc9e6c5acb90e60f025a9d496d4b69eeb9a3b"
 dependencies = [
  "libloading",
  "once_cell",

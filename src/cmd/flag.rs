@@ -125,7 +125,7 @@ pub fn add_global_options(app: Command) -> Command {
             .help("pre-connect hook")
             .value_name("path")
             .takes_value(true)
-            .display_order(2)
+            .display_order(2),
     ]);
 
     // log

@@ -11,7 +11,7 @@ pub async fn pre_connect_hook<'a>(
     extra_raddrs: &'a Vec<RemoteAddr>,
 ) -> Result<&'a RemoteAddr> {
     if !pre_conn::is_loaded() {
-        return Ok(raddr)
+        return Ok(raddr);
     }
 
     let len = first_pkt_len() as usize;
