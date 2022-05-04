@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.2.3"
+version = "2.3.0"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -64,7 +64,7 @@ tokio = { version = "1", features = ["macros"] }
 
  
 [features]
-default = ["proxy", "multi-thread", "transport"]
+default = ["hook", "proxy", "multi-thread", "transport"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
 transport = ["kaminari", "realm_core/transport", "realm_core/transport-boost"]

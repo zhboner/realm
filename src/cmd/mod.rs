@@ -102,7 +102,7 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         use realm_core::hook::load_pre_conn_hook;
         if let Some(path) = matches.value_of("pre_conn_hook") {
             load_pre_conn_hook(path);
-            println!("load pre-connect hook from: {}", path);
+            println!("hook: {}", path);
         }
     }
 

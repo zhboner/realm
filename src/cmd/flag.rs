@@ -122,7 +122,7 @@ pub fn add_global_options(app: Command) -> Command {
         Arg::new("pre_conn_hook")
             .short('j')
             .long("pre-conn-hook")
-            .help("pre-connect hook")
+            .help("set pre-connect hook")
             .value_name("path")
             .takes_value(true)
             .display_order(2),
