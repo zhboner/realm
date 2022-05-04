@@ -20,6 +20,7 @@ macro_rules! def_feat {
     };
 }
 
+def_feat!(FEATURE_HOOK, "hook");
 def_feat!(FEATURE_PROXY, "proxy");
 def_feat!(FEATURE_MIMALLOC, "mimalloc");
 def_feat!(FEATURE_JEMALLOC, "jemalloc");
@@ -30,6 +31,7 @@ pub struct Features {
     pub mimalloc: bool,
     pub jemalloc: bool,
     pub multi_thread: bool,
+    pub hook: bool,
     pub proxy: bool,
     pub transport: bool,
 }
@@ -38,6 +40,7 @@ pub const FEATURES: Features = Features {
     mimalloc: FEATURE_MIMALLOC,
     jemalloc: FEATURE_JEMALLOC,
     multi_thread: FEATURE_MULTI_THREAD,
+    hook: FEATURE_HOOK,
     proxy: FEATURE_PROXY,
     transport: FEATURE_TRANSPORT,
 };
@@ -52,6 +55,7 @@ impl Display for Features {
             };
         }
 
+        disp_feat!(hook, "hook");
         disp_feat!(proxy, "proxy");
         disp_feat!(transport, "transport");
         disp_feat!(multi_thread, "multi-thread");
