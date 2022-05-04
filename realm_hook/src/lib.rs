@@ -13,7 +13,7 @@ macro_rules! call_ffi {
     ($dylib: expr, $symbol: expr => $t: ty $(, $arg: expr)*) => {
         unsafe {
             let fp = $dylib.get().unwrap().get::<$t>($symbol).unwrap();
-            fp($($arg)*)
+            fp($($arg,)*)
         }
     };
 }

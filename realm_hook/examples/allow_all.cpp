@@ -7,7 +7,7 @@ uint32_t realm_first_pkt_len()
 };
 
 
-int32_t realm_decide_remote_idx(const char *buf)
+int32_t realm_decide_remote_idx(int32_t idx, const char *buf)
 {
     return 0;
 };
