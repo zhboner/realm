@@ -20,5 +20,5 @@ uint32_t realm_first_pkt_len();
 //
 // idx < 0 means **ban**.
 // idx = 0 means **default**.
-int32_t realm_decide_remote_idx(const char*);
+int32_t realm_decide_remote_idx(int32_t max_remote_idx, const char *pkt);
 ```
