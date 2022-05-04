@@ -1,7 +1,7 @@
 use std::io::{Result, Error, ErrorKind};
 
 use tokio::net::TcpStream;
-use realm_hook::{first_pkt_len, decide_remote_idx};
+use realm_hook::pre_conn::{self, first_pkt_len, decide_remote_idx};
 
 use crate::endpoint::RemoteAddr;
 
@@ -10,6 +10,10 @@ pub async fn pre_connect_hook<'a>(
     raddr: &'a RemoteAddr,
     extra_raddrs: &'a Vec<RemoteAddr>,
 ) -> Result<&'a RemoteAddr> {
+    if !pre_conn::is_loaded() {
+        return Ok(raddr)
+    }
+
     let len = first_pkt_len() as usize;
     let mut buf = Vec::<u8>::new();
 
