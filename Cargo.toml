@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.3.0"
+version = "2.3.1"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -31,7 +31,7 @@ path = "src/bin.rs"
 realm_io = { path = "realm_io" }
 realm_core = { path = "realm_core" }
 realm_syscall = { path = "realm_syscall" }
-kaminari = { version = "0.7.2", optional = true }
+kaminari = { version = "0.8", optional = true }
 
 # common
 cfg-if = "1"

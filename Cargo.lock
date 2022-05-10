@@ -456,9 +456,9 @@ dependencies = [
 
 [[package]]
 name = "kaminari"
-version = "0.7.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d80ca5fee4c52a5876838ead1b9d0c42266c48d78915a498ea0226105c00a891"
+checksum = "415e88694d33166db57b9562283cf536a8a8927e3e57d6da4a91fb1235faee43"
 dependencies = [
  "lazy_static",
  "lightws",
@@ -466,6 +466,7 @@ dependencies = [
  "rustls-pemfile",
  "tokio",
  "tokio-rustls",
+ "udpflow",
  "webpki-roots",
 ]
 
@@ -502,9 +503,9 @@ dependencies = [
 
 [[package]]
 name = "lightws"
-version = "0.6.3"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52355f151b7652f070b36ca2ab766f2f85c42e1c417507e982dd7dacf11465b0"
+checksum = "938940b6a181913c2c87d4283c45c0bd75dbd18f0336b839cd4bac88fbd5d7a4"
 dependencies = [
  "base64 0.20.0-alpha.1",
  "cfg-if",
@@ -823,7 +824,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.3.0"
+version = "2.3.1"
 dependencies = [
  "cfg-if",
  "chrono",
@@ -861,7 +862,7 @@ dependencies = [
  "pin-project",
  "proxy-protocol",
  "realm_hook 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "realm_io 0.2.7",
+ "realm_io 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_syscall 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "trust-dns-resolver",
@@ -891,9 +892,7 @@ dependencies = [
 
 [[package]]
 name = "realm_io"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a29814fb040b111cab9c2023aef866b20b10a193529c2f56c810f3b8568daad8"
+version = "0.3.0"
 dependencies = [
  "libc",
  "tokio",
@@ -902,6 +901,8 @@ dependencies = [
 [[package]]
 name = "realm_io"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc46c2807030b66f9388f2d28fd709a4cd8c2f30c2502ef90d9d7265e500e535"
 dependencies = [
  "libc",
  "tokio",
@@ -1302,6 +1303,15 @@ name = "typenum"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
+
+[[package]]
+name = "udpflow"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdcd3eb84a09ccdb41034d5d251061c6c906fc466a4589a178eaebe23c2451df"
+dependencies = [
+ "tokio",
+]
 
 [[package]]
 name = "unicode-bidi"
