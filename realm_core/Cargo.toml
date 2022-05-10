@@ -12,10 +12,10 @@ license = "MIT"
 
 [dependencies]
 # realm
-realm_io = "0.2.7"
+realm_io = "0.3"
 realm_syscall = "0.1.4"
 realm_hook = { version = "0.1.4", optional = true }
-kaminari = { version = "0.7.2", optional = true }
+kaminari = { version = "0.8", optional = true }
 
 # other
 futures = "0.3"
