@@ -37,7 +37,7 @@ where
 /// Copy data bidirectionally between two streams via `byte array`.
 ///
 /// Return transferred bytes no matter this operation succeeds or fails.
-pub async fn bidi_copy<A, B>(a: &mut A, b: &mut B) -> (Result<()>, u64, u64)
+pub async fn bidi_copy<A, B>(a: &mut A, b: &mut B) -> Result<()>
 where
     A: AsyncRead + AsyncWrite + Unpin,
     B: AsyncRead + AsyncWrite + Unpin,

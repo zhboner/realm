@@ -55,7 +55,6 @@ where
         cx: &mut Context<'_>,
         r: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamR,
         w: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamW,
-        amt: &mut u64,
     ) -> Poll<Result<()>> {
         loop {
             // If our buffer is empty, then we need to read some data to
@@ -95,7 +94,6 @@ where
                     return Poll::Ready(Err(ErrorKind::WriteZero.into()));
                 } else {
                     self.pos += i;
-                    *amt += i as u64;
                     self.need_flush = true;
                 }
             }

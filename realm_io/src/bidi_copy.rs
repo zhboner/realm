@@ -18,7 +18,6 @@ fn transfer<B, SL, SR>(
     state: &mut TransferState<B, SL, SR>,
     r: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamR,
     w: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamW,
-    amt: &mut u64,
 ) -> Poll<Result<()>>
 where
     B: Unpin,
@@ -30,7 +29,7 @@ where
     loop {
         match state {
             TransferState::Running(buf) => {
-                ready!(buf.poll_copy(cx, r, w, amt))?;
+                ready!(buf.poll_copy(cx, r, w))?;
 
                 *state = TransferState::ShuttingDown;
             }
@@ -49,7 +48,6 @@ fn transfer2<B, SL, SR>(
     state: &mut TransferState<B, SR, SL>, // reverse
     r: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamW,
     w: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamR,
-    amt: &mut u64,
 ) -> Poll<Result<()>>
 where
     B: Unpin,
@@ -64,7 +62,7 @@ where
     loop {
         match state {
             TransferState::Running(buf) => {
-                ready!(buf.poll_copy(cx, r, w, amt))?;
+                ready!(buf.poll_copy(cx, r, w))?;
 
                 *state = TransferState::ShuttingDown;
             }
@@ -90,8 +88,6 @@ where
     b: &'a mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamW,
     a_to_b: TransferState<B, SL, SR>,
     b_to_a: TransferState<B, SR, SL>,
-    ab_amt: &'a mut u64,
-    ba_amt: &'a mut u64,
 }
 
 impl<'a, B, SL, SR> Future for BidiCopy<'a, B, SL, SR>
@@ -106,17 +102,10 @@ where
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Unpack self into mut refs to each field to avoid borrow check issues.
-        let BidiCopy {
-            a,
-            b,
-            a_to_b,
-            b_to_a,
-            ab_amt,
-            ba_amt,
-        } = self.get_mut();
+        let BidiCopy { a, b, a_to_b, b_to_a } = self.get_mut();
 
-        let a_to_b = transfer(cx, a_to_b, a, b, ab_amt)?;
-        let b_to_a = transfer2::<B, SL, SR>(cx, b_to_a, b, a, ba_amt)?;
+        let a_to_b = transfer(cx, a_to_b, a, b)?;
+        let b_to_a = transfer2::<B, SL, SR>(cx, b_to_a, b, a)?;
 
         // graceful shutdown
         #[cfg(not(feature = "brutal-shutdown"))]
@@ -146,7 +135,7 @@ pub async fn bidi_copy_buf<B, SR, SW>(
     b: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamW,
     a_to_b_buf: CopyBuffer<B, SR, SW>,
     b_to_a_buf: CopyBuffer<B, SW, SR>,
-) -> (Result<()>, u64, u64)
+) -> Result<()>
 where
     B: Unpin,
     SR: AsyncRead + AsyncWrite + Unpin,
@@ -157,18 +146,5 @@ where
     let a_to_b = TransferState::Running(a_to_b_buf);
     let b_to_a = TransferState::Running(b_to_a_buf);
 
-    let mut ab_amt = 0;
-    let mut ba_amt = 0;
-
-    let res = BidiCopy {
-        a,
-        b,
-        a_to_b,
-        b_to_a,
-        ab_amt: &mut ab_amt,
-        ba_amt: &mut ba_amt,
-    }
-    .await;
-
-    (res, ab_amt, ba_amt)
+    BidiCopy { a, b, a_to_b, b_to_a }.await
 }

@@ -163,19 +163,13 @@ mod tokio_net {
 /// Copy data bidirectionally between two streams via `unix pipe`.
 ///
 /// Return transferred bytes no matter this operation succeeds or fails.
-pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> (Result<()>, u64, u64)
+pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> Result<()>
 where
     A: AsyncRawIO + Unpin,
     B: AsyncRawIO + Unpin,
 {
-    let a_to_b_buf = CopyBuffer::new(match Pipe::new() {
-        Ok(x) => x,
-        Err(e) => return (Err(e), 0, 0),
-    });
-    let b_to_a_buf = CopyBuffer::new(match Pipe::new() {
-        Ok(x) => x,
-        Err(e) => return (Err(e), 0, 0),
-    });
+    let a_to_b_buf = CopyBuffer::new(Pipe::new()?);
+    let b_to_a_buf = CopyBuffer::new(Pipe::new()?);
     bidi_copy_buf(a, b, a_to_b_buf, b_to_a_buf).await
 }
 

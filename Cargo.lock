@@ -836,7 +836,7 @@ dependencies = [
  "log",
  "mimalloc",
  "realm_core",
- "realm_io 0.2.7",
+ "realm_io 0.3.0",
  "realm_syscall 0.1.4",
  "serde",
  "serde_json",
@@ -861,7 +861,7 @@ dependencies = [
  "pin-project",
  "proxy-protocol",
  "realm_hook 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "realm_io 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "realm_io 0.2.7",
  "realm_syscall 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "trust-dns-resolver",
@@ -892,6 +892,8 @@ dependencies = [
 [[package]]
 name = "realm_io"
 version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a29814fb040b111cab9c2023aef866b20b10a193529c2f56c810f3b8568daad8"
 dependencies = [
  "libc",
  "tokio",
@@ -899,9 +901,7 @@ dependencies = [
 
 [[package]]
 name = "realm_io"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a29814fb040b111cab9c2023aef866b20b10a193529c2f56c810f3b8568daad8"
+version = "0.3.0"
 dependencies = [
  "libc",
  "tokio",
