@@ -147,7 +147,7 @@ where
         let this = self.get_mut();
 
         if this.rd == this.wr {
-            Pin::new(this).poll_read(cx, buf)
+            Pin::new(&mut this.io).poll_read(cx, buf)
         } else {
             let extra = this.buf.as_ref();
             let len = std::cmp::min(this.wr - this.rd, buf.remaining());
@@ -165,7 +165,7 @@ where
 {
     #[inline]
     fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<Result<usize>> {
-        Pin::new(&mut self.get_mut()).poll_write(cx, buf)
+        Pin::new(&mut self.get_mut().io).poll_write(cx, buf)
     }
 
     #[inline]
