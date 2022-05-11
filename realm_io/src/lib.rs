@@ -56,3 +56,5 @@ pub use mem_copy::{bidi_copy, buf_size, set_buf_size};
 
 #[cfg(target_os = "linux")]
 pub use zero_copy::{Pipe, AsyncRawIO, bidi_zero_copy, pipe_size, set_pipe_size};
+
+pub mod peek;
