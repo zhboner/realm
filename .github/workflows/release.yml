@@ -24,6 +24,24 @@ jobs:
             output: realm
           - target: aarch64-linux-android
             output: realm
+          - target: arm-unknown-linux-gnueabi
+            output: realm
+          - target: arm-unknown-linux-gnueabihf
+            output: realm
+          - target: arm-unknown-linux-musleabi
+            output: realm
+          - target: arm-unknown-linux-musleabihf
+            output: realm
+          - target: armv7-unknown-linux-gnueabi
+            output: realm
+          - target: armv7-unknown-linux-gnueabihf
+            output: realm
+          - target: armv7-unknown-linux-musleabi
+            output: realm
+          - target: armv7-unknown-linux-musleabihf
+            output: realm
+          - target: armv7-linux-androideabi
+            output: realm
     steps:
       - uses: actions/checkout@v2
       - name: install toolchain
