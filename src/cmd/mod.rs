@@ -70,18 +70,19 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
     {
         use realm_syscall::{get_nofile_limit, set_nofile_limit};
 
+        let nofile = matches.value_of("nofile").map_or_else(
+            || get_nofile_limit().map_or(None, |(_, hard)| Some(hard)),
+            |nofile| Some(nofile.parse().unwrap()),
+        );
+
         // set
-        if let Some(nofile) = matches.value_of("nofile") {
-            if let Ok(nofile) = nofile.parse::<u64>() {
-                let _ = set_nofile_limit(nofile);
-            } else {
-                eprintln!("invalid nofile value: {}", nofile);
-            }
+        if let Some(nofile) = nofile {
+            let _ = set_nofile_limit(nofile);
         }
 
         // get
         if let Ok((soft, hard)) = get_nofile_limit() {
-            println!("nofile limit: soft={}, hard={}", soft, hard);
+            println!("fd: soft={}, hard={}", soft, hard);
         }
     }
 
