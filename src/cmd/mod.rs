@@ -69,9 +69,10 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
     #[cfg(all(unix, not(target_os = "android")))]
     {
         use realm_syscall::{get_nofile_limit, set_nofile_limit};
+        const THRESHOLD: u64 = 65535;
 
         let nofile = matches.value_of("nofile").map_or_else(
-            || get_nofile_limit().map_or(None, |(_, hard)| Some(hard)),
+            || get_nofile_limit().map_or(None, |(_, hard)| Some(if hard > THRESHOLD { THRESHOLD } else { hard })),
             |nofile| Some(nofile.parse().unwrap()),
         );
 
