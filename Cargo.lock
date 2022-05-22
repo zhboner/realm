@@ -456,9 +456,9 @@ dependencies = [
 
 [[package]]
 name = "kaminari"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "415e88694d33166db57b9562283cf536a8a8927e3e57d6da4a91fb1235faee43"
+checksum = "a950527d5583b6b8dd5c120bf6bbf23b2946cc88772a653c8ca0b5b5e07e873f"
 dependencies = [
  "lazy_static",
  "lightws",
@@ -824,7 +824,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.3.2"
+version = "2.3.3"
 dependencies = [
  "cfg-if",
  "chrono",
@@ -851,7 +851,7 @@ version = "0.1.0"
 
 [[package]]
 name = "realm_core"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "bytes",
  "env_logger",
