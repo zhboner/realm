@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "realm_core"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "bytes",
  "env_logger",

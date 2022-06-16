@@ -40,7 +40,7 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
             Ok(x) => x,
             Err(e) => {
                 log::error!("[tcp]failed to accept: {}", e);
-                continue;
+                break;
             }
         };
 
@@ -54,4 +54,6 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
             }
         });
     }
+
+    Ok(())
 }
