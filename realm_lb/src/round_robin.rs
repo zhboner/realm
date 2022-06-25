@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use super::{Balance, Token};
 
+#[derive(Debug)]
 struct Node {
     cw: i16,
     ew: u8,
@@ -9,6 +10,7 @@ struct Node {
     token: Token,
 }
 
+#[derive(Debug)]
 pub struct RoundRobin {
     nodes: Mutex<Vec<Node>>,
     total: u8,

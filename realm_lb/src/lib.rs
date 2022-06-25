@@ -19,3 +19,6 @@ pub trait Balance {
 
 pub mod ip_hash;
 pub mod round_robin;
+
+mod balancer;
+pub use balancer::{Balancer, BalanceCtx};

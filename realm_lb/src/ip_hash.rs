@@ -2,11 +2,13 @@ use std::net::IpAddr;
 
 use super::{Balance, Token};
 
+#[derive(Debug)]
 struct Node {
     hash: u32,
     token: Token,
 }
 
+#[derive(Debug)]
 pub struct IpHash {
     nodes: Vec<Node>,
     total: u8,
@@ -29,11 +31,7 @@ impl Balance for IpHash {
         let count = weights.iter().map(|x| *x as usize * ratio as usize).sum();
         let mut nodes: Vec<Node> = Vec::with_capacity(count);
 
-        for (n, weight) in weights
-            .iter()
-            .map(|x| *x as usize * ratio as usize)
-            .enumerate()
-        {
+        for (n, weight) in weights.iter().map(|x| *x as usize * ratio as usize).enumerate() {
             let token = Token(n as u8);
 
             for vidx in 0..=weight {
@@ -96,10 +94,7 @@ mod chash {
         while len >= 4 {
             h = c_add!(
                 h,
-                (b[0] as u32)
-                    | ((b[1] as u32) << 8)
-                    | ((b[2] as u32) << 16)
-                    | ((b[3] as u32) << 24)
+                (b[0] as u32) | ((b[1] as u32) << 8) | ((b[2] as u32) << 16) | ((b[3] as u32) << 24)
             );
 
             h = c_mul!(h, M);
@@ -263,11 +258,7 @@ mod tests {
         let mut distro = [0f64; 16];
 
         let mut total: usize = 0;
-        for ip in (0..=u32::MAX)
-            .map(Ipv4Addr::from)
-            .map(IpAddr::from)
-            .step_by(127)
-        {
+        for ip in (0..=u32::MAX).map(Ipv4Addr::from).map(IpAddr::from).step_by(127) {
             let token = iphash.next(&ip).unwrap();
             distro[token.0 as usize] += 1 as f64;
             total += 1;
@@ -296,11 +287,7 @@ mod tests {
         let mut distro = [0f64; 16];
 
         let mut total: usize = 0;
-        for ip in (0..=u32::MAX)
-            .map(Ipv4Addr::from)
-            .map(IpAddr::from)
-            .step_by(127)
-        {
+        for ip in (0..=u32::MAX).map(Ipv4Addr::from).map(IpAddr::from).step_by(127) {
             let token = iphash.next(&ip).unwrap();
             distro[token.0 as usize] += 1 as f64;
             total += 1;
