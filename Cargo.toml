@@ -8,6 +8,7 @@ edition = "2021"
 [workspace]
 members = [
     "realm_io",
+    "realm_lb",
     "realm_core",
     "realm_hook",
     "realm_syscall"
