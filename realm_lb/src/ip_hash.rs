@@ -2,12 +2,14 @@ use std::net::IpAddr;
 
 use super::{Balance, Token};
 
+/// Iphash node.
 #[derive(Debug)]
 struct Node {
     hash: u32,
     token: Token,
 }
 
+/// Iphash balancer.
 #[derive(Debug)]
 pub struct IpHash {
     nodes: Vec<Node>,
@@ -16,6 +18,10 @@ pub struct IpHash {
 
 impl Balance for IpHash {
     type State = IpAddr;
+
+    fn total(&self) -> u8 {
+        self.total
+    }
 
     fn new(weights: &[u8]) -> Self {
         assert!(weights.len() <= u8::MAX as usize);

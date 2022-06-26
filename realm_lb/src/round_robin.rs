@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use super::{Balance, Token};
 
+/// Round-robin node.
 #[derive(Debug)]
 struct Node {
     cw: i16,
@@ -10,6 +11,7 @@ struct Node {
     token: Token,
 }
 
+/// Round robin balancer.
 #[derive(Debug)]
 pub struct RoundRobin {
     nodes: Mutex<Vec<Node>>,
@@ -18,6 +20,10 @@ pub struct RoundRobin {
 
 impl Balance for RoundRobin {
     type State = ();
+
+    fn total(&self) -> u8 {
+        self.total
+    }
 
     fn new(weights: &[u8]) -> Self {
         assert!(weights.len() <= u8::MAX as usize);
@@ -45,6 +51,7 @@ impl Balance for RoundRobin {
         }
     }
 
+    #[allow(clippy::significant_drop_in_scrutinee)]
     fn next(&self, _: &Self::State) -> Option<Token> {
         if self.total <= 1 {
             return Some(Token(0));
