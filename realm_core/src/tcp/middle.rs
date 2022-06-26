@@ -30,18 +30,46 @@ pub async fn connect_and_relay(
 
         #[cfg(feature = "transport")]
         transport,
+
+        #[cfg(feature = "balance")]
+        balancer,
         ..
     } = conn_opts.as_ref();
 
-    // before connect
+    // before connect:
+    // - pre-connect hook
+    // - load balance
     // ..
     let raddr = {
         #[cfg(feature = "hook")]
         {
-            hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?
+            // accept or deny connection.
+            #[cfg(feature = "balance")]
+            {
+                hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?;
+            }
+
+            // accept or deny connection, or select a remote peer.
+            #[cfg(not(feature = "balance"))]
+            {
+                hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?
+            }
         }
 
-        #[cfg(not(feature = "hook"))]
+        #[cfg(feature = "balance")]
+        {
+            use realm_lb::{Token, BalanceCtx};
+            let token = balancer.next(BalanceCtx {
+                src_ip: &local.peer_addr().unwrap().ip(),
+            });
+            log::debug!("[tcp]select remote peer, token: {:?}", token);
+            match token {
+                None | Some(Token(0)) => raddr.as_ref(),
+                Some(Token(idx)) => &extra_raddrs.as_ref()[idx as usize],
+            }
+        }
+
+        #[cfg(not(any(feature = "hook", feature = "balance")))]
         raddr.as_ref()
     };
 

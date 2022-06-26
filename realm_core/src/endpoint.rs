@@ -6,6 +6,9 @@ use std::net::SocketAddr;
 #[cfg(feature = "transport")]
 use kaminari::mix::{MixAccept, MixConnect};
 
+#[cfg(feature = "balance")]
+use realm_lb::Balancer;
+
 /// Remote address.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RemoteAddr {
@@ -44,6 +47,9 @@ pub struct ConnectOpts {
 
     #[cfg(feature = "transport")]
     pub transport: Option<(MixAccept, MixConnect)>,
+
+    #[cfg(feature = "balance")]
+    pub balancer: Balancer,
 }
 
 /// Relay endpoint.
@@ -90,6 +96,9 @@ impl Display for ConnectOpts {
 
             #[cfg(feature = "transport")]
             transport,
+
+            #[cfg(feature = "balance")]
+            balancer,
         } = self;
 
         if let Some(iface) = bind_interface {
@@ -123,9 +132,11 @@ impl Display for ConnectOpts {
 
         #[cfg(feature = "transport")]
         if let Some((ac, cc)) = transport {
-            write!(f, "transport={}||{}", ac, cc)?
+            write!(f, "transport={}||{}; ", ac, cc)?;
         }
 
+        #[cfg(feature = "balance")]
+        write!(f, "balance={}", balancer.strategy())?;
         Ok(())
     }
 }
