@@ -8,4 +8,7 @@ pub mod trick;
 pub mod endpoint;
 
 #[cfg(feature = "hook")]
-pub mod hook;
+pub use realm_hook as hook;
+
+#[cfg(feature = "balance")]
+pub use realm_lb as balance;
