@@ -65,7 +65,7 @@ pub async fn connect_and_relay(
             log::debug!("[tcp]select remote peer, token: {:?}", token);
             match token {
                 None | Some(Token(0)) => raddr.as_ref(),
-                Some(Token(idx)) => &extra_raddrs.as_ref()[idx as usize],
+                Some(Token(idx)) => &extra_raddrs.as_ref()[idx as usize - 1],
             }
         }
 
