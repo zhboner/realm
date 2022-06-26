@@ -1,0 +1,30 @@
+{
+  "log": {
+    "level": "warn",
+    "output": "/var/log/realm.log"
+  },
+  "network": {
+    "no_tcp": false,
+    "use_udp": true
+  },
+  "endpoints": [
+    {
+      "listen": "0.0.0.0:10000",
+      "remote": "127.0.0.1:20000",
+      "extra_remotes": [
+        "127.0.0.1:20001",
+        "127.0.0.1:20002"
+      ],
+      "balance": "roundrobin: 4, 2, 1"
+    },
+    {
+      "listen": "0.0.0.0:20000",
+      "remote": "127.0.0.1:30000",
+      "extra_remotes": [
+        "127.0.0.1:30001",
+        "127.0.0.1:30002"
+      ],
+      "balance": "iphash: 4, 2, 1"
+    }
+  ]
+}

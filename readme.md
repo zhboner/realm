@@ -15,6 +15,7 @@ A simple, high performance relay server written in rust.
 | ----- | ----- |
 | realm-core | [![crates.io](https://img.shields.io/crates/v/realm_core.svg)](https://crates.io/crates/realm_core) [![Released API docs](https://docs.rs/realm_core/badge.svg)](https://docs.rs/realm_core) |
 | realm-io | [![crates.io](https://img.shields.io/crates/v/realm_io.svg)](https://crates.io/crates/realm_io) [![Released API docs](https://docs.rs/realm_io/badge.svg)](https://docs.rs/realm_io) |
+| realm-lb | [![crates.io](https://img.shields.io/crates/v/realm_lb.svg)](https://crates.io/crates/realm_lb) [![Released API docs](https://docs.rs/realm_lb/badge.svg)](https://docs.rs/realm_lb) |
 | realm-hook | [![crates.io](https://img.shields.io/crates/v/realm_hook.svg)](https://crates.io/crates/realm_hook) [![Released API docs](https://docs.rs/realm_hook/badge.svg)](https://docs.rs/realm_hook)|
 | realm-syscall | [![crates.io](https://img.shields.io/crates/v/realm_syscall.svg)](https://crates.io/crates/realm_syscall) [![Released API docs](https://docs.rs/realm_syscall/badge.svg)](https://docs.rs/realm_syscall) |
 
@@ -23,10 +24,6 @@ A simple, high performance relay server written in rust.
 - Zero configuration. Setup and run in one command.
 - Concurrency. Bidirectional concurrent traffic leads to high performance.
 - Low resources cost.
-
-## Transports
-
-With `transport` feature, Realm is able to handle [ws/tls/wss] on both sides. This is powered by [libkaminari](https://github.com/zephyrchien/kaminari), which is dramatically faster in comparison to other implements. [Here are some benchmark results](https://github.com/zephyrchien/boring-relay-bench).
 
 ## Container
 
@@ -67,12 +64,13 @@ RUSTFLAGS='-C target_cpu=native' cargo build --release
 - brutal-shutdown: see [realm_io/brutal-shutdown](realm_io/README.md#about-brutal-shutdown).
 - hook: see [realm_hook](realm_hook/README.md).
 - proxy: enable proxy-protocol.
+- balance: enable load balance.
 - transport: enable ws/tls/wss.
 - multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
 
-Default: hook + proxy + transport + multi-thread.
+Default: hook + proxy + balance + transport + multi-thread.
 
 See also: [Cargo.toml](Cargo.toml).
 
@@ -95,7 +93,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.3.0 [hook][proxy][transport][multi-thread]
+Realm 2.4.0 [hook][proxy][balance][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:
@@ -263,6 +261,8 @@ remote = "www.google.com:443"
 └── endpoints
     ├── listen
     ├── remote
+    ├── extra_remotes
+    ├── balance
     ├── through
     ├── interface
     ├── listen_transport
@@ -273,6 +273,89 @@ remote = "www.google.com:443"
 You should provide at least [endpoint.listen](#endpointlisten-string) and [endpoint.remote](#endpointremote-string), the left fields will take their default values.
 
 Option priority: cmd override > endpoint config > global config.
+
+### endpoint
+
+#### endpoint.listen: string
+
+Local address, supported formats:
+
+- ipv4:port
+- ipv6:port
+
+#### endpoint.remote: string
+
+Remote address, supported formats:
+
+- ipv4:port
+- ipv6:port
+- example.com:port
+
+#### endpoint.extra_remotes: string array
+
+Extra remote address, same as endpoint.remote above.
+
+#### endpoint.balance: string
+
+Require `balance` feature.
+
+Load balance strategy and weights of remote peers.
+
+Format:
+
+```bash
+$strategy: $weight1, $weight2, ...
+```
+
+Where `remote` is used as default backend server, and `extra_remotes` are used as backups.
+
+Available algorithms (provided by [realm_lb](./realm_lb/)):
+
+- iphash
+
+- roundrobin
+
+Example:
+
+```toml
+[[endpoints]]
+remote = "a:443"
+extra_remotes = ["b:443", "c:443"]
+balance = "roundrobin: 4, 2, 1"
+```
+
+The weight of [a, b, c] is [4, 2, 1] in turn.
+
+#### endpoint.through: string
+
+TCP: Bind a specific `ip` before opening a connection.
+
+UDP: Bind a specific `ip` or `address` before sending packet.
+
+Supported formats:
+
+- ipv4/ipv6 (tcp/udp)
+- ipv4/ipv6:port (udp)
+
+#### endpoint.interface: string
+
+Bind to a specific interface.
+
+#### endpoint.listen_transport: string
+
+Require `transport` feature.
+
+See [Kaminari Options](https://github.com/zephyrchien/kaminari#options).
+
+#### endpoint.remote_transport: string
+
+Require `transport` feature.
+
+See [Kaminari Options](https://github.com/zephyrchien/kaminari#options).
+
+#### endpoint.network
+
+The same as [network](#network), override global options.
 
 ### log
 
@@ -301,7 +384,7 @@ default: stdout
 
 ### dns
 
-Require the `trust-dns` feature
+Require `trust-dns` feature.
 
 #### dns.mode: string
 
@@ -369,7 +452,7 @@ default: false
 
 #### network.use_udp: bool
 
-~~Require the `udp` feature~~
+~~Require `udp` feature~~
 
 Start listening on a udp endpoint and forward packets to the remote peer.
 
@@ -381,7 +464,7 @@ default: false
 
 #### ~~network.zero_copy: bool~~ deprecated
 
-~~Require the `zero-copy` feature.~~
+~~Require `zero-copy` feature.~~
 
 ~~Use `splice` instead of `send/recv` while handing tcp connection. This will save a lot of memory copies and context switches.~~
 
@@ -389,7 +472,7 @@ default: false
 
 #### ~~network.fast_open: bool~~ deprecated
 
-~~Require the `fast-open` feature.~~
+~~Require `fast-open` feature.~~
 
 ~~It is not recommended to enable this option, see [The Sad Story of TCP Fast Open](https://squeeze.isobar.com/2019/04/11/the-sad-story-of-tcp-fast-open/).~~
 
@@ -413,7 +496,7 @@ default: 30
 
 #### network.send_proxy: bool
 
-Requires the `proxy` feature.
+Require `proxy` feature.
 
 Send haproxy PROXY header once the connection established. Both `v1` and `v2` are supported, see [send_proxy_version](#networksend_proxy_version-unsigned-int).
 
@@ -423,7 +506,7 @@ default: false
 
 #### network.send_proxy_version: unsigned int
 
-Requires the `proxy` feature.
+Require `proxy` feature.
 
 This option has no effect unless [send_proxy](#networksend_proxy-bool) is enabled.
 
@@ -436,7 +519,7 @@ default: 2
 
 #### network.accept_proxy: bool
 
-Requires the `proxy` feature.
+Require `proxy` feature.
 
 Wait for a PROXY header once the connection established.
 
@@ -446,56 +529,8 @@ default: false
 
 #### network.accept_timeout: unsigned int
 
-Requires the `proxy` feature.
+Require `proxy` feature.
 
 Wait for a PROXY header within a period of time, otherwise close the connection.
 
 default: 5.
-
-### endpoint
-
-#### endpoint.listen: string
-
-Local address, supported formats:
-
-- ipv4:port
-- ipv6:port
-
-#### endpoint.remote: string
-
-Remote address, supported formats:
-
-- ipv4:port
-- ipv6:port
-- example.com:port
-
-#### endpoint.through: string
-
-TCP: Bind a specific `ip` before opening a connection.
-
-UDP: Bind a specific `ip` or `address` before sending packet.
-
-Supported formats:
-
-- ipv4/ipv6 (tcp/udp)
-- ipv4/ipv6:port (udp)
-
-#### endpoint.interface: string
-
-Bind to a specific interface.
-
-#### endpoint.listen_transport: string
-
-Require the `transport` feature.
-
-See [Kaminari Options](https://github.com/zephyrchien/kaminari#options).
-
-#### endpoint.remote_transport: string
-
-Require the `transport` feature.
-
-See [Kaminari Options](https://github.com/zephyrchien/kaminari#options).
-
-#### endpoint.network
-
-The same as [network](#network), override global options.
