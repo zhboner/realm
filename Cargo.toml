@@ -62,9 +62,10 @@ tokio = { version = "1", features = ["macros"] }
 
  
 [features]
-default = ["hook", "proxy", "multi-thread", "transport"]
+default = ["hook", "proxy", "balance", "multi-thread", "transport"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
+balance = ["realm_core/balance"]
 transport = ["kaminari", "realm_core/transport", "realm_core/transport-boost"]
 multi-thread = ["tokio/rt-multi-thread"]
 brutal-shutdown = ["realm_io/brutal-shutdown"]

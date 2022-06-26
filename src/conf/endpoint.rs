@@ -3,6 +3,9 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 use realm_core::endpoint::{Endpoint, RemoteAddr};
 
+#[cfg(feature = "balance")]
+use realm_core::balance::Balancer;
+
 #[cfg(feature = "transport")]
 use kaminari::mix::{MixAccept, MixConnect};
 
@@ -17,6 +20,10 @@ pub struct EndpointConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extra_remotes: Vec<String>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub balance: Option<String>,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -78,6 +85,15 @@ impl EndpointConf {
                 ipstr.retain(|c| c != '[' && c != ']');
                 ipstr.parse::<IpAddr>().map_or(None, |ip| Some(SocketAddr::new(ip, 0)))
             }
+        }
+    }
+
+    #[cfg(feature = "balance")]
+    fn build_balancer(&self) -> Balancer {
+        if let Some(s) = &self.balance {
+            Balancer::parse_from_str(s)
+        } else {
+            Balancer::default()
         }
     }
 
@@ -150,6 +166,11 @@ impl Config for EndpointConf {
 
         conn_opts.bind_address = self.build_send_through();
 
+        #[cfg(feature = "balance")]
+        {
+            conn_opts.balancer = self.build_balancer();
+        }
+
         #[cfg(feature = "transport")]
         {
             conn_opts.transport = self.build_transport();
@@ -194,6 +215,7 @@ impl Config for EndpointConf {
             remote_transport,
             network: Default::default(),
             extra_remotes: Vec::new(),
+            balance: None,
         }
     }
 }

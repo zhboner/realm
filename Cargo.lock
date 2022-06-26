@@ -879,7 +879,7 @@ dependencies = [
 
 [[package]]
 name = "realm_core"
-version = "0.2.7"
+version = "0.3.0"
 dependencies = [
  "bytes",
  "env_logger",
@@ -891,6 +891,7 @@ dependencies = [
  "proxy-protocol",
  "realm_hook 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_io 0.3.0",
+ "realm_lb 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_syscall 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "trust-dns-resolver",
@@ -938,6 +939,12 @@ version = "0.1.0"
 dependencies = [
  "average",
 ]
+
+[[package]]
+name = "realm_lb"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1ac1e00be0e1a25c2944d3e7cba9482772527ebc46ece30dcd7d4dca48bc97a"
 
 [[package]]
 name = "realm_syscall"

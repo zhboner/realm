@@ -99,9 +99,9 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
 
     #[cfg(feature = "hook")]
     {
-        use realm_core::hook::load_pre_conn_hook;
+        use realm_core::hook::pre_conn::load_dylib as load_pre_conn;
         if let Some(path) = matches.value_of("pre_conn_hook") {
-            load_pre_conn_hook(path);
+            load_pre_conn(path);
             println!("hook: {}", path);
         }
     }

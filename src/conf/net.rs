@@ -87,6 +87,9 @@ impl Config for NetConf {
             bind_address: None,
             bind_interface: None,
 
+            #[cfg(feature = "balance")]
+            balancer: Default::default(),
+
             #[cfg(feature = "transport")]
             transport: None,
 
