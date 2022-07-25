@@ -482,9 +482,9 @@ dependencies = [
 
 [[package]]
 name = "kaminari"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51adfd06d5c44bf3ff715c2c3aad78eda31794131e25be2ad8e84b5a31e380b6"
+checksum = "29e5a1c47c8eb88c87a8c60293723377e92ceb7716cc43b4f640b15ef6bee5bb"
 dependencies = [
  "lazy_static",
  "lightws",
@@ -534,9 +534,9 @@ dependencies = [
 
 [[package]]
 name = "lightws"
-version = "0.6.5"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "076a71f9dffa193b990e390eb07e114a3b28776bcfb8d697c549331dc7b1f487"
+checksum = "4322731125a8d3696b5d0ae9e404d4dd7292d2d03c2389f42f9d9171e26ccd16"
 dependencies = [
  "base64 0.20.0-alpha.1",
  "cfg-if",
@@ -732,18 +732,18 @@ checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "pin-project"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58ad3879ad3baf4e44784bc6a718a8698867bb991f8ce24d1bcbe2cfb4c3a75e"
+checksum = "78203e83c48cffbe01e4a2d35d566ca4de445d79a85372fc64e378bfc812a260"
 dependencies = [
  "pin-project-internal",
 ]
 
 [[package]]
 name = "pin-project-internal"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "744b6f092ba29c3650faf274db506afd39944f48420f6c86b17cfe0ee1cb36bb"
+checksum = "710faf75e1b33345361201d36d04e98ac1ed8909151a017ed384700836104c74"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -856,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.4.0"
+version = "2.4.1"
 dependencies = [
  "cfg-if",
  "chrono",
@@ -865,11 +865,10 @@ dependencies = [
  "fern",
  "futures",
  "jemallocator",
- "kaminari",
  "log",
  "mimalloc",
  "realm_core",
- "realm_io 0.3.2",
+ "realm_io 0.3.3",
  "realm_syscall 0.1.4",
  "serde",
  "serde_json",
@@ -927,7 +926,7 @@ dependencies = [
 
 [[package]]
 name = "realm_io"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "libc",
  "tokio",
@@ -1471,9 +1470,9 @@ dependencies = [
 
 [[package]]
 name = "webpki-roots"
-version = "0.22.3"
+version = "0.22.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44d8de8415c823c8abd270ad483c6feeac771fad964890779f9a8cb24fbbc1bf"
+checksum = "f1c760f0d366a6c24a02ed7816e23e691f5d92291f94d15e836006fd11b04daf"
 dependencies = [
  "webpki",
 ]

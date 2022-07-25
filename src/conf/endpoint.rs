@@ -7,7 +7,7 @@ use realm_core::endpoint::{Endpoint, RemoteAddr};
 use realm_core::balance::Balancer;
 
 #[cfg(feature = "transport")]
-use kaminari::mix::{MixAccept, MixConnect};
+use realm_core::kaminari::mix::{MixAccept, MixConnect};
 
 use super::{Config, NetConf, NetInfo};
 
@@ -99,10 +99,10 @@ impl EndpointConf {
 
     #[cfg(feature = "transport")]
     fn build_transport(&self) -> Option<(MixAccept, MixConnect)> {
-        use kaminari::mix::{MixClientConf, MixServerConf};
-        use kaminari::opt::get_ws_conf;
-        use kaminari::opt::get_tls_client_conf;
-        use kaminari::opt::get_tls_server_conf;
+        use realm_core::kaminari::mix::{MixClientConf, MixServerConf};
+        use realm_core::kaminari::opt::get_ws_conf;
+        use realm_core::kaminari::opt::get_tls_client_conf;
+        use realm_core::kaminari::opt::get_tls_server_conf;
 
         let Self {
             listen_transport,

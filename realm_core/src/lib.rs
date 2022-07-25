@@ -12,3 +12,6 @@ pub use realm_hook as hook;
 
 #[cfg(feature = "balance")]
 pub use realm_lb as balance;
+
+#[cfg(feature = "transport")]
+pub use kaminari;

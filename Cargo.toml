@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.4.0"
+version = "2.4.1"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -29,7 +29,6 @@ path = "src/bin.rs"
 realm_io = { path = "realm_io" }
 realm_core = { path = "realm_core" }
 realm_syscall = { path = "realm_syscall" }
-kaminari = { version = "0.9.1", features = ["ws", "tls", "mix"], optional = true }
 
 # common
 cfg-if = "1"
@@ -60,13 +59,13 @@ jemallocator = { version = "0.5", optional = true }
 env_logger = "0.9"
 tokio = { version = "1", features = ["macros"] }
 
- 
+
 [features]
 default = ["hook", "proxy", "balance", "multi-thread", "transport"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
 balance = ["realm_core/balance"]
-transport = ["kaminari", "realm_core/transport", "realm_core/transport-boost"]
+transport = ["realm_core/transport", "realm_core/transport-boost"]
 multi-thread = ["tokio/rt-multi-thread"]
 brutal-shutdown = ["realm_io/brutal-shutdown"]
 jemalloc = ["jemallocator"]
