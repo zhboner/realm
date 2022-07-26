@@ -9,7 +9,7 @@ use realm::relay;
 use realm::ENV_CONFIG;
 
 cfg_if! {
-    if #[cfg(all(feature = "mi-malloc"))] {
+    if #[cfg(feature = "mi-malloc")] {
         use mimalloc::MiMalloc;
         #[global_allocator]
         static GLOBAL: MiMalloc = MiMalloc;
@@ -17,6 +17,10 @@ cfg_if! {
         use jemallocator::Jemalloc;
         #[global_allocator]
         static GLOBAL: Jemalloc = Jemalloc;
+    } else if #[cfg(all(feature = "page-alloc", unix))] {
+        use mmap_allocator::MmapAllocator;
+        #[global_allocator]
+        static GLOBAL: MmapAllocator = MmapAllocator::new();
     }
 }
 

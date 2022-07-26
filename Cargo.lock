@@ -630,6 +630,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mmap-allocator"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f0d1de3adf2053ad56a86a2b35fd0e74d9a82eb6d204821a2186cc96cb6a6c7"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "ntapi"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -867,6 +876,7 @@ dependencies = [
  "jemallocator",
  "log",
  "mimalloc",
+ "mmap-allocator",
  "realm_core",
  "realm_io 0.3.3",
  "realm_syscall 0.1.4",

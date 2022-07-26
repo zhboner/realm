@@ -69,6 +69,7 @@ RUSTFLAGS='-C target_cpu=native' cargo build --release
 - multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
+- page-alloc: custom memory allocator.
 
 Default: hook + proxy + balance + transport + multi-thread.
 

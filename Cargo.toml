@@ -53,6 +53,7 @@ mimalloc = { version = "0.1", optional = true }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 jemallocator = { version = "0.5", optional = true }
+mmap-allocator = { version = "0.3", optional = true }
 
 
 [dev-dependencies]
@@ -70,6 +71,7 @@ multi-thread = ["tokio/rt-multi-thread"]
 brutal-shutdown = ["realm_io/brutal-shutdown"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
+page-alloc = ["mmap-allocator"]
 
 
 [profile.release]
