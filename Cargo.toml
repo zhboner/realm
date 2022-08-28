@@ -26,7 +26,6 @@ path = "src/bin.rs"
 
 [dependencies]
 # realm
-realm_io = { path = "realm_io" }
 realm_core = { path = "realm_core" }
 realm_syscall = { path = "realm_syscall" }
 
@@ -65,10 +64,10 @@ tokio = { version = "1", features = ["macros"] }
 default = ["hook", "proxy", "balance", "multi-thread", "transport"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
+brutal-shutdown = ["realm_core/brutal-shutdown"]
 balance = ["realm_core/balance"]
 transport = ["realm_core/transport", "realm_core/transport-boost"]
 multi-thread = ["tokio/rt-multi-thread"]
-brutal-shutdown = ["realm_io/brutal-shutdown"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
 page-alloc = ["mmap-allocator"]
