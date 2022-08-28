@@ -160,9 +160,7 @@ mod tokio_net {
     delegate_impl!(UnixStream);
 }
 
-/// Copy data bidirectionally between two streams via `unix pipe`.
-///
-/// Return transferred bytes no matter this operation succeeds or fails.
+/// Copy data bidirectionally between two streams with pipe.
 pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> Result<()>
 where
     A: AsyncRawIO + Unpin,
@@ -177,7 +175,7 @@ mod pipe_ctl {
     pub const DF_PIPE_SIZE: usize = 16 * 0x1000;
     static mut PIPE_SIZE: usize = DF_PIPE_SIZE;
 
-    /// Get current pipe capacity.
+    /// Get pipe capacity.
     #[inline]
     pub fn pipe_size() -> usize {
         unsafe { PIPE_SIZE }

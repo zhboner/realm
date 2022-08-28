@@ -34,9 +34,7 @@ where
     }
 }
 
-/// Copy data bidirectionally between two streams via `byte array`.
-///
-/// Return transferred bytes no matter this operation succeeds or fails.
+/// Copy data bidirectionally between two streams with userspace buffer.
 pub async fn bidi_copy<A, B>(a: &mut A, b: &mut B) -> Result<()>
 where
     A: AsyncRead + AsyncWrite + Unpin,
@@ -57,7 +55,7 @@ mod buf_ctl {
         unsafe { BUF_SIZE }
     }
 
-    /// Set buffer size.
+    /// Set current buffer size.
     #[inline]
     pub fn set_buf_size(n: usize) {
         unsafe { BUF_SIZE = n }
