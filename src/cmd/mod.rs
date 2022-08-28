@@ -1,6 +1,7 @@
 use clap::{Command, ArgMatches};
 
 use realm_core::realm_io;
+use realm_core::realm_syscall;
 
 use crate::conf::CmdOverride;
 use crate::conf::EndpointConf;
@@ -70,7 +71,9 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
 
     #[cfg(all(unix, not(target_os = "android")))]
     {
-        use realm_syscall::{get_nofile_limit, set_nofile_limit};
+        use realm_syscall::get_nofile_limit;
+        use realm_syscall::set_nofile_limit;
+        use realm_syscall::bump_nofile_limit;
 
         // set
         if let Some(nofile) = matches.value_of("nofile") {
@@ -79,6 +82,8 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
             } else {
                 eprintln!("invalid nofile value: {}", nofile);
             }
+        } else {
+            let _ = bump_nofile_limit();
         }
 
         // get

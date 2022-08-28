@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.4.1"
+version = "2.4.2"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -27,7 +27,6 @@ path = "src/bin.rs"
 [dependencies]
 # realm
 realm_core = { path = "realm_core" }
-realm_syscall = { path = "realm_syscall" }
 
 # common
 cfg-if = "1"

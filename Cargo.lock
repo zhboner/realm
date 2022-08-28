@@ -865,7 +865,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.4.1"
+version = "2.4.2"
 dependencies = [
  "cfg-if",
  "chrono",
@@ -878,7 +878,6 @@ dependencies = [
  "mimalloc",
  "mmap-allocator",
  "realm_core",
- "realm_syscall 0.1.5",
  "serde",
  "serde_json",
  "tokio",
@@ -887,7 +886,7 @@ dependencies = [
 
 [[package]]
 name = "realm_core"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bytes",
  "env_logger",
