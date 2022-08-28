@@ -43,8 +43,8 @@ pub fn get_nofile_limit() -> Result<(u64, u64)> {
 #[cfg(all(unix, not(target_os = "android")))]
 pub fn bump_nofile_limit() -> Result<()> {
     let (cur, max) = get_nofile_limit()?;
-    if cur != max {
-        set_nofile_limit(cur)?;
+    if cur < max {
+        set_nofile_limit(max)?;
     }
     Ok(())
 }
