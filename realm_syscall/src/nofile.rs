@@ -1,7 +1,7 @@
 use std::io::{Error, Result};
 use libc::{rlimit, rlim_t, RLIMIT_NOFILE};
 
-/// Set nofile limitation.
+/// Set nofile limits.
 ///
 /// `CAP_NET_ADMIN` privilege is required if exceeds hard limitation.
 ///
@@ -22,7 +22,7 @@ pub fn set_nofile_limit(nofile: u64) -> Result<()> {
     }
 }
 
-/// Get current nofile limitation.
+/// Get current nofile limits.
 ///
 /// Reference: [man](https://man7.org/linux/man-pages/man2/setrlimit.2.html).
 #[cfg(all(unix, not(target_os = "android")))]
@@ -37,4 +37,14 @@ pub fn get_nofile_limit() -> Result<(u64, u64)> {
     } else {
         Ok((lim.rlim_cur as u64, lim.rlim_max as u64))
     }
+}
+
+/// Bump nofile limits.
+#[cfg(all(unix, not(target_os = "android")))]
+pub fn bump_nofile_limit() -> Result<()> {
+    let (cur, max) = get_nofile_limit()?;
+    if cur != max {
+        set_nofile_limit(cur)?;
+    }
+    Ok(())
 }
