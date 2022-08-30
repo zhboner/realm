@@ -1,6 +1,6 @@
 [package]
 name = "realm_core"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Realm Contributors"]
 description = "Realm's core facilities."
 repository = "https://github.com/zhboner/realm/realm_core"
@@ -16,7 +16,7 @@ realm_io = "0.3"
 realm_syscall = "0.1.6"
 realm_hook = { version = "0.1.4", optional = true }
 realm_lb = { version = "0.1.0", optional = true }
-kaminari = { version = "0.9.2", features = ["ws", "tls", "mix"], optional = true }
+kaminari = { version = "0.9", features = ["ws", "tls", "mix"], optional = true }
 
 # other
 futures = "0.3"
