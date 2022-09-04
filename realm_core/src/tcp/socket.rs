@@ -66,5 +66,5 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
         }
     }
 
-    Err(last_err.unwrap_or_else(|| Error::new(ErrorKind::InvalidInput, "could not resolve to any address")))
+    Err(last_err.unwrap_or_else(|| Error::new(ErrorKind::InvalidInput, "could not connect to any address")))
 }
