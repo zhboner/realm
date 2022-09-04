@@ -60,7 +60,7 @@ pub async fn connect_and_relay(
         {
             use realm_lb::{Token, BalanceCtx};
             let token = balancer.next(BalanceCtx {
-                src_ip: &local.peer_addr().unwrap().ip(),
+                src_ip: &local.peer_addr()?.ip(),
             });
             log::debug!("[tcp]select remote peer, token: {:?}", token);
             match token {
@@ -75,12 +75,7 @@ pub async fn connect_and_relay(
 
     // connect!
     let mut remote = socket::connect(raddr, conn_opts.as_ref()).await?;
-    log::info!(
-        "[tcp]{} => {} as {}",
-        local.peer_addr().unwrap(),
-        raddr,
-        remote.peer_addr().unwrap()
-    );
+    log::info!("[tcp]{} => {} as {}", local.peer_addr()?, raddr, remote.peer_addr()?);
 
     // after connected
     // ..
