@@ -127,9 +127,7 @@ where
     }
 }
 
-/// Copy data bidirectionally between two streams via two provided buffers.
-///
-/// Return transferred bytes no matter this operation succeeds or fails.
+/// Copy data bidirectionally between two streams with provided buffer.
 pub async fn bidi_copy_buf<B, SR, SW>(
     a: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamR,
     b: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamW,
