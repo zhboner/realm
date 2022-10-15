@@ -1,11 +1,8 @@
 use std::env;
 use cfg_if::cfg_if;
 
-use realm_core::dns;
-
 use realm::cmd;
 use realm::conf::{Config, FullConf, LogConf, DnsConf, EndpointInfo};
-use realm::relay;
 use realm::ENV_CONFIG;
 
 cfg_if! {
@@ -95,7 +92,7 @@ fn setup_dns(dns: DnsConf) {
     println!("dns: {}", &dns);
 
     let (conf, opts) = dns.build();
-    dns::build(conf, opts);
+    realm::core::dns::build(conf, opts);
 }
 
 fn execute(eps: Vec<EndpointInfo>) {
@@ -105,7 +102,7 @@ fn execute(eps: Vec<EndpointInfo>) {
             .enable_all()
             .build()
             .unwrap()
-            .block_on(relay::run(eps))
+            .block_on(run(eps))
     }
 
     #[cfg(not(feature = "multi-thread"))]
@@ -114,6 +111,33 @@ fn execute(eps: Vec<EndpointInfo>) {
             .enable_all()
             .build()
             .unwrap()
-            .block_on(relay::run(eps))
+            .block_on(run(eps))
     }
+}
+
+async fn run(endpoints: Vec<EndpointInfo>) {
+    use realm::core::tcp::run_tcp;
+    use realm::core::udp::run_udp;
+    use futures::future::join_all;
+
+    let mut workers = Vec::with_capacity(2 * endpoints.len());
+
+    for EndpointInfo {
+        endpoint,
+        no_tcp,
+        use_udp,
+    } in endpoints
+    {
+        if use_udp {
+            workers.push(tokio::spawn(run_udp(endpoint.clone())));
+        }
+
+        if !no_tcp {
+            workers.push(tokio::spawn(run_tcp(endpoint)));
+        }
+    }
+
+    workers.shrink_to_fit();
+
+    join_all(workers).await;
 }
