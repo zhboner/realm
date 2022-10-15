@@ -73,7 +73,7 @@ The `realm` binary will be available in `target/release`.
 - jemalloc: custom memory allocator.
 - page-alloc: custom memory allocator.
 
-Default: hook + proxy + balance + transport + multi-thread.
+Default: hook + proxy + balance + transport + brutal-shutdown + multi-thread.
 
 See also: [Cargo.toml](Cargo.toml).
 
@@ -84,7 +84,12 @@ Examples:
 cargo build --release --no-default-features
 
 # enable other options
-cargo build --release --features 'brutal-shutdown,jemalloc'
+cargo build --release --features 'jemalloc'
+
+# fully customized
+cargo build --release
+    --no-default-features
+    --features 'transport, multi-thread, jemalloc'
 ```
 
 ### Cross Compile
@@ -96,7 +101,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.4.0 [hook][proxy][balance][transport][multi-thread]
+Realm 2.4.0 [hook][proxy][balance][brutal][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:
@@ -481,7 +486,7 @@ default: false
 
 ~~default: false~~
 
-#### network.tcp_tomeout: unsigned int
+#### network.tcp_timeout: unsigned int
 
 This is **connect** timeout. An attempt to connect to a remote peer fails after waiting for a period of time.
 

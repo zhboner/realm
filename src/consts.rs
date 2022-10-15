@@ -61,10 +61,10 @@ impl Display for Features {
             };
         }
 
-        disp_feat!(brutal_shutdown, "brutal");
         disp_feat!(hook, "hook");
         disp_feat!(proxy, "proxy");
         disp_feat!(balance, "balance");
+        disp_feat!(brutal_shutdown, "brutal");
         disp_feat!(transport, "transport");
         disp_feat!(multi_thread, "multi-thread");
         disp_feat!(mimalloc, "mimalloc");
