@@ -22,10 +22,10 @@ cfg_if! {
 }
 
 fn main() {
-    let conf = (|| {
+    let conf = 'blk: {
         if let Ok(conf_str) = env::var(ENV_CONFIG) {
             if let Ok(conf) = FullConf::from_conf_str(&conf_str) {
-                return conf;
+                break 'blk conf;
             }
         };
 
@@ -43,7 +43,7 @@ fn main() {
             }
             CmdInput::None => std::process::exit(0),
         }
-    })();
+    };
 
     start_from_conf(conf);
 }
