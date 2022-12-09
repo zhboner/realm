@@ -13,7 +13,7 @@ mod proxy;
 #[cfg(feature = "transport")]
 mod transport;
 
-use std::io::Result;
+use std::io::{ErrorKind, Result};
 
 use crate::trick::Ref;
 use crate::endpoint::Endpoint;
@@ -38,6 +38,10 @@ pub async fn run_tcp(endpoint: Endpoint) -> Result<()> {
     loop {
         let (local, addr) = match lis.accept().await {
             Ok(x) => x,
+            Err(e) if e.kind() == ErrorKind::ConnectionAborted => {
+                log::warn!("[tcp]failed to accept: {}", e);
+                continue;
+            }
             Err(e) => {
                 log::error!("[tcp]failed to accept: {}", e);
                 break;
