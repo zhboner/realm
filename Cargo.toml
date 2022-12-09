@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.4.4"
+version = "2.4.5"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -55,7 +55,7 @@ mmap-allocator = { version = "0.3", optional = true }
 
 
 [dev-dependencies]
-env_logger = "0.9"
+env_logger = "0.10"
 tokio = { version = "1", features = ["macros"] }
 
 
