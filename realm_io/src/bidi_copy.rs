@@ -9,8 +9,8 @@ use super::{AsyncIOBuf, CopyBuffer};
 
 enum TransferState<B, SR, SW> {
     Running(CopyBuffer<B, SR, SW>),
-    ShuttingDown,
-    Done,
+    ShuttingDown(u64),
+    Done(u64),
 }
 
 fn transfer<B, SL, SR>(
@@ -18,7 +18,7 @@ fn transfer<B, SL, SR>(
     state: &mut TransferState<B, SL, SR>,
     r: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamR,
     w: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamW,
-) -> Poll<Result<()>>
+) -> Poll<Result<u64>>
 where
     B: Unpin,
     SL: AsyncRead + AsyncWrite + Unpin,
@@ -29,16 +29,16 @@ where
     loop {
         match state {
             TransferState::Running(buf) => {
-                ready!(buf.poll_copy(cx, r, w))?;
+                let count = ready!(buf.poll_copy(cx, r, w))?;
 
-                *state = TransferState::ShuttingDown;
+                *state = TransferState::ShuttingDown(count);
             }
-            TransferState::ShuttingDown => {
+            TransferState::ShuttingDown(count) => {
                 ready!(Pin::new(&mut *w).poll_shutdown(cx))?;
 
-                *state = TransferState::Done;
+                *state = TransferState::Done(*count);
             }
-            TransferState::Done => return Poll::Ready(Ok(())),
+            TransferState::Done(count) => return Poll::Ready(Ok(*count)),
         }
     }
 }
@@ -48,7 +48,7 @@ fn transfer2<B, SL, SR>(
     state: &mut TransferState<B, SR, SL>, // reverse
     r: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamW,
     w: &mut <CopyBuffer<B, SL, SR> as AsyncIOBuf>::StreamR,
-) -> Poll<Result<()>>
+) -> Poll<Result<u64>>
 where
     B: Unpin,
     SL: AsyncRead + AsyncWrite + Unpin,
@@ -62,16 +62,16 @@ where
     loop {
         match state {
             TransferState::Running(buf) => {
-                ready!(buf.poll_copy(cx, r, w))?;
+                let count = ready!(buf.poll_copy(cx, r, w))?;
 
-                *state = TransferState::ShuttingDown;
+                *state = TransferState::ShuttingDown(count);
             }
-            TransferState::ShuttingDown => {
+            TransferState::ShuttingDown(count) => {
                 ready!(Pin::new(&mut *w).poll_shutdown(cx))?;
 
-                *state = TransferState::Done;
+                *state = TransferState::Done(*count);
             }
-            TransferState::Done => return Poll::Ready(Ok(())),
+            TransferState::Done(count) => return Poll::Ready(Ok(*count)),
         }
     }
 }
@@ -98,7 +98,7 @@ where
     CopyBuffer<B, SL, SR>: AsyncIOBuf,
     CopyBuffer<B, SR, SL>: AsyncIOBuf,
 {
-    type Output = Result<()>;
+    type Output = Result<(u64, u64)>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Unpack self into mut refs to each field to avoid borrow check issues.
@@ -110,18 +110,19 @@ where
         // graceful shutdown
         #[cfg(not(feature = "brutal-shutdown"))]
         {
-            ready!(a_to_b);
-            ready!(b_to_a);
-            Poll::Ready(Ok(()))
+            let a_to_b = ready!(a_to_b);
+            let b_to_a = ready!(b_to_a);
+            Poll::Ready(Ok((a_to_b, b_to_a)))
         }
 
         // brutal shutdown
         #[cfg(feature = "brutal-shutdown")]
         {
-            if a_to_b.is_ready() || b_to_a.is_ready() {
-                Poll::Ready(Ok(()))
-            } else {
-                Poll::Pending
+            match (a_to_b, b_to_a) {
+                (Poll::Ready(a), Poll::Ready(b)) => Poll::Ready(Ok((a, b))),
+                (Poll::Pending, Poll::Ready(b)) => Poll::Ready(Ok((0, b))),
+                (Poll::Ready(a), Poll::Pending) => Poll::Ready(Ok((a, 0))),
+                _ => Poll::Pending,
             }
         }
     }
@@ -133,7 +134,7 @@ pub async fn bidi_copy_buf<B, SR, SW>(
     b: &mut <CopyBuffer<B, SR, SW> as AsyncIOBuf>::StreamW,
     a_to_b_buf: CopyBuffer<B, SR, SW>,
     b_to_a_buf: CopyBuffer<B, SW, SR>,
-) -> Result<()>
+) -> Result<(u64, u64)>
 where
     B: Unpin,
     SR: AsyncRead + AsyncWrite + Unpin,

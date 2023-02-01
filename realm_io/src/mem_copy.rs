@@ -35,7 +35,7 @@ where
 }
 
 /// Copy data bidirectionally between two streams with userspace buffer.
-pub async fn bidi_copy<A, B>(a: &mut A, b: &mut B) -> Result<()>
+pub async fn bidi_copy<A, B>(a: &mut A, b: &mut B) -> Result<(u64, u64)>
 where
     A: AsyncRead + AsyncWrite + Unpin,
     B: AsyncRead + AsyncWrite + Unpin,

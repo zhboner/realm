@@ -161,7 +161,7 @@ mod tokio_net {
 }
 
 /// Copy data bidirectionally between two streams with pipe.
-pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> Result<()>
+pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> Result<(u64, u64)>
 where
     A: AsyncRawIO + Unpin,
     B: AsyncRawIO + Unpin,
