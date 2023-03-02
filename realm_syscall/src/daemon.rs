@@ -14,12 +14,10 @@ use daemonize::Daemonize;
 pub fn daemonize(msg: &'static str) {
     let pwd = current_dir().unwrap().canonicalize().unwrap();
 
-    let daemon = Daemonize::new()
-        .umask(0)
-        .working_directory(pwd)
-        .exit_action(move || println!("{}", msg));
+    let daemon = Daemonize::new().umask(0).working_directory(pwd);
 
-    daemon
-        .start()
-        .unwrap_or_else(|e| eprintln!("failed to daemonize: {}", e));
+    match daemon.start() {
+        Ok(_) => println!("{}", msg),
+        Err(e) => eprintln!("failed to daemonize: {}", e),
+    }
 }
