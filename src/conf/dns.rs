@@ -9,20 +9,15 @@ use config::{ResolverConfig, ResolverOpts};
 use super::Config;
 
 // dns mode
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum DnsMode {
     Ipv4Only,
     Ipv6Only,
+    #[default]
     Ipv4AndIpv6,
     Ipv4ThenIpv6,
     Ipv6ThenIpv4,
-}
-
-impl Default for DnsMode {
-    fn default() -> Self {
-        Self::Ipv4AndIpv6
-    }
 }
 
 impl Display for DnsMode {
@@ -66,18 +61,13 @@ impl From<DnsMode> for LookupIpStrategy {
 }
 
 // dns protocol
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Default, Serialize, Deserialize, Eq, PartialEq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum DnsProtocol {
     Tcp,
     Udp,
+    #[default]
     TcpAndUdp,
-}
-
-impl Default for DnsProtocol {
-    fn default() -> Self {
-        Self::TcpAndUdp
-    }
 }
 
 impl Display for DnsProtocol {

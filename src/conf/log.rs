@@ -4,9 +4,10 @@ use log::LevelFilter;
 use super::Config;
 use crate::consts::DEFAULT_LOG_FILE;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum LogLevel {
+    #[default]
     Off,
     Error,
     Warn,
@@ -41,12 +42,6 @@ impl From<LogLevel> for LevelFilter {
             Debug => LevelFilter::Debug,
             Trace => LevelFilter::Trace,
         }
-    }
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Off
     }
 }
 
