@@ -56,5 +56,5 @@ where
     let buf1 = CopyBuffer::new(buf1);
     let buf2 = CopyBuffer::new(buf2);
 
-    bidi_copy_buf(&mut src, &mut dst, buf1, buf2).await
+    bidi_copy_buf(&mut src, &mut dst, buf1, buf2).await.map(|_| ())
 }
