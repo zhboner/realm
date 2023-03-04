@@ -57,7 +57,7 @@ jobs:
         with:
           use-cross: true
           command: build
-          args: --release --target=${{ matrix.target }} -Zbuild-std
+          args: --release --target=${{ matrix.target }}
       - name: upload
         uses: actions/upload-artifact@v2
         with:
@@ -82,7 +82,7 @@ jobs:
         with:
           use-cross: false
           command: build
-          args: --release --target=${{ matrix.target }} -Zbuild-std
+          args: --release --target=${{ matrix.target }}
       - name: upload
         uses: actions/upload-artifact@v2
         with:
@@ -109,7 +109,7 @@ jobs:
         with:
           use-cross: true
           command: build
-          args: --release --target=${{ matrix.target }} -Zbuild-std
+          args: --release --target=${{ matrix.target }}
       - name: upload
         uses: actions/upload-artifact@v2
         with:
