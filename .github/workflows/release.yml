@@ -42,6 +42,8 @@ jobs:
             output: realm
     steps:
       - uses: actions/checkout@v2
+      - run: echo '[build]' > Cross.toml && echo 'build-std = true' >> Cross.toml
+        if: contains(matrix.target, 'android')
       - name: install toolchain
         uses: actions-rs/toolchain@v1
         with:
