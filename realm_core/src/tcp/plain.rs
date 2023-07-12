@@ -3,7 +3,7 @@ use tokio::net::TcpStream;
 
 #[inline]
 pub async fn run_relay(mut local: TcpStream, mut remote: TcpStream) -> Result<()> {
-    #[cfg(all(target_os = "linux"))]
+    #[cfg(target_os = "linux")]
     {
         use std::io::ErrorKind;
         match realm_io::bidi_zero_copy(&mut local, &mut remote).await {

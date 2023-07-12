@@ -66,7 +66,7 @@ impl From<LegacyConf> for FullConf {
 
         let endpoints = listen
             .into_iter()
-            .zip(remote.into_iter())
+            .zip(remote)
             .map(|(listen, remote)| EndpointConf {
                 listen,
                 remote,

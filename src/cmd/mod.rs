@@ -92,7 +92,7 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         }
     }
 
-    #[cfg(all(target_os = "linux"))]
+    #[cfg(target_os = "linux")]
     {
         use realm_io::set_pipe_size;
 
