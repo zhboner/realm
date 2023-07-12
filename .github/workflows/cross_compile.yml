@@ -45,7 +45,7 @@ jobs:
           - target: armv7-unknown-linux-musleabihf
             output: realm
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: echo '[build]' > Cross.toml && echo 'build-std = true' >> Cross.toml
         if: contains(matrix.target, 'android')
       - name: install toolchain
@@ -72,7 +72,7 @@ jobs:
         target:
           - x86_64-pc-windows-msvc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: install toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -99,7 +99,7 @@ jobs:
           - aarch64-apple-darwin
           - aarch64-apple-ios
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: install toolchain
         uses: actions-rs/toolchain@v1
         with:

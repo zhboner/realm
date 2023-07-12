@@ -16,7 +16,7 @@ jobs:
     name: Build Rust project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
@@ -54,7 +54,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Create release tmp folder
         run: mkdir -p target/x86_64-unknown-linux-musl/release
       - uses: actions/download-artifact@v2
