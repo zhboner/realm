@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use realm_core::endpoint::{ConnectOpts, ProxyOpts};
 
 use super::Config;
-use crate::consts::{TCP_TIMEOUT, UDP_TIMEOUT};
+use crate::consts::{TCP_KEEPALIVE, TCP_TIMEOUT, UDP_TIMEOUT};
 use crate::consts::PROXY_PROTOCOL_VERSION;
 use crate::consts::PROXY_PROTOCOL_TIMEOUT;
 
@@ -33,6 +33,10 @@ pub struct NetConf {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcp_keepalive: Option<u64>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tcp_timeout: Option<usize>,
 
     #[serde(default)]
@@ -53,7 +57,7 @@ impl Config for NetConf {
     fn is_empty(&self) -> bool {
         crate::empty![self =>
             send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout,
-            tcp_timeout, udp_timeout
+            tcp_keepalive, tcp_timeout, udp_timeout
         ]
     }
 
@@ -69,7 +73,7 @@ impl Config for NetConf {
 
         let no_tcp = unbox!(no_tcp);
         let use_udp = unbox!(use_udp);
-
+        let tcp_keepalive = unbox!(tcp_keepalive, TCP_KEEPALIVE);
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
@@ -80,6 +84,7 @@ impl Config for NetConf {
         let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
 
         let conn_opts = ConnectOpts {
+            tcp_keepalive: tcp_keepalive,
             connect_timeout: tcp_timeout,
             associate_timeout: udp_timeout,
 
@@ -114,6 +119,7 @@ impl Config for NetConf {
 
         rst!(self, no_tcp, other);
         rst!(self, use_udp, other);
+        rst!(self, tcp_keepalive, other);
         rst!(self, tcp_timeout, other);
         rst!(self, udp_timeout, other);
         rst!(self, send_proxy, other);
@@ -129,6 +135,7 @@ impl Config for NetConf {
 
         take!(self, no_tcp, other);
         take!(self, use_udp, other);
+        take!(self, tcp_keepalive, other);
         take!(self, tcp_timeout, other);
         take!(self, udp_timeout, other);
         take!(self, send_proxy, other);
@@ -155,6 +162,7 @@ impl Config for NetConf {
         let no_tcp = unpack!("no_tcp");
         let use_udp = unpack!("use_udp");
 
+        let tcp_keepalive = unpack!("tcp_keepalive", u64);
         let tcp_timeout = unpack!("tcp_timeout", usize);
         let udp_timeout = unpack!("udp_timeout", usize);
 
@@ -167,6 +175,7 @@ impl Config for NetConf {
         Self {
             no_tcp,
             use_udp,
+            tcp_keepalive,
             tcp_timeout,
             udp_timeout,
             send_proxy,

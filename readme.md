@@ -151,6 +151,7 @@ PROXY OPTIONS:
 TIMEOUT OPTIONS:
         --tcp-timeout <second>    override tcp timeout
         --udp-timeout <second>    override udp timeout
+        --tcp-keepalive <second>  override default tcp keepalive interval(15s)
 
 SUBCOMMANDS:
     convert    convert your legacy configuration into an advanced one
@@ -260,6 +261,7 @@ remote = "www.google.com:443"
 ├── network
 │   ├── no_tcp
 │   ├── use_udp
+│   ├── tcp_keepalive
 │   ├── tcp_timeout
 │   ├── udp_timeout
 │   ├── send_proxy
@@ -485,6 +487,14 @@ default: false
 ~~It is not recommended to enable this option, see [The Sad Story of TCP Fast Open](https://squeeze.isobar.com/2019/04/11/the-sad-story-of-tcp-fast-open/).~~
 
 ~~default: false~~
+
+#### network.tcp_keepalive: unsigned int64
+
+TCP Keepalive interval.
+
+To use system tcp keepalive interval, you need to explicitly set timeout value to 0.
+
+default: 15
 
 #### network.tcp_timeout: unsigned int
 

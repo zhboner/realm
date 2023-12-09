@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 pub const DEFAULT_LOG_FILE: &str = "stdout";
 
 // default timeout
+pub const TCP_KEEPALIVE: u64 = 15;
 pub const TCP_TIMEOUT: usize = 5;
 pub const UDP_TIMEOUT: usize = 30;
 

@@ -222,6 +222,12 @@ pub fn add_global_options(app: Command) -> Command {
             .value_name("second")
             .takes_value(true)
             .display_order(1),
+        Arg::new("tcp_keepalive")
+            .long("tcp-keepalive")
+            .help("override default tcp keepalive interval(15s)")
+            .value_name("second")
+            .takes_value(true)
+            .display_order(2),
     ]);
 
     app
