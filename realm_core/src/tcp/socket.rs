@@ -87,12 +87,18 @@ pub(super) mod keepalive {
         if *tcp_keepalive == 0 {
             return None;
         };
-        let sec = Duration::from_secs(*tcp_keepalive as u64);
-        let probe = *tcp_keepalive_probe as u32;
-        let kpa = TcpKeepalive::new()
-            .with_time(sec)
-            .with_interval(sec)
-            .with_retries(probe);
+        let secs = Duration::from_secs(*tcp_keepalive as u64);
+        let mut kpa = TcpKeepalive::new().with_time(secs);
+        #[cfg(not(target_os = "openbsd"))]
+        {
+            kpa = TcpKeepalive::with_interval(kpa, secs);
+        }
+        #[cfg(not(any(target_os = "openbsd", target_os = "windows")))]
+        {
+            let probe = *tcp_keepalive_probe as u32;
+            kpa = TcpKeepalive::with_retries(kpa, probe);
+        }
+
         Some(kpa)
     }
 }
