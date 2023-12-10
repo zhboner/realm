@@ -3,7 +3,7 @@
 use std::io::{Result, Error, ErrorKind};
 use std::net::SocketAddr;
 
-use trust_dns_resolver as resolver;
+use hickory_resolver as resolver;
 use resolver::TokioAsyncResolver;
 use resolver::system_conf::read_system_conf;
 use resolver::lookup_ip::{LookupIp, LookupIpIter};
@@ -39,7 +39,7 @@ static mut DNS_CONF: OnceCell<DnsConf> = OnceCell::new();
 
 static mut DNS: Lazy<TokioAsyncResolver> = Lazy::new(|| {
     let DnsConf { conf, opts } = unsafe { DNS_CONF.take().unwrap() };
-    TokioAsyncResolver::tokio(conf, opts).unwrap()
+    TokioAsyncResolver::tokio(conf, opts)
 });
 
 /// Setup global dns resolver. This is not thread-safe!

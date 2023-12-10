@@ -264,7 +264,7 @@ impl Config for DnsConf {
                     socket_addr,
                     protocol,
                     tls_dns_name: None,
-                    trust_nx_responses: true,
+                    trust_negative_responses: true,
                     bind_addr: None,
                 });
             }
