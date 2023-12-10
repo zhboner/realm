@@ -212,13 +212,13 @@ pub fn add_global_options(app: Command) -> Command {
     let app = app.next_help_heading("TIMEOUT OPTIONS").args([
         Arg::new("tcp_timeout")
             .long("tcp-timeout")
-            .help("override tcp timeout")
+            .help("override tcp timeout(5s)")
             .value_name("second")
             .takes_value(true)
             .display_order(0),
         Arg::new("udp_timeout")
             .long("udp-timeout")
-            .help("override udp timeout")
+            .help("override udp timeout(30s)")
             .value_name("second")
             .takes_value(true)
             .display_order(1),
@@ -228,6 +228,12 @@ pub fn add_global_options(app: Command) -> Command {
             .value_name("second")
             .takes_value(true)
             .display_order(2),
+        Arg::new("tcp_keepalive_probe")
+            .long("tcp-keepalive-probe")
+            .help("override default tcp keepalive count(3)")
+            .value_name("count")
+            .takes_value(true)
+            .display_order(3),
     ]);
 
     app

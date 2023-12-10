@@ -8,7 +8,7 @@ use crate::endpoint::RemoteAddr;
 pub async fn pre_connect_hook<'a>(
     local: &mut TcpStream,
     raddr: &'a RemoteAddr,
-    extra_raddrs: &'a Vec<RemoteAddr>,
+    extra_raddrs: &'a [RemoteAddr],
 ) -> Result<&'a RemoteAddr> {
     if !pre_conn::is_loaded() {
         return Ok(raddr);

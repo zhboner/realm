@@ -1,5 +1,6 @@
 use std::io::{Result, Error, ErrorKind};
 use std::net::SocketAddr;
+use std::time::Duration;
 
 use realm_syscall::new_tcp_socket;
 use tokio::net::{TcpSocket, TcpStream, TcpListener};
@@ -32,6 +33,7 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
     } = conn_opts;
 
     let mut last_err = None;
+    let keepalive = keepalive::build(conn_opts);
 
     for addr in resolve_addr(raddr).await?.iter() {
         log::debug!("[tcp]{} resolved as {}", raddr, &addr);
@@ -51,6 +53,10 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
             realm_syscall::bind_to_device(&socket, iface)?;
         }
 
+        if let Some(kpa) = &keepalive {
+            socket.set_tcp_keepalive(kpa)?;
+        }
+
         let socket = TcpSocket::from_std_stream(socket.into());
 
         match timeoutfut(socket.connect(addr), *connect_timeout).await {
@@ -67,4 +73,26 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
     }
 
     Err(last_err.unwrap_or_else(|| Error::new(ErrorKind::InvalidInput, "could not connect to any address")))
+}
+
+pub(super) mod keepalive {
+    use super::*;
+    pub use realm_syscall::socket2::{SockRef, TcpKeepalive};
+    pub fn build(conn_opts: &ConnectOpts) -> Option<TcpKeepalive> {
+        let ConnectOpts {
+            tcp_keepalive,
+            tcp_keepalive_probe,
+            ..
+        } = conn_opts;
+        if *tcp_keepalive == 0 {
+            return None;
+        };
+        let sec = Duration::from_secs(*tcp_keepalive as u64);
+        let probe = *tcp_keepalive_probe as u32;
+        let kpa = TcpKeepalive::new()
+            .with_time(sec)
+            .with_interval(sec)
+            .with_retries(probe);
+        Some(kpa)
+    }
 }

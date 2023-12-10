@@ -37,9 +37,10 @@ impl ProxyOpts {
 /// Connect or associate options.
 #[derive(Debug, Default, Clone)]
 pub struct ConnectOpts {
-    pub tcp_keepalive: u64,
     pub connect_timeout: usize,
     pub associate_timeout: usize,
+    pub tcp_keepalive: usize,
+    pub tcp_keepalive_probe: usize,
     pub bind_address: Option<SocketAddr>,
     pub bind_interface: Option<String>,
 
@@ -87,9 +88,10 @@ impl Display for Endpoint {
 impl Display for ConnectOpts {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let ConnectOpts {
-            tcp_keepalive,
             connect_timeout,
             associate_timeout,
+            tcp_keepalive,
+            tcp_keepalive_probe,
             bind_address,
             bind_interface,
 
@@ -128,8 +130,8 @@ impl Display for ConnectOpts {
 
         write!(
             f,
-            "tcp-keepalive={}s connect-timeout={}s, associate-timeout={}s; ",
-            tcp_keepalive, connect_timeout, associate_timeout
+            "tcp-keepalive={}s[{}] connect-timeout={}s, associate-timeout={}s; ",
+            tcp_keepalive, tcp_keepalive_probe, connect_timeout, associate_timeout
         )?;
 
         #[cfg(feature = "transport")]

@@ -1,6 +1,4 @@
 use std::io::Result;
-use std::time::Duration;
-
 use tokio::net::TcpStream;
 
 use super::socket;
@@ -77,16 +75,6 @@ pub async fn connect_and_relay(
 
     // connect!
     let mut remote = socket::connect(raddr, conn_opts.as_ref()).await?;
-
-    if *tcp_keepalive > 0 {
-        let sockref = socket2::SockRef::from(&remote);
-        let mut ka = socket2::TcpKeepalive::new();
-
-        ka = ka
-            .with_time(Duration::from_secs(*tcp_keepalive))
-            .with_interval(Duration::from_secs(*tcp_keepalive));
-        let _ = sockref.set_tcp_keepalive(&ka);
-    }
     log::info!("[tcp]{} => {} as {}", local.peer_addr()?, raddr, remote.peer_addr()?);
 
     // after connected

@@ -1027,8 +1027,7 @@ dependencies = [
  "realm_hook 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_io 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "realm_lb 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "realm_syscall 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "socket2",
+ "realm_syscall 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
  "trust-dns-resolver",
 ]
@@ -1084,7 +1083,7 @@ checksum = "e1ac1e00be0e1a25c2944d3e7cba9482772527ebc46ece30dcd7d4dca48bc97a"
 
 [[package]]
 name = "realm_syscall"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "daemonize",
  "libc",
@@ -1093,9 +1092,9 @@ dependencies = [
 
 [[package]]
 name = "realm_syscall"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8edff993b2672552f1c9afd483b8704263b0a4d7d37620e5c4a7e6760f6f9868"
+checksum = "e59aa61541fb76e4216da9eb43cdebd63d4ba2874e802aee31c77d57c703d17c"
 dependencies = [
  "daemonize",
  "libc",
