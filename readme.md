@@ -101,7 +101,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.4.0 [hook][proxy][balance][brutal][transport][multi-thread]
+Realm 2.5.0 [hook][proxy][balance][brutal][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:
