@@ -1,31 +1,29 @@
 name: ci
 on:
   push:
+    paths-ignore: ["**.md"]
     branches: [ master ]
   pull_request:
+    paths-ignore: ["**.md"]
     branches: [ master ]
 jobs:
-  clippy_check:
+  clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
         with:
             toolchain: nightly
             components: clippy
-            default: true
-            override: true
-      - uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features -- -A 'clippy::uninlined_format_args'
-  run_test:
+      - run: cargo clippy
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly
-          default: true
-          override: true
-      - run: cargo test -v --all --no-fail-fast
+            toolchain: nightly
+      - name: test core
+        run: cargo test -p realm_core -v --no-fail-fast --features proxy
+      - name: test binary
+        run: cargo test -v --no-fail-fast
