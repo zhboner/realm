@@ -149,9 +149,10 @@ PROXY OPTIONS:
         --accept-proxy-timeout <second>    accept proxy protocol timeout
 
 TIMEOUT OPTIONS:
-        --tcp-timeout <second>    override tcp timeout
-        --udp-timeout <second>    override udp timeout
-        --tcp-keepalive <second>  override default tcp keepalive interval(15s)
+        --tcp-timeout <second>           override tcp timeout(5s)
+        --udp-timeout <second>           override udp timeout(30s)
+        --tcp-keepalive <second>         override default tcp keepalive interval(15s)
+        --tcp-keepalive-probe <count>    override default tcp keepalive count(3)
 
 SUBCOMMANDS:
     convert    convert your legacy configuration into an advanced one
@@ -261,9 +262,10 @@ remote = "www.google.com:443"
 ├── network
 │   ├── no_tcp
 │   ├── use_udp
-│   ├── tcp_keepalive
 │   ├── tcp_timeout
 │   ├── udp_timeout
+│   ├── tcp_keepalive
+│   ├── tcp_keepalive_probe
 │   ├── send_proxy
 │   ├── send_proxy_version
 │   ├── accept_proxy
@@ -488,14 +490,6 @@ default: false
 
 ~~default: false~~
 
-#### network.tcp_keepalive: unsigned int64
-
-TCP Keepalive interval.
-
-To use system tcp keepalive interval, you need to explicitly set timeout value to 0.
-
-default: 15
-
 #### network.tcp_timeout: unsigned int
 
 This is **connect** timeout. An attempt to connect to a remote peer fails after waiting for a period of time.
@@ -511,6 +505,24 @@ Terminate udp association after `timeout`.
 The timeout value must be properly configured in case of memory leak. Do not use a large `timeout`!
 
 default: 30
+
+#### network.tcp_keepalive: unsigned int
+
+TCP Keepalive interval.
+
+On Linux, this is equivalent to setting both `net.ipv4.tcp_keepalive_time` and `net.ipv4.tcp_keepalive_intvl`.
+
+To use system's tcp keepalive interval, you need to explicitly set this option to 0.
+
+default: 15
+
+#### network.tcp_keepalive_probe: unsigned int
+
+TCP Keepalive retries.
+
+On Linux, this is equivalent to `ipv4.tcp_keepalive_probes`.
+
+default: 3
 
 #### network.send_proxy: bool
 
