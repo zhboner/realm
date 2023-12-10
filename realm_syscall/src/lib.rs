@@ -12,3 +12,4 @@ pub use nofile::*;
 
 mod socket;
 pub use socket::*;
+pub use socket2;
