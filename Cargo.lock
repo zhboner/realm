@@ -1026,7 +1026,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.5.0"
+version = "2.5.1"
 dependencies = [
  "cfg-if",
  "chrono",
