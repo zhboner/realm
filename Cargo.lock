@@ -708,6 +708,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libloading"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c571b676ddfc9a8c12f1f3d3085a7b163966a8fd8098a90640953ce5f6170161"
+dependencies = [
+ "cfg-if",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1069,7 +1079,7 @@ dependencies = [
 name = "realm_hook"
 version = "0.1.4"
 dependencies = [
- "libloading",
+ "libloading 0.8.1",
  "once_cell",
 ]
 
@@ -1079,7 +1089,7 @@ version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "649558d37699ce29b521830fc129da236ba65efe0117e05d7fda0380d301a004"
 dependencies = [
- "libloading",
+ "libloading 0.7.4",
  "once_cell",
 ]
 

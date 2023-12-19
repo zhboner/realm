@@ -73,7 +73,7 @@ The `realm` binary will be available in `target/release`.
 - jemalloc: custom memory allocator.
 - page-alloc: custom memory allocator.
 
-Default: hook + proxy + balance + transport + brutal-shutdown + multi-thread.
+Default: proxy + balance + transport + brutal-shutdown + multi-thread.
 
 See also: [Cargo.toml](Cargo.toml).
 
@@ -101,7 +101,7 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.5.0 [hook][proxy][balance][brutal][transport][multi-thread]
+Realm 2.5.0 [proxy][balance][brutal][transport][multi-thread]
 A high efficiency relay tool
 
 USAGE:

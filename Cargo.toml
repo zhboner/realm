@@ -60,7 +60,7 @@ tokio = { version = "1", features = ["macros"] }
 
 
 [features]
-default = ["hook", "proxy", "balance", "multi-thread", "transport", "brutal-shutdown" ]
+default = ["proxy", "balance", "multi-thread", "transport", "brutal-shutdown"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
 brutal-shutdown = ["realm_core/brutal-shutdown"]
