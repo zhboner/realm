@@ -298,18 +298,25 @@ impl Config for DnsConf {
     }
 
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
-        let mode = matches.value_of("dns_mode").map(|x| String::from(x).into());
+        let mode = matches.get_one::<String>("dns_mode").cloned().map(DnsMode::from);
 
-        let min_ttl = matches.value_of("dns_min_ttl").map(|x| x.parse::<u32>().unwrap());
+        let min_ttl = matches
+            .get_one::<String>("dns_min_ttl")
+            .and_then(|x| x.parse::<u32>().ok());
+        let max_ttl = matches
+            .get_one::<String>("dns_max_ttl")
+            .and_then(|x| x.parse::<u32>().ok());
+        let cache_size = matches
+            .get_one::<String>("dns_cache_size")
+            .and_then(|x| x.parse::<usize>().ok());
 
-        let max_ttl = matches.value_of("dns_max_ttl").map(|x| x.parse::<u32>().unwrap());
-
-        let cache_size = matches.value_of("dns_cache_size").map(|x| x.parse::<usize>().unwrap());
-
-        let protocol = matches.value_of("dns_protocol").map(|x| String::from(x).into());
+        let protocol = matches
+            .get_one::<String>("dns_protocol")
+            .cloned()
+            .map(DnsProtocol::from);
 
         let nameservers = matches
-            .value_of("dns_servers")
+            .get_one::<String>("dns_servers")
             .map(|x| x.split(',').map(String::from).collect());
 
         Self {

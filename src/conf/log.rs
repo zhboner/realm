@@ -119,9 +119,9 @@ impl Config for LogConf {
     }
 
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
-        let level = matches.value_of("log_level").map(|x| String::from(x).into());
+        let level = matches.get_one::<String>("log_level").cloned().map(LogLevel::from);
 
-        let output = matches.value_of("log_output").map(String::from);
+        let output = matches.get_one("log_output").cloned();
 
         Self { level, output }
     }

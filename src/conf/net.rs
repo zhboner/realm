@@ -157,14 +157,14 @@ impl Config for NetConf {
     fn from_cmd_args(matches: &clap::ArgMatches) -> Self {
         macro_rules! unpack {
             ($key: expr) => {
-                if matches.is_present($key) {
+                if matches.get_flag($key) {
                     Some(true)
                 } else {
                     None
                 }
             };
             ($key: expr, $t: ident) => {
-                matches.value_of($key).map(|x| x.parse::<$t>().unwrap())
+                matches.get_one::<String>($key).and_then(|x| x.parse::<$t>().ok())
             };
         }
 
@@ -176,10 +176,10 @@ impl Config for NetConf {
         let tcp_timeout = unpack!("tcp_timeout", usize);
         let udp_timeout = unpack!("udp_timeout", usize);
 
-        let send_proxy = unpack!("send_proxy");
+        let send_proxy = unpack!("send_proxy", bool);
         let send_proxy_version = unpack!("send_proxy_version", usize);
 
-        let accept_proxy = unpack!("accept_proxy");
+        let accept_proxy = unpack!("accept_proxy", bool);
         let accept_proxy_timeout = unpack!("accept_proxy_timeout", usize);
 
         Self {

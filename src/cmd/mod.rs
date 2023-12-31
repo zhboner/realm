@@ -21,10 +21,16 @@ pub enum CmdInput {
 }
 
 pub fn scan() -> CmdInput {
+    static mut _VER: String = String::new(); // damn!
     let version = format!("{} {}", VERSION, FEATURES);
+    let version = unsafe {
+        _VER = version;
+        _VER.as_str()
+    };
+
     let app = Command::new("Realm")
         .about("A high efficiency relay tool")
-        .version(version.as_str());
+        .version(version);
 
     let app = app
         .disable_help_flag(true)
@@ -40,12 +46,12 @@ pub fn scan() -> CmdInput {
     let mut app2 = app.clone();
     let matches = app.get_matches();
 
-    if matches.is_present("help") {
+    if matches.get_flag("help") {
         app2.print_help().unwrap();
         return CmdInput::None;
     }
 
-    if matches.is_present("version") {
+    if matches.get_flag("version") {
         print!("{}", app2.render_version());
         return CmdInput::None;
     }
@@ -65,7 +71,7 @@ pub fn scan() -> CmdInput {
 
 fn handle_matches(matches: ArgMatches) -> CmdInput {
     #[cfg(unix)]
-    if matches.is_present("daemon") {
+    if matches.get_flag("daemon") {
         realm_syscall::daemonize("realm is running in the background");
     }
 
@@ -76,7 +82,7 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         use realm_syscall::bump_nofile_limit;
 
         // set
-        if let Some(nofile) = matches.value_of("nofile") {
+        if let Some(nofile) = matches.get_one::<String>("nofile") {
             if let Ok(nofile) = nofile.parse::<u64>() {
                 let _ = set_nofile_limit(nofile);
             } else {
@@ -96,10 +102,12 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
     {
         use realm_io::set_pipe_size;
 
-        if let Some(page) = matches.value_of("pipe_page") {
+        if let Some(page) = matches.get_one::<String>("pipe_page") {
             if let Ok(page) = page.parse::<usize>() {
                 set_pipe_size(page * 0x1000);
                 println!("pipe capacity: {}", page * 0x1000);
+            } else {
+                eprintln!("invalid page value: {}", page);
             }
         }
     }
@@ -107,7 +115,7 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
     #[cfg(feature = "hook")]
     {
         use realm_core::hook::pre_conn::load_dylib as load_pre_conn;
-        if let Some(path) = matches.value_of("pre_conn_hook") {
+        if let Some(path) = matches.get_one::<String>("pre_conn_hook") {
             load_pre_conn(path);
             println!("hook: {}", path);
         }
@@ -115,11 +123,11 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
 
     let opts = parse_global_opts(&matches);
 
-    if let Some(config) = matches.value_of("config") {
-        return CmdInput::Config(String::from(config), opts);
+    if let Some(config) = matches.get_one("config").cloned() {
+        return CmdInput::Config(config, opts);
     }
 
-    if matches.value_of("local").is_some() && matches.value_of("remote").is_some() {
+    if matches.contains_id("local") && matches.contains_id("remote") {
         let ep = EndpointConf::from_cmd_args(&matches);
         return CmdInput::Endpoint(ep, opts);
     }
