@@ -92,7 +92,7 @@ fn setup_dns(dns: DnsConf) {
     println!("dns: {}", &dns);
 
     let (conf, opts) = dns.build();
-    realm::core::dns::build(conf, opts);
+    realm::core::dns::build_lazy(conf, opts);
 }
 
 fn execute(eps: Vec<EndpointInfo>) {
