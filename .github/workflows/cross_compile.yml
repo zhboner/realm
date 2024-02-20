@@ -44,13 +44,13 @@ jobs:
         run: cross build --release --target=${{ matrix.target }}
       - name: upload unix binary
         if: "!contains(matrix.target, 'windows')"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: realm-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/realm
       - name: upload windows binary
         if: "contains(matrix.target, 'windows')"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: realm-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/realm.exe
@@ -70,7 +70,7 @@ jobs:
       - name: compile
         run: cargo build --release --target=${{ matrix.target }}
       - name: upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: realm-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/realm.exe
@@ -92,7 +92,7 @@ jobs:
       - name: compile
         run: cargo build --release --target=${{ matrix.target }}
       - name: upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: realm-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/realm
