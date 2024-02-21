@@ -10,7 +10,11 @@ use resolver::lookup_ip::{LookupIp, LookupIpIter};
 pub use resolver::config;
 use config::{ResolverOpts, ResolverConfig};
 
+#[cfg(not(feature = "multi-thread"))]
 use once_cell::unsync::{OnceCell, Lazy};
+
+#[cfg(feature = "multi-thread")]
+use once_cell::{unsync::OnceCell, sync::Lazy};
 
 use crate::endpoint::RemoteAddr;
 
