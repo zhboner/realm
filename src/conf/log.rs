@@ -89,9 +89,8 @@ impl Config for LogConf {
             "stdout" => io::stdout().into(),
             "stderr" => io::stderr().into(),
             output => OpenOptions::new()
-                .write(true)
-                .create(true)
                 .append(true)
+                .create(true)
                 .open(output)
                 .unwrap_or_else(|e| panic!("failed to open {}: {}", output, &e))
                 .into(),
