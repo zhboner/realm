@@ -23,7 +23,7 @@ pub async fn connect_and_relay(
     extra_raddrs: Ref<Vec<RemoteAddr>>,
 ) -> Result<()> {
     let ConnectOpts {
-        #[cfg(feature = "proxy-protocol")]
+        #[cfg(feature = "proxy")]
         proxy_opts,
 
         #[cfg(feature = "transport")]

@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use realm_core::endpoint::{ConnectOpts, ProxyOpts};
+use realm_core::endpoint::ConnectOpts;
 
 use super::Config;
 use crate::consts::{TCP_TIMEOUT, UDP_TIMEOUT};
@@ -83,12 +83,6 @@ impl Config for NetConf {
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
-        let send_proxy = unbox!(send_proxy);
-        let send_proxy_version = unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
-
-        let accept_proxy = unbox!(accept_proxy);
-        let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
-
         let conn_opts = ConnectOpts {
             tcp_keepalive: tcp_kpa,
             tcp_keepalive_probe: tcp_kpa_probe,
@@ -105,11 +99,19 @@ impl Config for NetConf {
             #[cfg(feature = "transport")]
             transport: None,
 
-            proxy_opts: ProxyOpts {
-                send_proxy,
-                accept_proxy,
-                send_proxy_version,
-                accept_proxy_timeout,
+            #[cfg(feature = "proxy")]
+            proxy_opts: {
+                use realm_core::endpoint::ProxyOpts;
+                let send_proxy = unbox!(send_proxy);
+                let send_proxy_version = unbox!(send_proxy_version, PROXY_PROTOCOL_VERSION);
+                let accept_proxy = unbox!(accept_proxy);
+                let accept_proxy_timeout = unbox!(accept_proxy_timeout, PROXY_PROTOCOL_TIMEOUT);
+                ProxyOpts {
+                    send_proxy,
+                    accept_proxy,
+                    send_proxy_version,
+                    accept_proxy_timeout,
+                }
             },
         };
 
