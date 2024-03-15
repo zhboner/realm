@@ -13,12 +13,15 @@ cache_size = 256
 [network]
 no_tcp = false
 use_udp = true
+ipv6_only = false
 tcp_timeout = 5
 udp_timeout = 30
 send_proxy = true
 send_proxy_version = 2
 accept_proxy = true
 accept_proxy_timeout = 5
+tcp_keepalive = 15
+tcp_keepalive_probe = 3
 
 [[endpoints]]
 listen = "0.0.0.0:5000"
