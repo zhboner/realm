@@ -18,6 +18,7 @@ async fn tcp() {
             .map(RemoteAddr::SocketAddr)
             .unwrap(),
         conn_opts: Default::default(),
+        bind_opts: Default::default(),
         extra_raddrs: Vec::new(),
     };
 

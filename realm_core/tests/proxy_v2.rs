@@ -27,6 +27,7 @@ async fn proxy_v2() {
             },
             ..Default::default()
         },
+        bind_opts: Default::default(),
         extra_raddrs: Vec::new(),
     };
 
@@ -44,6 +45,7 @@ async fn proxy_v2() {
             },
             ..Default::default()
         },
+        bind_opts: Default::default(),
         extra_raddrs: Vec::new(),
     };
 
