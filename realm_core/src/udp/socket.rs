@@ -4,11 +4,17 @@ use std::net::SocketAddr;
 use tokio::net::UdpSocket;
 use realm_syscall::new_udp_socket;
 
-use crate::endpoint::ConnectOpts;
+use crate::endpoint::{BindOpts, ConnectOpts};
 
 #[allow(clippy::clone_on_copy)]
-pub fn bind(laddr: &SocketAddr) -> Result<UdpSocket> {
+pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<UdpSocket> {
+    let BindOpts { ipv6_only } = bind_opts;
     let socket = new_udp_socket(laddr)?;
+
+    // ipv6_only
+    if let SocketAddr::V6(_) = laddr {
+        socket.set_only_v6(ipv6_only)?;
+    }
 
     // ignore error
     let _ = socket.set_reuse_address(true);

@@ -1,6 +1,6 @@
 [package]
 name = "realm_core"
-version = "0.3.8"
+version = "0.3.9"
 authors = ["Realm Contributors"]
 description = "Realm's core facilities."
 repository = "https://github.com/zhboner/realm"

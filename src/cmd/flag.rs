@@ -40,18 +40,24 @@ pub fn add_flags(app: Command) -> Command {
             .help("force disable tcp forward")
             .action(ArgAction::SetTrue)
             .display_order(4),
+        Arg::new("ipv6_only")
+            .short('6')
+            .long("ipv6")
+            .help("force disable ipv6 mapped ipv4")
+            .action(ArgAction::SetTrue)
+            .display_order(5),
         Arg::new("fast_open")
             .short('f')
             .long("tfo")
             .help("force enable tcp fast open -- deprecated")
             .action(ArgAction::SetTrue)
-            .display_order(5),
+            .display_order(6),
         Arg::new("zero_copy")
             .short('z')
             .long("splice")
             .help("force enable tcp zero copy -- deprecated")
             .action(ArgAction::SetTrue)
-            .display_order(6),
+            .display_order(7),
     ])
 }
 

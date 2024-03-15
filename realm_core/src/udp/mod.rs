@@ -19,13 +19,14 @@ pub async fn run_udp(endpoint: Endpoint) -> Result<()> {
     let Endpoint {
         laddr,
         raddr,
+        bind_opts,
         conn_opts,
         ..
     } = endpoint;
 
     let sockmap = SockMap::new();
 
-    let lis = socket::bind(&laddr).unwrap_or_else(|e| panic!("[udp]failed to bind {}: {}", laddr, e));
+    let lis = socket::bind(&laddr, bind_opts).unwrap_or_else(|e| panic!("[udp]failed to bind {}: {}", laddr, e));
 
     loop {
         if let Err(e) = associate_and_relay(&lis, &raddr, &conn_opts, &sockmap).await {

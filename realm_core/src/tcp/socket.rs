@@ -7,16 +7,21 @@ use tokio::net::{TcpSocket, TcpStream, TcpListener};
 
 use crate::dns::resolve_addr;
 use crate::time::timeoutfut;
-use crate::endpoint::{RemoteAddr, ConnectOpts};
+use crate::endpoint::{RemoteAddr, BindOpts, ConnectOpts};
 
-#[allow(clippy::clone_on_copy)]
-pub fn bind(laddr: &SocketAddr) -> Result<TcpListener> {
+pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<TcpListener> {
+    let BindOpts { ipv6_only } = bind_opts;
     let socket = new_tcp_socket(laddr)?;
+
+    // ipv6_only
+    if let SocketAddr::V6(_) = laddr {
+        socket.set_only_v6(ipv6_only)?;
+    }
 
     // ignore error
     let _ = socket.set_reuse_address(true);
 
-    socket.bind(&laddr.clone().into())?;
+    socket.bind(&(*laddr).into())?;
     socket.listen(1024)?;
 
     TcpListener::from_std(socket.into())

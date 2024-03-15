@@ -157,6 +157,7 @@ impl Config for EndpointConf {
 
         // build partial conn_opts from netconf
         let NetInfo {
+            bind_opts,
             mut conn_opts,
             no_tcp,
             use_udp,
@@ -184,6 +185,7 @@ impl Config for EndpointConf {
             endpoint: Endpoint {
                 laddr,
                 raddr,
+                bind_opts,
                 conn_opts,
                 extra_raddrs,
             },

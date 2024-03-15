@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use realm_core::endpoint::ConnectOpts;
+use realm_core::endpoint::{BindOpts, ConnectOpts};
 
 use super::Config;
 use crate::consts::{TCP_TIMEOUT, UDP_TIMEOUT};
@@ -16,6 +16,10 @@ pub struct NetConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub use_udp: Option<bool>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ipv6_only: Option<bool>,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,6 +55,7 @@ pub struct NetConf {
 
 #[derive(Debug)]
 pub struct NetInfo {
+    pub bind_opts: BindOpts,
     pub conn_opts: ConnectOpts,
     pub no_tcp: bool,
     pub use_udp: bool,
@@ -61,8 +66,9 @@ impl Config for NetConf {
 
     fn is_empty(&self) -> bool {
         crate::empty![self =>
+            ipv6_only,
             send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout,
-            tcp_keepalive, tcp_timeout, udp_timeout
+            tcp_keepalive, tcp_keepalive_probe, tcp_timeout, udp_timeout
         ]
     }
 
@@ -78,11 +84,13 @@ impl Config for NetConf {
 
         let no_tcp = unbox!(no_tcp);
         let use_udp = unbox!(use_udp);
+        let ipv6_only = unbox!(ipv6_only);
         let tcp_kpa = unbox!(tcp_keepalive, TCP_KEEPALIVE);
         let tcp_kpa_probe = unbox!(tcp_keepalive_probe, TCP_KEEPALIVE_PROBE);
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
+        let bind_opts = BindOpts { ipv6_only };
         let conn_opts = ConnectOpts {
             tcp_keepalive: tcp_kpa,
             tcp_keepalive_probe: tcp_kpa_probe,
@@ -116,6 +124,7 @@ impl Config for NetConf {
         };
 
         NetInfo {
+            bind_opts,
             conn_opts,
             no_tcp,
             use_udp,
@@ -128,6 +137,7 @@ impl Config for NetConf {
 
         rst!(self, no_tcp, other);
         rst!(self, use_udp, other);
+        rst!(self, ipv6_only, other);
         rst!(self, tcp_keepalive, other);
         rst!(self, tcp_keepalive_probe, other);
         rst!(self, tcp_timeout, other);
@@ -145,6 +155,7 @@ impl Config for NetConf {
 
         take!(self, no_tcp, other);
         take!(self, use_udp, other);
+        take!(self, ipv6_only, other);
         take!(self, tcp_keepalive, other);
         take!(self, tcp_keepalive_probe, other);
         take!(self, tcp_timeout, other);
@@ -172,6 +183,7 @@ impl Config for NetConf {
 
         let no_tcp = unpack!("no_tcp");
         let use_udp = unpack!("use_udp");
+        let ipv6_only = unpack!("ipv6_only");
 
         let tcp_keepalive = unpack!("tcp_keepalive", usize);
         let tcp_keepalive_probe = unpack!("tcp_keepalive", usize);
@@ -187,6 +199,7 @@ impl Config for NetConf {
         Self {
             no_tcp,
             use_udp,
+            ipv6_only,
             tcp_keepalive,
             tcp_keepalive_probe,
             tcp_timeout,

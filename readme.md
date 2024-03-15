@@ -101,61 +101,60 @@ Or have a look at [Cross](https://github.com/cross-rs/cross), it makes things ea
 ## Usage
 
 ```shell
-Realm 2.5.0 [proxy][balance][brutal][transport][multi-thread]
 A high efficiency relay tool
 
-USAGE:
-    realm [FLAGS] [OPTIONS]
+Usage: realm [FLAGS] [OPTIONS]
+
+Commands:
+  convert  convert your legacy configuration into an advanced one
 
 FLAGS:
-    -h, --help       show help
-    -v, --version    show version
-    -d, --daemon     run as a unix daemon
-    -u, --udp        force enable udp forward
-    -t, --ntcp       force disable tcp forward
-    -f, --tfo        force enable tcp fast open -- deprecated
-    -z, --splice     force enable tcp zero copy -- deprecated
+  -h, --help     show help
+  -v, --version  show version
+  -d, --daemon   run as a unix daemon
+  -u, --udp      force enable udp forward
+  -t, --ntcp     force disable tcp forward
+  -6, --ipv6     force disable ipv6 mapped ipv4
+  -f, --tfo      force enable tcp fast open -- deprecated
+  -z, --splice   force enable tcp zero copy -- deprecated
 
 OPTIONS:
-    -c, --config <path>                 use config file
-    -l, --listen <address>              listen address
-    -r, --remote <address>              remote address
-    -x, --through <address>             send through ip or address
-    -i, --interface <device>            bind to interface
-    -a, --listen-transport <options>    listen transport
-    -b, --remote-transport <options>    remote transport
+  -c, --config <path>               use config file
+  -l, --listen <address>            listen address
+  -r, --remote <address>            remote address
+  -x, --through <address>           send through ip or address
+  -i, --interface <device>          bind to interface
+  -a, --listen-transport <options>  listen transport
+  -b, --remote-transport <options>  remote transport
 
 SYS OPTIONS:
-    -n, --nofile <limit>          set nofile limit
-    -p, --pipe-page <number>      set pipe capacity
-    -j, --pre-conn-hook <path>    set pre-connect hook
+  -n, --nofile <limit>        set nofile limit
+  -p, --pipe-page <number>    set pipe capacity
+  -j, --pre-conn-hook <path>  set pre-connect hook
 
 LOG OPTIONS:
-        --log-level <level>    override log level
-        --log-output <path>    override log output
+      --log-level <level>  override log level
+      --log-output <path>  override log output
 
 DNS OPTIONS:
-        --dns-mode <mode>            override dns mode
-        --dns-min-ttl <second>       override dns min ttl
-        --dns-max-ttl <second>       override dns max ttl
-        --dns-cache-size <number>    override dns cache size
-        --dns-protocol <protocol>    override dns protocol
-        --dns-servers <servers>      override dns servers
+      --dns-mode <mode>          override dns mode
+      --dns-min-ttl <second>     override dns min ttl
+      --dns-max-ttl <second>     override dns max ttl
+      --dns-cache-size <number>  override dns cache size
+      --dns-protocol <protocol>  override dns protocol
+      --dns-servers <servers>    override dns servers
 
 PROXY OPTIONS:
-        --send-proxy                       send proxy protocol header
-        --send-proxy-version <version>     send proxy protocol version
-        --accept-proxy                     accept proxy protocol header
-        --accept-proxy-timeout <second>    accept proxy protocol timeout
+      --send-proxy <send_proxy>        send proxy protocol header
+      --send-proxy-version <version>   send proxy protocol version
+      --accept-proxy <accept_proxy>    accept proxy protocol header
+      --accept-proxy-timeout <second>  accept proxy protocol timeout
 
 TIMEOUT OPTIONS:
-        --tcp-timeout <second>           override tcp timeout(5s)
-        --udp-timeout <second>           override udp timeout(30s)
-        --tcp-keepalive <second>         override default tcp keepalive interval(15s)
-        --tcp-keepalive-probe <count>    override default tcp keepalive count(3)
-
-SUBCOMMANDS:
-    convert    convert your legacy configuration into an advanced one
+      --tcp-timeout <second>         override tcp timeout(5s)
+      --udp-timeout <second>         override udp timeout(30s)
+      --tcp-keepalive <second>       override default tcp keepalive interval(15s)
+      --tcp-keepalive-probe <count>  override default tcp keepalive count(3)
 ```
 
 Start from command line arguments:
@@ -262,6 +261,7 @@ remote = "www.google.com:443"
 ├── network
 │   ├── no_tcp
 │   ├── use_udp
+│   ├── ipv6_only
 │   ├── tcp_timeout
 │   ├── udp_timeout
 │   ├── tcp_keepalive
@@ -471,6 +471,17 @@ Start listening on a udp endpoint and forward packets to the remote peer.
 It will dynamically allocate local endpoints and establish udp associations. Once timeout, the endpoints will be deallocated and the association will be terminated. See also: [network.udp_timeout](#networkudp_timeout-unsigned-int).
 
 Due to the receiver side not limiting access to the association, the relay works like a full-cone NAT.
+
+default: false
+
+#### network.ipv6_only: bool
+
+Disable ipv4-mapped-ipv6 when binding to an ipv6 address.
+
+E.g.:
+`[::0]:port` with (ipv6_only=false) binds to `*:port`
+
+`[::0]:port` with (ipv6_only=true) binds to `[::]:port`
 
 default: false
 
