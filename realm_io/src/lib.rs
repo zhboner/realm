@@ -52,11 +52,14 @@ pub use bidi_copy::bidi_copy_buf;
 pub use mem_copy::{bidi_copy, buf_size, set_buf_size};
 
 #[cfg(target_os = "linux")]
-mod zero_copy;
+mod linux;
 
 #[cfg(any(target_os = "linux", doc))]
 #[cfg_attr(doc, doc(cfg(target_os = "linux")))]
-pub use zero_copy::{Pipe, AsyncRawIO, bidi_zero_copy, pipe_size, set_pipe_size};
+pub use linux::{
+    AsyncRawIO,
+    zero_copy::{Pipe, bidi_zero_copy, pipe_size, set_pipe_size},
+};
 
 #[cfg(any(feature = "peek", doc))]
 #[cfg_attr(doc, doc(cfg(feature = "peek")))]
