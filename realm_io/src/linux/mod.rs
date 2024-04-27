@@ -22,9 +22,9 @@ pub trait AsyncRawIO: AsRawFd {
         }
     }
 
-    fn poll_read_raw<S>(&self, cx: &mut Context<'_>, syscall: S) -> Poll<Result<usize>>
+    fn poll_read_raw<S>(&self, cx: &mut Context<'_>, mut syscall: S) -> Poll<Result<usize>>
     where
-        S: FnOnce() -> isize + Copy,
+        S: FnMut() -> isize,
     {
         loop {
             ready!(Self::x_poll_read_ready(self, cx))?;
@@ -39,9 +39,9 @@ pub trait AsyncRawIO: AsRawFd {
         }
     }
 
-    fn poll_write_raw<S>(&self, cx: &mut Context<'_>, syscall: S) -> Poll<Result<usize>>
+    fn poll_write_raw<S>(&self, cx: &mut Context<'_>, mut syscall: S) -> Poll<Result<usize>>
     where
-        S: FnOnce() -> isize + Copy,
+        S: FnMut() -> isize,
     {
         loop {
             ready!(Self::x_poll_write_ready(self, cx))?;
