@@ -79,6 +79,27 @@ where
     }
 }
 
+impl<'a, SR, SW> AsyncIOBuf for CopyBuffer<&'a mut Pipe, SR, SW>
+where
+    SR: AsyncRead + AsyncWrite + AsyncRawIO + Unpin,
+    SW: AsyncRead + AsyncWrite + AsyncRawIO + Unpin,
+{
+    type StreamR = SR;
+    type StreamW = SW;
+
+    fn poll_read_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamR) -> Poll<Result<usize>> {
+        stream.poll_read_raw(cx, || splice_n(stream.as_raw_fd(), self.buf.1, usize::MAX))
+    }
+
+    fn poll_write_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamW) -> Poll<Result<usize>> {
+        stream.poll_write_raw(cx, || splice_n(self.buf.0, stream.as_raw_fd(), self.cap - self.pos))
+    }
+
+    fn poll_flush_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamW) -> Poll<Result<()>> {
+        Pin::new(stream).poll_flush(cx)
+    }
+}
+
 /// Copy data bidirectionally between two streams with pipe.
 pub async fn bidi_zero_copy<A, B>(a: &mut A, b: &mut B) -> Result<(u64, u64)>
 where

@@ -19,12 +19,12 @@
 //!     // zero copy
 //!     bidi_zero_copy(&mut left, &mut right).await;
 //!
-//!     // use custom buffer(vector)
+//!     // use custom buffer(AsMut<[u8]>)
 //!     let buf1 = CopyBuffer::new(vec![0; 0x2000]);
 //!     let buf2 = CopyBuffer::new(vec![0; 0x2000]);
 //!     bidi_copy_buf(&mut left, &mut right, buf1, buf2).await;
 //!
-//!     // use custom buffer(pipe)
+//!     // use custom buffer(Pipe or &mut Pipe)
 //!     let buf1 = CopyBuffer::new(Pipe::new().unwrap());
 //!     let buf2 = CopyBuffer::new(Pipe::new().unwrap());
 //!     bidi_copy_buf(&mut left, &mut right, buf1, buf2).await;
