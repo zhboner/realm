@@ -1,6 +1,6 @@
 [package]
 name = "realm_io"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["zephyr <i@zephyr.moe>"]
 description = "Realm's high performance IO collections."
 repository = "https://github.com/zhboner/realm"
@@ -12,6 +12,7 @@ license = "MIT"
 
 [dependencies]
 libc = "0.2"
+socket2 = "0.5"
 tokio = "1.9"
 
 [target.'cfg(unix)'.dependencies]
