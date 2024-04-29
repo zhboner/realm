@@ -57,9 +57,7 @@ mod linux;
 #[cfg(any(target_os = "linux", doc))]
 #[cfg_attr(doc, doc(cfg(target_os = "linux")))]
 pub use linux::{
-    AsyncRawIO,
-    mmsg::{Packet, PacketMut, PacketStore, SockAddrStore, STORE_LEN},
-    mmsg::{send_mul_pkts, recv_mul_pkts},
+    AsyncRawIO, mmsg,
     zero_copy::{Pipe, bidi_zero_copy, pipe_size, set_pipe_size},
 };
 

@@ -4,8 +4,8 @@ use std::os::unix::io::AsRawFd;
 
 use tokio::io::Interest;
 
-pub(crate) mod mmsg;
-pub(crate) mod zero_copy;
+pub mod mmsg;
+pub mod zero_copy;
 
 /// Type traits of Linux objects.
 pub trait AsyncRawIO: AsRawFd {
