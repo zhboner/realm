@@ -36,6 +36,7 @@ brutal-shutdown = ["realm_io/brutal-shutdown"]
 transport = ["kaminari"]
 transport-boost = []
 proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
+multi-thread = []
 
 [dev-dependencies]
 env_logger = "0.10"
