@@ -6,19 +6,19 @@ use std::os::unix::io::RawFd;
 
 use crate::AsyncRawIO;
 
-pub use store::{PacketStore, Const, Mutable};
-pub use store::{PacketRef, PacketMutRef};
+pub use store::{MmsgHdrStore, Const, Mutable};
+pub use store::{MmsgRef, MmsgMutRef};
 pub use store::{SockAddrStore, SOCK_STORE_LEN};
-pub type Packet<'a, 'buf, 'iov, 'ctrl> = PacketStore<'a, 'buf, 'iov, 'ctrl, Const>;
-pub type PacketMut<'a, 'buf, 'iov, 'ctrl> = PacketStore<'a, 'buf, 'iov, 'ctrl, Mutable>;
+pub type MmsgHdr<'a, 'b, 'iov, 'ctrl> = MmsgHdrStore<'a, 'b, 'iov, 'ctrl, Const>;
+pub type MmsgHdrMut<'a, 'b, 'iov, 'ctrl> = MmsgHdrStore<'a, 'b, 'iov, 'ctrl, Mutable>;
 
 #[inline]
-fn sendmpkts<M>(fd: RawFd, pkts: &mut [PacketStore<'_, '_, '_, '_, M>]) -> i32 {
+fn sendmpkts<M>(fd: RawFd, pkts: &mut [MmsgHdrStore<'_, '_, '_, '_, M>]) -> i32 {
     unsafe { libc::sendmmsg(fd, pkts.as_ptr() as *mut _, pkts.len() as u32, 0) }
 }
 
 #[inline]
-fn recvmpkts(fd: RawFd, pkts: &mut [PacketMut]) -> i32 {
+fn recvmpkts(fd: RawFd, pkts: &mut [MmsgHdrMut]) -> i32 {
     unsafe {
         libc::recvmmsg(
             fd,
@@ -31,37 +31,37 @@ fn recvmpkts(fd: RawFd, pkts: &mut [PacketMut]) -> i32 {
 }
 
 fn poll_sendmpkts<S, M>(
-    stream: &mut S,
+    sock: &S,
     cx: &mut Context<'_>,
-    pkts: &mut [PacketStore<'_, '_, '_, '_, M>],
+    pkts: &mut [MmsgHdrStore<'_, '_, '_, '_, M>],
 ) -> Poll<Result<usize>>
 where
     S: AsyncRawIO + Unpin,
 {
-    stream.poll_write_raw(cx, || sendmpkts(stream.as_raw_fd(), pkts) as isize)
+    sock.poll_write_raw(cx, || sendmpkts(sock.as_raw_fd(), pkts) as isize)
 }
 
-fn poll_recvmpkts<S>(stream: &mut S, cx: &mut Context<'_>, pkts: &mut [PacketMut]) -> Poll<Result<usize>>
+fn poll_recvmpkts<S>(sock: &S, cx: &mut Context<'_>, pkts: &mut [MmsgHdrMut]) -> Poll<Result<usize>>
 where
     S: AsyncRawIO + Unpin,
 {
-    stream.poll_read_raw(cx, || recvmpkts(stream.as_raw_fd(), pkts) as isize)
+    sock.poll_read_raw(cx, || recvmpkts(sock.as_raw_fd(), pkts) as isize)
 }
 
 /// Send multiple packets.
-pub async fn send_mul_pkts<S>(stream: &mut S, pkts: &mut [Packet<'_, '_, '_, '_>]) -> Result<usize>
+pub async fn send_mul_pkts<S, M>(sock: &S, pkts: &mut [MmsgHdrStore<'_, '_, '_, '_, M>]) -> Result<usize>
 where
     S: AsyncRawIO + Unpin,
 {
-    std::future::poll_fn(move |cx| poll_sendmpkts(stream, cx, pkts)).await
+    std::future::poll_fn(move |cx| poll_sendmpkts(sock, cx, pkts)).await
 }
 
 /// Recv multiple packets.
-pub async fn recv_mul_pkts<S>(stream: &mut S, pkts: &mut [PacketMut<'_, '_, '_, '_>]) -> Result<usize>
+pub async fn recv_mul_pkts<S>(sock: &S, pkts: &mut [MmsgHdrMut<'_, '_, '_, '_>]) -> Result<usize>
 where
     S: AsyncRawIO + Unpin,
 {
-    std::future::poll_fn(move |cx| poll_recvmpkts(stream, cx, pkts)).await
+    std::future::poll_fn(move |cx| poll_recvmpkts(sock, cx, pkts)).await
 }
 
 mod store {
@@ -74,36 +74,48 @@ mod store {
     use libc::{sockaddr_storage, socklen_t};
 
     /// Marker.
+    #[derive(Debug, Clone, Copy)]
     pub struct Const {}
 
     /// Marker.
+    #[derive(Debug, Clone, Copy)]
     pub struct Mutable {}
 
+    /// # Safety: mmsghdr is POD.
+    unsafe impl<'a, 'b, 'iov, 'ctrl, M> Send for MmsgHdrStore<'a, 'b, 'iov, 'ctrl, M> {}
+
+    /// # Safety: Inner pointers come from references ruled by the borrow-checker,
+    /// thereby mutable pointers which point to the same memory address cant co-exist.
+    ///
+    /// We provide a thin and limited interface that neither [`Const`] nor &[`Mutable`]
+    /// can have mutable access to the internal data, while restriction of mutable access
+    /// behind `&mut`[`Mutable`] will be enforced by the borrow-checker.
+    unsafe impl<'a, 'b, 'iov, 'ctrl, M> Sync for MmsgHdrStore<'a, 'b, 'iov, 'ctrl, M> {}
+
     /// Represent [`libc::mmsghdr`].
-    #[derive(Clone, Copy)]
-    #[repr(transparent)]
-    pub struct PacketStore<'a, 'buf, 'iov, 'ctrl, M> {
+    #[repr(C)]
+    pub struct MmsgHdrStore<'a, 'b, 'iov, 'ctrl, M> {
         pub(crate) store: mmsghdr,
         _type: PhantomData<M>,
-        _lifetime: PhantomData<(&'a (), &'buf (), &'iov (), &'ctrl ())>,
+        _lifetime: PhantomData<(&'a (), &'b (), &'iov (), &'ctrl ())>,
     }
 
-    /// Constant field accessor for [`PacketStore`].
-    pub struct PacketRef<'a, 'buf, 'iov, 'ctrl, 'this> {
+    /// Constant field accessor for [`MmsgHdrStore`].
+    pub struct MmsgRef<'a, 'b, 'iov, 'ctrl, 'this> {
         addr: &'a SockAddrStore,
-        iovec: &'iov [IoSlice<'buf>],
+        iovec: &'iov [IoSlice<'b>],
         control: &'ctrl [u8],
-        flags: i32,
+        flags: &'this i32,
         nbytes: u32,
         _lifetime: PhantomData<&'this ()>,
     }
 
-    /// Mutable field accessor for [`PacketStore`].
-    pub struct PacketMutRef<'a, 'buf, 'iov, 'ctrl, 'this> {
+    /// Mutable field accessor for [`MmsgHdrStore`].
+    pub struct MmsgMutRef<'a, 'b, 'iov, 'ctrl, 'this> {
         addr: &'a mut SockAddrStore,
-        iovec: &'iov mut [IoSlice<'buf>],
+        iovec: &'iov mut [IoSlice<'b>],
         control: &'ctrl mut [u8],
-        flags: i32,
+        flags: &'this mut i32,
         nbytes: u32,
         _lifetime: PhantomData<&'this ()>,
     }
@@ -121,23 +133,23 @@ mod store {
         };
     }
 
-    impl<'a, 'buf, 'iov, 'ctrl, 'this> PacketRef<'a, 'buf, 'iov, 'ctrl, 'this> {
+    impl<'a, 'b, 'iov, 'ctrl, 'this> MmsgRef<'a, 'b, 'iov, 'ctrl, 'this> {
         access_fn!(!ref, addr, &&'a SockAddrStore);
-        access_fn!(!ref, iovec, &&'iov [IoSlice<'buf>]);
+        access_fn!(!ref, iovec, &&'iov [IoSlice<'b>]);
         access_fn!(!ref, control, &&'ctrl [u8]);
-        access_fn!(!val, flags, i32);
+        access_fn!(!ref, flags, &&'this i32);
         access_fn!(!val, nbytes, u32);
     }
 
-    impl<'a, 'buf, 'iov, 'ctrl, 'this> PacketMutRef<'a, 'buf, 'iov, 'ctrl, 'this> {
+    impl<'a, 'b, 'iov, 'ctrl, 'this> MmsgMutRef<'a, 'b, 'iov, 'ctrl, 'this> {
         access_fn!(!mut, addr, &mut &'a mut SockAddrStore);
-        access_fn!(!mut, iovec, &mut &'iov mut [IoSlice<'buf>]);
+        access_fn!(!mut, iovec, &mut &'iov mut [IoSlice<'b>]);
         access_fn!(!mut, control, &mut &'ctrl mut [u8]);
-        access_fn!(!val, flags, i32);
+        access_fn!(!mut, flags, &mut &'this mut i32);
         access_fn!(!val, nbytes, u32);
     }
 
-    impl<'a, 'buf, 'iov, 'ctrl, M> PacketStore<'a, 'buf, 'iov, 'ctrl, M> {
+    impl<'a, 'b, 'iov, 'ctrl, M> MmsgHdrStore<'a, 'b, 'iov, 'ctrl, M> {
         /// New zeroed storage.
         pub const fn new() -> Self {
             Self {
@@ -149,31 +161,30 @@ mod store {
 
         /// Get constant accessor.
         #[rustfmt::skip]
-        pub fn get_ref<'this>(&'this self) -> PacketRef<'this, 'a, 'buf, 'iov, 'ctrl> {
+        pub fn get_ref<'this>(&'this self) -> MmsgRef<'a, 'b, 'iov, 'ctrl, 'this> {
             let msghdr {
-                msg_name, msg_namelen,
+                msg_name, msg_namelen: _,
                 msg_iov, msg_iovlen,
-                msg_control, msg_controllen, msg_flags,
+                msg_control, msg_controllen, ..
             } = self.store.msg_hdr;
-            let msg_len = self.store.msg_len;
-            unsafe { PacketRef {
-                addr: &*msg_name.cast(), // todo!
+            unsafe { MmsgRef {
+                addr: &*msg_name.cast(),
                 iovec: slice::from_raw_parts(msg_iov as *const _, msg_iovlen),
                 control: slice::from_raw_parts(msg_control as *const _, msg_controllen),
-                flags: msg_flags,
-                nbytes: msg_len,
+                flags: &self.store.msg_hdr.msg_flags,
+                nbytes: self.store.msg_len,
                 _lifetime: PhantomData,
             }}
         }
     }
 
-    impl<'a, 'buf, 'iov, 'ctrl, M> Default for PacketStore<'a, 'buf, 'iov, 'ctrl, M> {
+    impl<'a, 'b, 'iov, 'ctrl, M> Default for MmsgHdrStore<'a, 'b, 'iov, 'ctrl, M> {
         fn default() -> Self {
             Self::new()
         }
     }
 
-    impl<'a, 'buf, 'iov, 'ctrl> PacketStore<'a, 'buf, 'iov, 'ctrl, Const> {
+    impl<'a, 'b, 'iov, 'ctrl> MmsgHdrStore<'a, 'b, 'iov, 'ctrl, Const> {
         /// Set target address.
         pub const fn with_addr(mut self, addr: &'a SockAddrStore) -> Self {
             self.store.msg_hdr.msg_name = addr.0.as_ptr() as *mut _;
@@ -182,7 +193,7 @@ mod store {
         }
 
         /// Set data to send.
-        pub const fn with_iovec(mut self, iov: &'iov [IoSlice<'buf>]) -> Self {
+        pub const fn with_iovec(mut self, iov: &'iov [IoSlice<'b>]) -> Self {
             self.store.msg_hdr.msg_iov = ptr::from_ref(iov) as *mut _;
             self.store.msg_hdr.msg_iovlen = iov.len();
             self
@@ -195,14 +206,14 @@ mod store {
             self
         }
 
-        /// Set sending flags.
+        /// Set message flags to send.
         pub const fn with_flags(mut self, flags: i32) -> Self {
             self.store.msg_hdr.msg_flags = flags;
             self
         }
     }
 
-    impl<'a, 'buf, 'iov, 'ctrl> PacketStore<'a, 'buf, 'iov, 'ctrl, Mutable> {
+    impl<'a, 'b, 'iov, 'ctrl> MmsgHdrStore<'a, 'b, 'iov, 'ctrl, Mutable> {
         /// Set storage to accommodate peer address.
         pub fn with_addr(mut self, addr: &'a mut SockAddrStore) -> Self {
             self.store.msg_hdr.msg_name = addr.0.as_ptr() as *mut _;
@@ -211,7 +222,7 @@ mod store {
         }
 
         /// Set storage to receive data.
-        pub fn with_iovec(mut self, iov: &'iov mut [IoSliceMut<'buf>]) -> Self {
+        pub fn with_iovec(mut self, iov: &'iov mut [IoSliceMut<'b>]) -> Self {
             self.store.msg_hdr.msg_iov = ptr::from_mut(iov) as *mut _;
             self.store.msg_hdr.msg_iovlen = iov.len();
             self
@@ -226,19 +237,18 @@ mod store {
 
         /// Get mutable accessor.
         #[rustfmt::skip]
-        pub fn get_mut<'this>(&'this mut self) -> PacketMutRef<'this, 'a, 'buf, 'iov, 'ctrl> {
+        pub fn get_mut<'this>(&'this mut self) -> MmsgMutRef<'a, 'b, 'iov, 'ctrl, 'this> {
             let msghdr {
-                msg_name, msg_namelen,
+                msg_name, msg_namelen: _,
                 msg_iov, msg_iovlen,
-                msg_control, msg_controllen, msg_flags,
+                msg_control, msg_controllen, ..
             } = self.store.msg_hdr;
-            let msg_len = self.store.msg_len;
-            unsafe { PacketMutRef {
-                addr: &mut *msg_name.cast(), // todo!
+            unsafe { MmsgMutRef {
+                addr: &mut *msg_name.cast(),
                 iovec: slice::from_raw_parts_mut(msg_iov as *mut _, msg_iovlen),
                 control: slice::from_raw_parts_mut(msg_control as *mut _, msg_controllen),
-                flags: msg_flags,
-                nbytes: msg_len,
+                flags: &mut self.store.msg_hdr.msg_flags,
+                nbytes: self.store.msg_len,
                 _lifetime: PhantomData,
             }}
         }
@@ -246,6 +256,7 @@ mod store {
 
     /// Represent [`libc::sockaddr_storage`].
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    #[repr(C)]
     pub struct SockAddrStore(pub(crate) SockAddr);
 
     /// Size of [`libc::sockaddr_storage`].
