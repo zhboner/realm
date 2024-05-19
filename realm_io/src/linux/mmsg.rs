@@ -183,8 +183,8 @@ mod store {
             } = self.store.msg_hdr;
             unsafe { MmsgRef {
                 addr: &*msg_name.cast(),
-                iovec: make_slice(msg_iov as *const _, msg_iovlen),
-                control: make_slice(msg_control as *const _, msg_controllen),
+                iovec: make_slice(msg_iov as *const _, msg_iovlen as _),
+                control: make_slice(msg_control as *const _, msg_controllen as _),
                 flags: &self.store.msg_hdr.msg_flags,
                 nbytes: self.store.msg_len,
                 _lifetime: PhantomData,
@@ -202,21 +202,21 @@ mod store {
         /// Set target address.
         pub const fn with_addr(mut self, addr: &'a SockAddrStore) -> Self {
             self.store.msg_hdr.msg_name = addr.0.as_ptr() as *mut _;
-            self.store.msg_hdr.msg_namelen = addr.0.len();
+            self.store.msg_hdr.msg_namelen = addr.0.len() as _;
             self
         }
 
         /// Set data to send.
         pub const fn with_iovec(mut self, iov: &'iov [IoSlice<'b>]) -> Self {
             self.store.msg_hdr.msg_iov = ptr::from_ref(iov) as *mut _;
-            self.store.msg_hdr.msg_iovlen = iov.len();
+            self.store.msg_hdr.msg_iovlen = iov.len() as _;
             self
         }
 
         /// Set control message to send.
         pub const fn with_control(mut self, ctrl: &'ctrl [u8]) -> Self {
             self.store.msg_hdr.msg_control = ptr::from_ref(ctrl) as *mut _;
-            self.store.msg_hdr.msg_controllen = ctrl.len();
+            self.store.msg_hdr.msg_controllen = ctrl.len() as _;
             self
         }
 
@@ -231,21 +231,21 @@ mod store {
         /// Set storage to accommodate peer address.
         pub fn with_addr(mut self, addr: &'a mut SockAddrStore) -> Self {
             self.store.msg_hdr.msg_name = addr.0.as_ptr() as *mut _;
-            self.store.msg_hdr.msg_namelen = addr.0.len();
+            self.store.msg_hdr.msg_namelen = addr.0.len() as _;
             self
         }
 
         /// Set storage to receive data.
         pub fn with_iovec(mut self, iov: &'iov mut [IoSliceMut<'b>]) -> Self {
             self.store.msg_hdr.msg_iov = ptr::from_mut(iov) as *mut _;
-            self.store.msg_hdr.msg_iovlen = iov.len();
+            self.store.msg_hdr.msg_iovlen = iov.len() as _;
             self
         }
 
         /// Set storage to receive control message.
         pub fn with_control(mut self, ctrl: &'ctrl mut [u8]) -> Self {
             self.store.msg_hdr.msg_control = ptr::from_mut(ctrl) as *mut _;
-            self.store.msg_hdr.msg_controllen = ctrl.len();
+            self.store.msg_hdr.msg_controllen = ctrl.len() as _;
             self
         }
 
@@ -259,8 +259,8 @@ mod store {
             } = self.store.msg_hdr;
             unsafe { MmsgMutRef {
                 addr: &mut *msg_name.cast(),
-                iovec: make_slice_mut(msg_iov as *mut _, msg_iovlen),
-                control: make_slice_mut(msg_control as *mut _, msg_controllen),
+                iovec: make_slice_mut(msg_iov as *mut _, msg_iovlen as _),
+                control: make_slice_mut(msg_control as *mut _, msg_controllen as _),
                 flags: &mut self.store.msg_hdr.msg_flags,
                 nbytes: self.store.msg_len,
                 _lifetime: PhantomData,
