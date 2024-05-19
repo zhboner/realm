@@ -1,6 +1,6 @@
 [package]
 name = "realm_core"
-version = "0.3.9"
+version = "0.4.0"
 authors = ["Realm Contributors"]
 description = "Realm's core facilities."
 repository = "https://github.com/zhboner/realm"
@@ -12,7 +12,7 @@ license = "MIT"
 
 [dependencies]
 # realm
-realm_io = "0.4"
+realm_io = { version = "0.5" }
 realm_syscall = "0.1"
 realm_hook = { version = "0.1", optional = true }
 realm_lb = { version = "0.1", optional = true }
@@ -36,8 +36,9 @@ brutal-shutdown = ["realm_io/brutal-shutdown"]
 transport = ["kaminari"]
 transport-boost = []
 proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
+batched-udp = []
 multi-thread = []
 
 [dev-dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 tokio = { version = "1", features = ["macros"] }

@@ -6,7 +6,6 @@ use realm_syscall::new_udp_socket;
 
 use crate::endpoint::{BindOpts, ConnectOpts};
 
-#[allow(clippy::clone_on_copy)]
 pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<UdpSocket> {
     let BindOpts { ipv6_only } = bind_opts;
     let socket = new_udp_socket(laddr)?;
@@ -19,12 +18,12 @@ pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<UdpSocket> {
     // ignore error
     let _ = socket.set_reuse_address(true);
 
-    socket.bind(&laddr.clone().into())?;
+    socket.bind(&(*laddr).into())?;
 
     UdpSocket::from_std(socket.into())
 }
 
-pub async fn associate(raddr: &SocketAddr, conn_opts: &ConnectOpts) -> Result<UdpSocket> {
+pub fn associate(raddr: &SocketAddr, conn_opts: &ConnectOpts) -> Result<UdpSocket> {
     let ConnectOpts {
         bind_address,
 

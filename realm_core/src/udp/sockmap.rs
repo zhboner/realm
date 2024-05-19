@@ -33,6 +33,21 @@ impl SockMap {
     }
 
     #[inline]
+    pub fn find_or_insert<E, F>(&self, addr: &SocketAddr, f: F) -> Result<Arc<UdpSocket>, E>
+    where
+        F: Fn() -> Result<Arc<UdpSocket>, E>,
+    {
+        match self.find(addr) {
+            Some(x) => Ok(x),
+            None => {
+                let socket = f()?;
+                self.insert(*addr, Arc::clone(&socket));
+                Ok(socket)
+            }
+        }
+    }
+
+    #[inline]
     pub fn remove(&self, addr: &SocketAddr) {
         // fetch the lock
         let mut sockmap = self.0.write().unwrap();
