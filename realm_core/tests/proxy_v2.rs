@@ -6,7 +6,10 @@ use tokio::time::sleep;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use realm_core::tcp::run_tcp;
-use realm_core::endpoint::{Endpoint, RemoteAddr, ConnectOpts, ProxyOpts};
+use realm_core::endpoint::{Endpoint, RemoteAddr, ConnectOpts};
+
+#[cfg(feature = "proxy")]
+use realm_core::endpoint::ProxyOpts;
 
 #[tokio::test]
 #[cfg(feature = "proxy")]
