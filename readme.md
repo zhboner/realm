@@ -68,12 +68,13 @@ The `realm` binary will be available in `target/release`.
 - proxy: enable proxy-protocol.
 - balance: enable load balance.
 - transport: enable ws/tls/wss.
+- batched-udp: enable more efficient udp on linux.
 - multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
 - page-alloc: custom memory allocator.
 
-Default: proxy + balance + transport + brutal-shutdown + multi-thread.
+Default: proxy + balance + transport + batched-udp + brutal-shutdown + multi-thread.
 
 See also: [Cargo.toml](Cargo.toml).
 

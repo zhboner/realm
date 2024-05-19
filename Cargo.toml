@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.5.4"
+version = "2.6.0"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -55,17 +55,18 @@ mmap-allocator = { version = "0.3", optional = true }
 
 
 [dev-dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 tokio = { version = "1", features = ["macros"] }
 
 
 [features]
-default = ["proxy", "balance", "multi-thread", "transport", "brutal-shutdown"]
+default = ["proxy", "balance", "multi-thread", "transport", "batched-udp", "brutal-shutdown"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
 brutal-shutdown = ["realm_core/brutal-shutdown"]
 balance = ["realm_core/balance"]
 transport = ["realm_core/transport", "realm_core/transport-boost"]
+batched-udp = ["realm_core/batched-udp"]
 multi-thread = ["tokio/rt-multi-thread", "realm_core/multi-thread"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
