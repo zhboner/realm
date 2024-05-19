@@ -149,6 +149,20 @@ mod store {
         access_fn!(!val, nbytes, u32);
     }
 
+    #[inline]
+    const unsafe fn make_slice<'a, T>(ptr: *const T, n: usize) -> &'a [T] {
+        use std::ptr::NonNull;
+        let ptr = if n != 0 { ptr } else { NonNull::dangling().as_ptr() };
+        slice::from_raw_parts(ptr, n)
+    }
+
+    #[inline]
+    unsafe fn make_slice_mut<'a, T>(ptr: *mut T, n: usize) -> &'a mut [T] {
+        use std::ptr::NonNull;
+        let ptr = if n != 0 { ptr } else { NonNull::dangling().as_ptr() };
+        slice::from_raw_parts_mut(ptr, n)
+    }
+
     impl<'a, 'b, 'iov, 'ctrl, M> MmsgHdrStore<'a, 'b, 'iov, 'ctrl, M> {
         /// New zeroed storage.
         pub const fn new() -> Self {
@@ -169,8 +183,8 @@ mod store {
             } = self.store.msg_hdr;
             unsafe { MmsgRef {
                 addr: &*msg_name.cast(),
-                iovec: slice::from_raw_parts(msg_iov as *const _, msg_iovlen),
-                control: slice::from_raw_parts(msg_control as *const _, msg_controllen),
+                iovec: make_slice(msg_iov as *const _, msg_iovlen),
+                control: make_slice(msg_control as *const _, msg_controllen),
                 flags: &self.store.msg_hdr.msg_flags,
                 nbytes: self.store.msg_len,
                 _lifetime: PhantomData,
@@ -245,8 +259,8 @@ mod store {
             } = self.store.msg_hdr;
             unsafe { MmsgMutRef {
                 addr: &mut *msg_name.cast(),
-                iovec: slice::from_raw_parts_mut(msg_iov as *mut _, msg_iovlen),
-                control: slice::from_raw_parts_mut(msg_control as *mut _, msg_controllen),
+                iovec: make_slice_mut(msg_iov as *mut _, msg_iovlen),
+                control: make_slice_mut(msg_control as *mut _, msg_controllen),
                 flags: &mut self.store.msg_hdr.msg_flags,
                 nbytes: self.store.msg_len,
                 _lifetime: PhantomData,
