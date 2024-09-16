@@ -66,7 +66,7 @@ impl Config for NetConf {
 
     fn is_empty(&self) -> bool {
         crate::empty![self =>
-            ipv6_only,
+            no_tcp, use_udp, ipv6_only,
             send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout,
             tcp_keepalive, tcp_keepalive_probe, tcp_timeout, udp_timeout
         ]
