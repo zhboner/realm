@@ -16,18 +16,18 @@ jobs:
     name: Build Rust project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly
-          target: x86_64-unknown-linux-musl
-          override: true
-          components: rustfmt, clippy
-      
+            toolchain: nightly
+            targets: ${{ matrix.target }}
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
       - name: Cache cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -37,14 +37,10 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target x86_64-unknown-linux-musl
+      - name: compile
+        run: cross build --release --target=x86_64-unknown-linux-musl
           
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: realm
           path: target/x86_64-unknown-linux-musl/release/realm
@@ -54,16 +50,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Create release tmp folder
         run: mkdir -p target/x86_64-unknown-linux-musl/release
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: realm
           path: target/x86_64-unknown-linux-musl/release/realm
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
           
@@ -73,13 +69,13 @@ jobs:
         run: echo ${{ env.RELEASE_VERSION }}
   
       - name: Log in to the Container registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push images with latest(debian)
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -87,7 +83,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}:latest, ghcr.io/${{ github.repository }}:${{ github.event.inputs.tag || env.RELEASE_VERSION }}
           
       - name: Build and push images with alpine
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.alpine
