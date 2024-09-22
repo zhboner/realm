@@ -1,7 +1,7 @@
 {
   "log": {
     "level": "warn",
-    "output": "/var/log/realm.log"
+    "output": "realm.log"
   },
   "dns": {
     "mode": "ipv4_only",

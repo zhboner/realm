@@ -1,7 +1,7 @@
 {
   "log": {
     "level": "warn",
-    "output": "/var/log/realm.log"
+    "output": "realm.log"
   },
   "network": {
     "no_tcp": false,

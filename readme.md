@@ -164,7 +164,7 @@ Start from command line arguments:
 realm -l 0.0.0.0:5000 -r 1.1.1.1:443
 ```
 
-Start with a config file:
+Start with config file:
 
 ```shell
 # use toml
@@ -172,6 +172,11 @@ realm -c config.toml
 
 # use json
 realm -c config.json
+
+# use configs in folder (since v2.6.2)
+# all toml and json files are recursively included (e.g.: config/log.toml, config/node/n1.toml)
+# hidden ones are recursively excluded (e.g.: config/.hidden_file, config/.hidden_dir/)
+realm -c config/
 ```
 
 Start with environment variables:
@@ -197,7 +202,7 @@ TOML Example
 ```toml
 [log]
 level = "warn"
-output = "/var/log/realm.log"
+output = "realm.log"
 
 [network]
 no_tcp = false
