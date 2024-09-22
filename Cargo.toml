@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.6.1"
+version = "2.6.2"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -31,10 +31,10 @@ realm_core = { path = "realm_core" }
 # common
 cfg-if = "1"
 futures = "0.3"
+walkdir = "2"
 
 # runtime
 tokio = { version = "1", features = ["rt"] }
-walkdir = "2"
 
 # logger
 log = "0.4"
