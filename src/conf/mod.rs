@@ -95,7 +95,7 @@ impl FullConf {
         for entry in WalkDir::new(file)
             .follow_links(true)
             .into_iter()
-            .filter_entry(|e| e.file_name().to_str().is_some_and(|x| x.starts_with('.')))
+            .filter_entry(|e| e.file_name().to_str().is_some_and(|x| !x.starts_with('.')))
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
             .filter(|e| e.path().extension().map_or(false, |s| s == "toml" || s == "json"))
