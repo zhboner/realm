@@ -2,7 +2,7 @@
 name = "realm_lb"
 version = "0.1.0"
 authors = ["zephyr <i@zephyr.moe>"]
-description = "Realm's flexible hooks."
+description = "Realm's load balance strategies."
 repository = "https://github.com/zhboner/realm"
 readme = "README.md"
 documentation = "https://docs.rs/realm_lb"

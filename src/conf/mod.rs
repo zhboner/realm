@@ -20,6 +20,7 @@ pub use endpoint::{EndpointConf, EndpointInfo};
 mod legacy;
 pub use legacy::LegacyConf;
 
+#[allow(clippy::too_long_first_doc_paragraph)]
 /// Conig Architecture
 /// cmd | file => LogConf => { level, output }
 /// cmd | file => DnsConf => { resolve cinfig, opts }

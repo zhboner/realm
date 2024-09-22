@@ -1,5 +1,3 @@
-#![feature(unchecked_math)]
-
 /// Peer token.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Token(pub u8);
