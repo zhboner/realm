@@ -1,7 +1,7 @@
 use std::fs;
 use std::io::{Result, Error, ErrorKind};
-use walkdir::WalkDir;
 
+use walkdir::WalkDir;
 use clap::ArgMatches;
 use serde::{Serialize, Deserialize};
 
@@ -81,65 +81,33 @@ impl FullConf {
     }
 
     pub fn from_conf_file(file: &str) -> Self {
-        let mtd = fs::metadata(file);
-        if mtd.is_err() {
-            eprintln!("failed to open {}: {}", file, mtd.err().unwrap());
-            std::process::exit(0)
-        }
+        let mtd = fs::metadata(file).unwrap_or_else(|e| panic!("failed to open {}: {}", file, e));
 
-        let attrs = mtd.unwrap();
-        if attrs.is_file() {
-            let conf = fs::read_to_string(file).unwrap_or_else(|e| panic!("unable to open {}: {}", file, &e));
+        if mtd.is_file() {
+            let conf = fs::read_to_string(file).unwrap_or_else(|e| panic!("failed to open {}: {}", file, e));
             match Self::from_conf_str(&conf) {
                 Ok(x) => return x,
                 Err(e) => panic!("failed to parse {}: {}", file, &e),
             }
         }
 
-        let mut conf = FullConf::default();
+        let mut full_conf = FullConf::default();
         for entry in WalkDir::new(file)
             .follow_links(true)
             .into_iter()
+            .filter_entry(|e| e.file_name().to_str().is_some_and(|x| x.starts_with('.')))
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
-            .filter(|e| {
-                e.file_name().to_string_lossy().ends_with(".toml") || e.file_name().to_string_lossy().ends_with(".json")
-            })
+            .filter(|e| e.path().extension().map_or(false, |s| s == "toml" || s == "json"))
         {
-            let mut conf_part = FullConf::default();
-            let conf_frag = fs::read_to_string(entry.path())
-                .unwrap_or_else(|e| panic!("unable to open {:#?}: {}", entry.path(), &e));
+            let conf_part = fs::read_to_string(entry.path())
+                .unwrap_or_else(|e| panic!("failed to open {}: {}", entry.path().to_string_lossy(), e));
 
-            let f_name = entry.file_name().to_string_lossy();
-            if f_name.ends_with(".json") {
-                conf_part = serde_json::from_str(conf_frag.as_str())
-                    .unwrap_or_else(|e| panic!("failed to parse {:#?}: {}", entry.path(), &e));
-            } else if f_name.ends_with(".toml") {
-                conf_part = toml::from_str(conf_frag.as_str())
-                    .unwrap_or_else(|e| panic!("failed to parse {:#?}: {}", entry.path(), &e));
-            }
-
-            if !conf_part.dns.is_empty() {
-                conf.dns.take_field(&conf_part.dns);
-            }
-            if !conf_part.log.is_empty() {
-                conf.log.take_field(&conf_part.log);
-            }
-            if !conf_part.network.is_empty() {
-                conf.network.take_field(&conf_part.network);
-            }
-            if !conf_part.endpoints.is_empty() {
-                for ep in conf_part.endpoints {
-                    conf.endpoints.push(ep);
-                }
-            }
+            let conf_part = Self::from_conf_str(&conf_part)
+                .unwrap_or_else(|e| panic!("failed to parse {}: {}", entry.path().to_string_lossy(), e));
+            full_conf.take_fields(conf_part);
         }
-
-        let conf_str = toml::to_string(&conf).unwrap();
-        match Self::from_conf_str(&conf_str.to_string()) {
-            Ok(x) => x,
-            Err(e) => panic!("failed to parse {}: {}", file, &e),
-        }
+        full_conf
     }
 
     pub fn from_conf_str(s: &str) -> Result<Self> {
@@ -169,6 +137,13 @@ impl FullConf {
                 toml_err, json_err, legacy_err
             ),
         ))
+    }
+
+    fn take_fields(&mut self, other: Self) {
+        self.log.take_field(&other.log);
+        self.dns.take_field(&other.dns);
+        self.network.take_field(&other.network);
+        self.endpoints.extend(other.endpoints);
     }
 
     pub fn add_endpoint(&mut self, endpoint: EndpointConf) -> &mut Self {
