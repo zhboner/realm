@@ -27,7 +27,6 @@ pub use legacy::LegacyConf;
 /// cmd | file => NetConf
 ///                      \
 /// cmd | file => EndpointConf => { [local, remote, conn_opts] }
-
 pub trait Config {
     type Output;
 

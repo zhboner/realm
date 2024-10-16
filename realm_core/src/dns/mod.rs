@@ -1,3 +1,5 @@
+#![allow(static_mut_refs)]
+
 //! Global dns resolver.
 
 use std::io::{Result, Error, ErrorKind};

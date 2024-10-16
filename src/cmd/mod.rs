@@ -21,16 +21,10 @@ pub enum CmdInput {
 }
 
 pub fn scan() -> CmdInput {
-    static mut _VER: String = String::new(); // damn!
-    let version = format!("{} {}", VERSION, FEATURES);
-    let version = unsafe {
-        _VER = version;
-        _VER.as_str()
-    };
-
+    let ver = format!("{} {}", VERSION, FEATURES);
     let app = Command::new("Realm")
         .about("A high efficiency relay tool")
-        .version(version);
+        .version(ver);
 
     let app = app
         .disable_help_flag(true)
