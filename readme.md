@@ -124,7 +124,8 @@ OPTIONS:
   -l, --listen <address>            listen address
   -r, --remote <address>            remote address
   -x, --through <address>           send through ip or address
-  -i, --interface <device>          bind to interface
+  -i, --interface <device>          send through interface
+  -e, --listen-interface <device>   listen interface
   -a, --listen-transport <options>  listen transport
   -b, --remote-transport <options>  remote transport
 
