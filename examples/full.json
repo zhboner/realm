@@ -37,7 +37,8 @@
       ],
       "balance": "roundrobin: 4, 2, 1",
       "through": "0.0.0.0",
-      "interface": "lo"
+      "interface": "lo",
+      "listen_interface": "lo"
     },
     {
       "listen": "0.0.0.0:10000",
@@ -47,7 +48,8 @@
       ],
       "balance": "roundrobin: 2, 1",
       "through": "0.0.0.0",
-      "interface": "wlan0"
+      "interface": "wlan0",
+      "listen_interface": "lo"
     }
   ]
 }

@@ -226,7 +226,7 @@ remote = "www.google.com:443"
 {
   "log": {
     "level": "warn",
-    "output": "/var/log/realm.log"
+    "output": "realm.log"
   },
   "network": {
     "no_tcp": false,
@@ -283,6 +283,7 @@ remote = "www.google.com:443"
     ├── balance
     ├── through
     ├── interface
+    ├── listen_interface
     ├── listen_transport
     ├── remote_transport
     └── network->
@@ -357,7 +358,11 @@ Supported formats:
 
 #### endpoint.interface: string
 
-Bind to a specific interface.
+Bind to a specific interface for outgoing traffics.
+
+#### endpoint.listen_interface: string
+
+Bind to a specific interface for incoming traffics.
 
 #### endpoint.listen_transport: string
 
