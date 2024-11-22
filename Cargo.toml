@@ -38,7 +38,7 @@ tokio = { version = "1", features = ["rt"] }
 
 # logger
 log = "0.4"
-fern = "0.6"
+fern = "0.7"
 chrono = "0.4"
 
 # command
