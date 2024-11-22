@@ -57,6 +57,7 @@ pub struct ConnectOpts {
 #[derive(Debug, Default, Clone)]
 pub struct BindOpts {
     pub ipv6_only: bool,
+    pub bind_interface: Option<String>,
 }
 
 /// Relay endpoint.
@@ -93,8 +94,18 @@ impl Display for Endpoint {
 
 impl Display for BindOpts {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let BindOpts { ipv6_only } = self;
-        write!(f, "ipv6_only={}", ipv6_only)
+        let BindOpts {
+            ipv6_only,
+            bind_interface,
+        } = self;
+
+        write!(f, "ipv6-only={}", ipv6_only)?;
+
+        if let Some(iface) = bind_interface {
+            write!(f, "listen-iface={}", iface)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -119,7 +130,7 @@ impl Display for ConnectOpts {
         } = self;
 
         if let Some(iface) = bind_interface {
-            write!(f, "bind-iface={}, ", iface)?;
+            write!(f, "send-iface={}, ", iface)?;
         }
 
         if let Some(send_through) = bind_address {
