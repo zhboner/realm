@@ -90,21 +90,27 @@ pub fn add_options(app: Command) -> Command {
         Arg::new("interface")
             .short('i')
             .long("interface")
-            .help("bind to interface")
+            .help("send through interface")
             .value_name("device")
             .display_order(4),
+        Arg::new("listen_interface")
+            .short('e')
+            .long("listen-interface")
+            .help("listen interface")
+            .value_name("device")
+            .display_order(5),
         Arg::new("listen_transport")
             .short('a')
             .long("listen-transport")
             .help("listen transport")
             .value_name("options")
-            .display_order(5),
+            .display_order(6),
         Arg::new("remote_transport")
             .short('b')
             .long("remote-transport")
             .help("remote transport")
             .value_name("options")
-            .display_order(6),
+            .display_order(7),
     ])
 }
 

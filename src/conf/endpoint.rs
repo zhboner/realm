@@ -35,6 +35,10 @@ pub struct EndpointConf {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub listen_interface: Option<String>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub listen_transport: Option<String>,
 
     #[serde(default)]
@@ -155,15 +159,11 @@ impl Config for EndpointConf {
 
         // build partial conn_opts from netconf
         let NetInfo {
-            bind_opts,
+            mut bind_opts,
             mut conn_opts,
             no_tcp,
             use_udp,
         } = self.network.build();
-
-        // build left fields of conn_opts
-
-        conn_opts.bind_address = self.build_send_through();
 
         #[cfg(feature = "balance")]
         {
@@ -175,7 +175,10 @@ impl Config for EndpointConf {
             conn_opts.transport = self.build_transport();
         }
 
+        // build left fields of bind_opts and conn_opts
+        conn_opts.bind_address = self.build_send_through();
         conn_opts.bind_interface = self.interface;
+        bind_opts.bind_interface = self.listen_interface;
 
         EndpointInfo {
             no_tcp,
@@ -203,6 +206,7 @@ impl Config for EndpointConf {
         let remote = matches.get_one("remote").cloned().unwrap();
         let through = matches.get_one("through").cloned();
         let interface = matches.get_one("interface").cloned();
+        let listen_interface = matches.get_one("listen_interface").cloned();
         let listen_transport = matches.get_one("listen_transport").cloned();
         let remote_transport = matches.get_one("remote_transport").cloned();
 
@@ -211,6 +215,7 @@ impl Config for EndpointConf {
             remote,
             through,
             interface,
+            listen_interface,
             listen_transport,
             remote_transport,
             network: Default::default(),

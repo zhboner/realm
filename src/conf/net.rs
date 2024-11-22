@@ -90,7 +90,10 @@ impl Config for NetConf {
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
 
-        let bind_opts = BindOpts { ipv6_only };
+        let bind_opts = BindOpts {
+            ipv6_only,
+            bind_interface: None,
+        };
         let conn_opts = ConnectOpts {
             tcp_keepalive: tcp_kpa,
             tcp_keepalive_probe: tcp_kpa_probe,

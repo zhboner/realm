@@ -22,9 +22,7 @@ pub enum CmdInput {
 
 pub fn scan() -> CmdInput {
     let ver = format!("{} {}", VERSION, FEATURES);
-    let app = Command::new("Realm")
-        .about("A high efficiency relay tool")
-        .version(ver);
+    let app = Command::new("Realm").about("A high efficiency relay tool").version(ver);
 
     let app = app
         .disable_help_flag(true)

@@ -98,7 +98,7 @@ impl FullConf {
             .filter_entry(|e| e.file_name().to_str().is_some_and(|x| !x.starts_with('.')))
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
-            .filter(|e| e.path().extension().map_or(false, |s| s == "toml" || s == "json"))
+            .filter(|e| e.path().extension().is_some_and(|s| s == "toml" || s == "json"))
         {
             let conf_part = fs::read_to_string(entry.path())
                 .unwrap_or_else(|e| panic!("failed to open {}: {}", entry.path().to_string_lossy(), e));
