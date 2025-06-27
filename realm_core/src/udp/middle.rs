@@ -45,7 +45,7 @@ mod registry {
             group_by_inner(&mut self.pkts[..n], &mut self.groups, |a, b| a.addr == b.addr);
         }
 
-        pub fn group_iter(&self) -> GroupIter {
+        pub fn group_iter(&self) -> GroupIter<'_> {
             GroupIter {
                 pkts: &self.pkts,
                 ranges: self.groups.iter(),

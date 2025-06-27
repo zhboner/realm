@@ -107,7 +107,7 @@ pub enum LookupRemoteAddr<'a> {
 
 impl LookupRemoteAddr<'_> {
     /// Get view of resolved result.
-    pub fn iter(&self) -> LookupRemoteAddrIter {
+    pub fn iter(&self) -> LookupRemoteAddrIter<'_> {
         use LookupRemoteAddr::*;
         match self {
             NoLookup(addr) => LookupRemoteAddrIter::NoLookup(std::iter::once(addr)),
