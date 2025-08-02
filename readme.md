@@ -114,6 +114,7 @@ FLAGS:
   -v, --version  show version
   -d, --daemon   run as a unix daemon
   -u, --udp      force enable udp forward
+  -m, --mtcp     force enable mptcp protocol
   -t, --ntcp     force disable tcp forward
   -6, --ipv6     force disable ipv6 mapped ipv4
   -f, --tfo      force enable tcp fast open -- deprecated
@@ -273,6 +274,8 @@ remote = "www.google.com:443"
 │   ├── udp_timeout
 │   ├── tcp_keepalive
 │   ├── tcp_keepalive_probe
+│   ├── send_mptcp
+│   ├── accept_mptcp
 │   ├── send_proxy
 │   ├── send_proxy_version
 │   ├── accept_proxy
@@ -546,6 +549,22 @@ TCP Keepalive retries.
 On Linux, this is equivalent to `ipv4.tcp_keepalive_probes`.
 
 default: 3
+
+#### network.send_mptcp: bool
+
+Enable MPTCP outbound connections on Linux.
+
+Requires a higher kernel version(>5.6) with `net.mptcp.enabled=1`.
+
+See also [Path Manager](https://www.mptcp.dev/pm.html) guidelines.
+
+default: false
+
+#### network.accept_mptcp: bool
+
+Enable MPTCP inbound connections on Linux.
+
+default: false
 
 #### network.send_proxy: bool
 
