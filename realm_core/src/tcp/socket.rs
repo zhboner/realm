@@ -55,7 +55,7 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
         let socket = new_tcp_socket(&addr)?;
 
         // ignore error
-        let _ = socket.set_nodelay(true);
+        let _ = socket.set_tcp_nodelay(true);
         let _ = socket.set_reuse_address(true);
 
         if let Some(addr) = *bind_address {
@@ -107,7 +107,7 @@ pub(super) mod keepalive {
         {
             kpa = TcpKeepalive::with_interval(kpa, secs);
         }
-        #[cfg(not(any(target_os = "openbsd", target_os = "windows")))]
+        #[cfg(not(target_os = "openbsd"))]
         {
             let probe = *tcp_keepalive_probe as u32;
             kpa = TcpKeepalive::with_retries(kpa, probe);
