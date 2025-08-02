@@ -1,6 +1,6 @@
 use std::io::Result;
 use std::net::SocketAddr;
-use socket2::{Socket, Domain, Type};
+use socket2::{Socket, Domain, Type, Protocol};
 
 /// Create a new non-blocking socket.
 ///
@@ -20,11 +20,17 @@ use socket2::{Socket, Domain, Type};
     target_os = "openbsd"
 ))]
 #[inline]
-pub fn new_socket(domain: Domain, ty: Type) -> Result<Socket> {
+pub fn new_socket(domain: Domain, ty: Type, pt: Protocol) -> Result<Socket> {
     use std::os::unix::prelude::FromRawFd;
     use libc::{SOCK_NONBLOCK, SOCK_CLOEXEC};
 
-    let fd = unsafe { libc::socket(domain.into(), libc::c_int::from(ty) | SOCK_NONBLOCK | SOCK_CLOEXEC, 0) };
+    let fd = unsafe {
+        libc::socket(
+            domain.into(),
+            libc::c_int::from(ty) | SOCK_NONBLOCK | SOCK_CLOEXEC,
+            pt.into(),
+        )
+    };
 
     if fd < 0 {
         Err(std::io::Error::last_os_error())
@@ -44,8 +50,8 @@ pub fn new_socket(domain: Domain, ty: Type) -> Result<Socket> {
     target_os = "openbsd"
 )))]
 #[inline]
-pub fn new_socket(domain: Domain, ty: Type) -> Result<Socket> {
-    let socket = Socket::new(domain, ty, None)?;
+pub fn new_socket(domain: Domain, ty: Type, pt: Protocol) -> Result<Socket> {
+    let socket = Socket::new(domain, ty, pt)?;
     socket.set_nonblocking(true)?;
     Ok(socket)
 }
@@ -64,7 +70,18 @@ pub fn new_tcp_socket(addr: &SocketAddr) -> Result<Socket> {
         SocketAddr::V4(..) => Domain::IPV4,
         SocketAddr::V6(..) => Domain::IPV6,
     };
-    new_socket(domain, Type::STREAM)
+    new_socket(domain, Type::STREAM, Protocol::TCP)
+}
+
+/// Create a new non-blocking MPTCP socket.
+#[cfg(target_os = "linux")]
+#[inline]
+pub fn new_mptcp_socket(addr: &SocketAddr) -> Result<Socket> {
+    let domain = match addr {
+        SocketAddr::V4(..) => Domain::IPV4,
+        SocketAddr::V6(..) => Domain::IPV6,
+    };
+    new_socket(domain, Type::STREAM, Protocol::MPTCP)
 }
 
 /// Create a new non-blocking UDP socket.
@@ -81,7 +98,7 @@ pub fn new_udp_socket(addr: &SocketAddr) -> Result<Socket> {
         SocketAddr::V4(..) => Domain::IPV4,
         SocketAddr::V6(..) => Domain::IPV6,
     };
-    new_socket(domain, Type::DGRAM)
+    new_socket(domain, Type::DGRAM, Protocol::UDP)
 }
 
 /// Bind a socket to a specific network interface.
