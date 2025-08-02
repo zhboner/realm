@@ -37,6 +37,7 @@ impl ProxyOpts {
 /// Connect or associate options.
 #[derive(Debug, Default, Clone)]
 pub struct ConnectOpts {
+    pub send_mptcp: bool,
     pub connect_timeout: usize,
     pub associate_timeout: usize,
     pub tcp_keepalive: usize,
@@ -57,6 +58,7 @@ pub struct ConnectOpts {
 #[derive(Debug, Default, Clone)]
 pub struct BindOpts {
     pub ipv6_only: bool,
+    pub accept_mptcp: bool,
     pub bind_interface: Option<String>,
 }
 
@@ -95,16 +97,15 @@ impl Display for Endpoint {
 impl Display for BindOpts {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let BindOpts {
+            accept_mptcp,
             ipv6_only,
             bind_interface,
         } = self;
-
-        write!(f, "ipv6-only={}", ipv6_only)?;
-
         if let Some(iface) = bind_interface {
-            write!(f, "listen-iface={}", iface)?;
+            write!(f, "listen-iface={}, ", iface)?;
         }
-
+        write!(f, "ipv6-only={}, ", ipv6_only)?;
+        write!(f, "accept-mptcp={}", accept_mptcp)?;
         Ok(())
     }
 }
@@ -112,6 +113,7 @@ impl Display for BindOpts {
 impl Display for ConnectOpts {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let ConnectOpts {
+            send_mptcp,
             connect_timeout,
             associate_timeout,
             tcp_keepalive,
@@ -134,8 +136,10 @@ impl Display for ConnectOpts {
         }
 
         if let Some(send_through) = bind_address {
-            write!(f, "send-through={}; ", send_through)?;
+            write!(f, "send-through={}, ", send_through)?;
         }
+
+        write!(f, "send-mptcp={}; ", send_mptcp)?;
 
         #[cfg(feature = "proxy")]
         {

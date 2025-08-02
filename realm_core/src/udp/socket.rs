@@ -10,6 +10,7 @@ pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<UdpSocket> {
     let BindOpts {
         ipv6_only,
         bind_interface,
+        ..
     } = bind_opts;
     let socket = new_udp_socket(laddr)?;
 

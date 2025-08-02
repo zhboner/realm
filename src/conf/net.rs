@@ -23,6 +23,14 @@ pub struct NetConf {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub send_mptcp: Option<bool>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accept_mptcp: Option<bool>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub send_proxy: Option<bool>,
 
     #[serde(default)]
@@ -67,6 +75,7 @@ impl Config for NetConf {
     fn is_empty(&self) -> bool {
         crate::empty![self =>
             no_tcp, use_udp, ipv6_only,
+            send_mptcp, accept_mptcp,
             send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout,
             tcp_keepalive, tcp_keepalive_probe, tcp_timeout, udp_timeout
         ]
@@ -85,6 +94,8 @@ impl Config for NetConf {
         let no_tcp = unbox!(no_tcp);
         let use_udp = unbox!(use_udp);
         let ipv6_only = unbox!(ipv6_only);
+        let send_mptcp = unbox!(send_mptcp);
+        let accept_mptcp = unbox!(accept_mptcp);
         let tcp_kpa = unbox!(tcp_keepalive, TCP_KEEPALIVE);
         let tcp_kpa_probe = unbox!(tcp_keepalive_probe, TCP_KEEPALIVE_PROBE);
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
@@ -92,9 +103,11 @@ impl Config for NetConf {
 
         let bind_opts = BindOpts {
             ipv6_only,
+            accept_mptcp,
             bind_interface: None,
         };
         let conn_opts = ConnectOpts {
+            send_mptcp,
             tcp_keepalive: tcp_kpa,
             tcp_keepalive_probe: tcp_kpa_probe,
             connect_timeout: tcp_timeout,
@@ -141,6 +154,8 @@ impl Config for NetConf {
         rst!(self, no_tcp, other);
         rst!(self, use_udp, other);
         rst!(self, ipv6_only, other);
+        rst!(self, send_mptcp, other);
+        rst!(self, accept_mptcp, other);
         rst!(self, tcp_keepalive, other);
         rst!(self, tcp_keepalive_probe, other);
         rst!(self, tcp_timeout, other);
@@ -159,6 +174,8 @@ impl Config for NetConf {
         take!(self, no_tcp, other);
         take!(self, use_udp, other);
         take!(self, ipv6_only, other);
+        take!(self, send_mptcp, other);
+        take!(self, accept_mptcp, other);
         take!(self, tcp_keepalive, other);
         take!(self, tcp_keepalive_probe, other);
         take!(self, tcp_timeout, other);
@@ -186,7 +203,11 @@ impl Config for NetConf {
 
         let no_tcp = unpack!("no_tcp");
         let use_udp = unpack!("use_udp");
+        let use_mptcp = unpack!("use_mptcp");
         let ipv6_only = unpack!("ipv6_only");
+
+        let send_mptcp = use_mptcp;
+        let accept_mptcp = use_mptcp;
 
         let tcp_keepalive = unpack!("tcp_keepalive", usize);
         let tcp_keepalive_probe = unpack!("tcp_keepalive", usize);
@@ -203,6 +224,8 @@ impl Config for NetConf {
             no_tcp,
             use_udp,
             ipv6_only,
+            send_mptcp,
+            accept_mptcp,
             tcp_keepalive,
             tcp_keepalive_probe,
             tcp_timeout,

@@ -2,19 +2,37 @@ use std::io::{Result, Error, ErrorKind};
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use realm_syscall::new_tcp_socket;
+use realm_syscall::socket2::Socket;
 use tokio::net::{TcpSocket, TcpStream, TcpListener};
 
 use crate::dns::resolve_addr;
 use crate::time::timeoutfut;
 use crate::endpoint::{RemoteAddr, BindOpts, ConnectOpts};
 
+fn new_socket(addr: &SocketAddr, mptcp: bool) -> Result<Socket> {
+    #[cfg(target_os = "linux")]
+    {
+        let call = if mptcp {
+            realm_syscall::new_mptcp_socket
+        } else {
+            realm_syscall::new_tcp_socket
+        };
+        call(addr)
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        realm_syscall::new_tcp_socket(addr)
+    }
+}
+
 pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<TcpListener> {
     let BindOpts {
+        accept_mptcp,
         ipv6_only,
         bind_interface,
     } = bind_opts;
-    let socket = new_tcp_socket(laddr)?;
+    let socket = new_socket(laddr, accept_mptcp)?;
 
     // ipv6_only
     if let SocketAddr::V6(_) = laddr {
@@ -38,6 +56,7 @@ pub fn bind(laddr: &SocketAddr, bind_opts: BindOpts) -> Result<TcpListener> {
 
 pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpStream> {
     let ConnectOpts {
+        send_mptcp,
         connect_timeout,
         bind_address,
 
@@ -52,7 +71,7 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
     for addr in resolve_addr(raddr).await?.iter() {
         log::debug!("[tcp]{} resolved as {}", raddr, &addr);
 
-        let socket = new_tcp_socket(&addr)?;
+        let socket = new_socket(&addr, *send_mptcp)?;
 
         // ignore error
         let _ = socket.set_tcp_nodelay(true);
