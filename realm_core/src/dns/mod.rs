@@ -2,7 +2,7 @@
 
 //! Global dns resolver.
 
-use std::io::{Result, Error, ErrorKind};
+use std::io::{Result, Error};
 use std::net::SocketAddr;
 
 use hickory_resolver as resolver;
@@ -82,11 +82,7 @@ pub fn build_lazy(conf: Option<ResolverConfig>, opts: Option<ResolverOpts>) {
 
 /// Lookup ip with global dns resolver.
 pub async fn resolve_ip(ip: &str) -> Result<LookupIp> {
-    unsafe {
-        DNS.lookup_ip(ip)
-            .await
-            .map_or_else(|e| Err(Error::new(ErrorKind::Other, e)), Ok)
-    }
+    unsafe { DNS.lookup_ip(ip).await.map_or_else(|e| Err(Error::other(e)), Ok) }
 }
 
 /// Lookup socketaddr with global dns resolver.

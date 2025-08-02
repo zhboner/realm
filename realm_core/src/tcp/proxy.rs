@@ -1,4 +1,4 @@
-use std::io::{Error, ErrorKind, Result};
+use std::io::{Error, Result};
 use std::mem::MaybeUninit;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
@@ -54,7 +54,7 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
         let mut slice = buf.as_ref();
 
         // slice is advanced
-        let header = parse(&mut slice).map_err(|e| Error::new(ErrorKind::Other, e))?;
+        let header = parse(&mut slice).map_err(Error::other)?;
         let parsed_n = peek_n - slice.remaining();
         debug!("[tcp]proxy-protocol parsed, {} bytes", parsed_n);
 
@@ -93,8 +93,7 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
     let server_addr = unsafe { server_addr.assume_init() };
 
     // write header
-    let header = encode(make_header(client_addr, server_addr, send_proxy_version))
-        .map_err(|e| Error::new(ErrorKind::Other, e))?;
+    let header = encode(make_header(client_addr, server_addr, send_proxy_version)).map_err(Error::other)?;
     debug!("[tcp]send initial {} bytes: {:#x}", header.len(), &header);
     dst.write_all(&header).await?;
 

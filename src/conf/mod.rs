@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{Result, Error, ErrorKind};
+use std::io::{Result, Error};
 
 use walkdir::WalkDir;
 use clap::ArgMatches;
@@ -130,13 +130,10 @@ impl FullConf {
             Err(e) => e,
         };
 
-        Err(Error::new(
-            ErrorKind::Other,
-            format!(
-                "parse as toml: {0}; parse as json: {1}; parse as legacy: {2}",
-                toml_err, json_err, legacy_err
-            ),
-        ))
+        Err(Error::other(format!(
+            "parse as toml: {0}; parse as json: {1}; parse as legacy: {2}",
+            toml_err, json_err, legacy_err
+        )))
     }
 
     fn take_fields(&mut self, other: Self) {
