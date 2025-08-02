@@ -51,7 +51,7 @@ pub fn new_socket(domain: Domain, ty: Type, pt: Protocol) -> Result<Socket> {
 )))]
 #[inline]
 pub fn new_socket(domain: Domain, ty: Type, pt: Protocol) -> Result<Socket> {
-    let socket = Socket::new(domain, ty, pt)?;
+    let socket = Socket::new(domain, ty, Some(pt))?;
     socket.set_nonblocking(true)?;
     Ok(socket)
 }
