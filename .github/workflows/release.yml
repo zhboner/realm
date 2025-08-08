@@ -87,6 +87,8 @@ jobs:
           files: release-${{ matrix.target }}/*
   release-apple:
     runs-on: macos-latest
+    env:
+        IPHONEOS_DEPLOYMENT_TARGET: "17.5"
     strategy:
       matrix:
         target:

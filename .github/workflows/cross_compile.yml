@@ -76,6 +76,8 @@ jobs:
           path: target/${{ matrix.target }}/release/realm.exe
   build-apple:
     runs-on: macos-latest
+    env:
+        IPHONEOS_DEPLOYMENT_TARGET: "17.5"
     strategy:
       matrix:
         target:
