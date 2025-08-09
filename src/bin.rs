@@ -58,6 +58,7 @@ fn start_from_conf(full: FullConf) {
 
     setup_log(log_conf);
     setup_dns(dns_conf);
+    setup_transport();
 
     let endpoints: Vec<EndpointInfo> = endpoints_conf
         .into_iter()
@@ -93,6 +94,13 @@ fn setup_dns(dns: DnsConf) {
 
     let (conf, opts) = dns.build();
     realm::core::dns::build_lazy(conf, opts);
+}
+
+fn setup_transport() {
+    #[cfg(feature = "transport")]
+    {
+        realm::core::kaminari::install_tls_provider();
+    }
 }
 
 fn execute(eps: Vec<EndpointInfo>) {
