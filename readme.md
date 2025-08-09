@@ -68,6 +68,7 @@ The `realm` binary will be available in `target/release`.
 - proxy: enable proxy-protocol.
 - balance: enable load balance.
 - transport: enable ws/tls/wss.
+- transport-tls-ring: use [ring](https://github.com/briansmith/ring) instead of [aws-lc](https://github.com/aws/aws-lc-rs) as rustls backend.
 - batched-udp: enable more efficient udp on linux.
 - multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
