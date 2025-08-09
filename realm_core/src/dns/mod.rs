@@ -6,11 +6,10 @@ use std::io::{Result, Error};
 use std::net::SocketAddr;
 
 use hickory_resolver as resolver;
-use resolver::TokioAsyncResolver;
+use resolver::TokioResolver;
 use resolver::system_conf::read_system_conf;
 use resolver::lookup_ip::{LookupIp, LookupIpIter};
-pub use resolver::config;
-use config::{ResolverOpts, ResolverConfig};
+use resolver::config::{ResolverOpts, ResolverConfig};
 
 #[cfg(not(feature = "multi-thread"))]
 use once_cell::unsync::{OnceCell, Lazy};
@@ -19,6 +18,12 @@ use once_cell::unsync::{OnceCell, Lazy};
 use once_cell::{unsync::OnceCell, sync::Lazy};
 
 use crate::endpoint::RemoteAddr;
+
+pub mod config {
+    use super::resolver;
+    pub use resolver::config::*;
+    pub use resolver::proto::xfer::Protocol;
+}
 
 /// Dns config.
 #[derive(Debug, Clone)]
@@ -43,9 +48,14 @@ impl Default for DnsConf {
 
 static mut DNS_CONF: OnceCell<DnsConf> = OnceCell::new();
 
-static mut DNS: Lazy<TokioAsyncResolver> = Lazy::new(|| {
+static mut DNS: Lazy<TokioResolver> = Lazy::new(|| {
+    use resolver::proto::runtime::TokioRuntimeProvider as Tokio;
+    use resolver::name_server::GenericConnector as Connect;
+
     let DnsConf { conf, opts } = unsafe { DNS_CONF.take().unwrap() };
-    TokioAsyncResolver::tokio(conf, opts)
+    TokioResolver::builder_with_config(conf, Connect::new(Tokio::new()))
+        .with_options(opts)
+        .build()
 });
 
 /// Force initialization.

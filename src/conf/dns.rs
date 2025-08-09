@@ -266,6 +266,7 @@ impl Config for DnsConf {
                     tls_dns_name: None,
                     trust_negative_responses: true,
                     bind_addr: None,
+                    http_endpoint: None,
                 });
             }
         }
