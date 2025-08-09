@@ -969,9 +969,9 @@ dependencies = [
 
 [[package]]
 name = "kaminari"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b65e038788041d43f59c28a5675fe6a619a613901b694ea1d6c9c4a2f695f979"
+checksum = "666c8029950f97555b7a442951494a363a90008719f690822c5d5d8f9c029fba"
 dependencies = [
  "aws-lc-rs",
  "lazy_static",
@@ -1593,6 +1593,7 @@ dependencies = [
  "aws-lc-rs",
  "log",
  "once_cell",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
