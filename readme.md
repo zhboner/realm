@@ -68,14 +68,15 @@ The `realm` binary will be available in `target/release`.
 - proxy: enable proxy-protocol.
 - balance: enable load balance.
 - transport: enable ws/tls/wss.
-- transport-tls-ring: use [ring](https://github.com/briansmith/ring) instead of [aws-lc](https://github.com/aws/aws-lc-rs) as rustls backend.
+- transport-tls-ring: use [ring](https://github.com/briansmith/ring) as rustls backend.
+- transport-tls-awslc: use [aws-lc](https://github.com/aws/aws-lc-rs) as rustls backend.
 - batched-udp: enable more efficient udp on linux.
 - multi-thread: enable tokio's multi-threaded IO scheduler.
 - mi-malloc: custom memory allocator.
 - jemalloc: custom memory allocator.
 - page-alloc: custom memory allocator.
 
-Default: proxy + balance + transport + batched-udp + brutal-shutdown + multi-thread.
+Default: proxy + balance + transport + transport-tls-awslc + batched-udp + brutal-shutdown + multi-thread.
 
 See also: [Cargo.toml](Cargo.toml).
 
@@ -89,9 +90,18 @@ cargo build --release --no-default-features
 cargo build --release --features 'jemalloc'
 
 # fully customized
-cargo build --release
-    --no-default-features
+cargo build --release \
+    --no-default-features \
     --features 'transport, multi-thread, jemalloc'
+
+# (since v2.9) use ring as rustls backend
+cargo build --release \
+    --no-default-features \
+    --features 'multi-thread, brutal-shutdown' \
+    --features 'proxy, balance, batched-udp' \
+    --features 'transport, transport-tls-ring'
+# equals
+cargo build --release --no-default-features --features default-ring
 ```
 
 ### Cross Compile

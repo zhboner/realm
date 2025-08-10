@@ -16,7 +16,7 @@ realm_io = { version = "0.5" }
 realm_syscall = "0.1"
 realm_hook = { version = "0.1", optional = true }
 realm_lb = { version = "0.1", optional = true }
-kaminari = { version = "0.13", features = ["ws", "tls", "mix"], optional = true }
+kaminari = { version = "0.14", features = ["ws", "tls", "mix"], optional = true }
 
 # other
 futures = "0.3"
@@ -36,6 +36,7 @@ brutal-shutdown = ["realm_io/brutal-shutdown"]
 transport = ["kaminari"]
 transport-boost = []
 transport-tls-ring = ["kaminari/tls-ring"]
+transport-tls-awslc = ["kaminari/tls-awslc"]
 proxy = ["proxy-protocol", "bytes", "tokio/io-util"]
 batched-udp = []
 multi-thread = []

@@ -61,13 +61,15 @@ tokio = { version = "1", features = ["macros"] }
 
 
 [features]
-default = ["proxy", "balance", "multi-thread", "transport", "batched-udp", "brutal-shutdown"]
+default = ["proxy", "balance", "multi-thread", "transport", "transport-tls-awslc", "batched-udp", "brutal-shutdown"]
+default-ring = ["proxy", "balance", "multi-thread", "transport", "transport-tls-ring", "batched-udp", "brutal-shutdown"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
 brutal-shutdown = ["realm_core/brutal-shutdown"]
 balance = ["realm_core/balance"]
 transport = ["realm_core/transport", "realm_core/transport-boost"]
 transport-tls-ring = ["realm_core/transport-tls-ring"]
+transport-tls-awslc = ["realm_core/transport-tls-awslc"]
 batched-udp = ["realm_core/batched-udp"]
 multi-thread = ["tokio/rt-multi-thread", "realm_core/multi-thread"]
 jemalloc = ["jemallocator"]
@@ -82,3 +84,7 @@ codegen-units = 1
 incremental = false
 panic = "unwind"
 strip = true
+
+[profile.release-thin]
+inherits = "release"
+opt-level = "s"
