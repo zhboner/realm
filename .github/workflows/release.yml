@@ -37,17 +37,56 @@ jobs:
       - name: compile
         run: cross build --release --target=${{ matrix.target }}
       - name: pack unix binary
-        if: "!contains(matrix.target, 'windows')"
+        if: ${{ !contains(matrix.target, 'windows') }}
         run: |
           mkdir -p release-${{ matrix.target }}
           cd release-${{ matrix.target }}
           tar -C ../target/${{ matrix.target }}/release -zcf realm-${{ matrix.target }}.tar.gz realm
       - name: pack windows binary
-        if: "contains(matrix.target, 'windows')"
+        if: ${{ contains(matrix.target, 'windows') }}
         run: |
           mkdir -p release-${{ matrix.target }}
           cd release-${{ matrix.target }}
           tar -C ../target/${{ matrix.target }}/release -zcf realm-${{ matrix.target }}.tar.gz realm.exe
+      - name: add signature
+        run: |
+          cd release-${{ matrix.target }}
+          sha256sum realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
+      - name: release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-${{ matrix.target }}/*
+  release-corss-mips:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target:
+          - mips-unknown-linux-gnu
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-gnu
+          - mipsel-unknown-linux-musl
+          - mips64-unknown-linux-gnuabi64
+          - mips64-unknown-linux-muslabi64
+          - mips64el-unknown-linux-gnuabi64
+          - mips64el-unknown-linux-muslabi64
+    steps:
+      - uses: actions/checkout@v4
+      - name: install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+            toolchain: nightly
+            targets: 'x86_64-unknown-linux-gnu'
+      - name: install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: compile
+        run: RUSTFLAGS='-C target-feature=-crt-static' cross build --profile=release-thin --no-default-features --features default-ring --target=${{ matrix.target }}
+      - name: pack unix-mips binary
+        run: |
+          mkdir -p release-${{ matrix.target }}
+          cd release-${{ matrix.target }}
+          tar -C ../target/${{ matrix.target }}/release-thin -zcf realm-${{ matrix.target }}.tar.gz realm
       - name: add signature
         run: |
           cd release-${{ matrix.target }}

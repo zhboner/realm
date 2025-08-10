@@ -1014,9 +1014,9 @@ dependencies = [
 
 [[package]]
 name = "kaminari"
-version = "0.13.3"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "666c8029950f97555b7a442951494a363a90008719f690822c5d5d8f9c029fba"
+checksum = "2546fd61ce52ddfbe635992d3305cc6a182e2c6d7de208850847265186096dce"
 dependencies = [
  "aws-lc-rs",
  "lazy_static",
@@ -1501,6 +1501,7 @@ version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0068c5b3cab1d4e271e0bb6539c87563c43411cad90b057b15c79958fbeb41f7"
 dependencies = [
+ "aws-lc-rs",
  "pem",
  "ring",
  "rustls-pki-types",
@@ -1510,7 +1511,7 @@ dependencies = [
 
 [[package]]
 name = "realm"
-version = "2.9.0"
+version = "2.9.1"
 dependencies = [
  "cfg-if",
  "chrono",
@@ -1735,7 +1736,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0ebcbd2f03de0fc1122ad9bb24b127a5a6cd51d72604a3f3c50ac459762b6cc"
 dependencies = [
  "aws-lc-rs",
- "log",
  "once_cell",
  "ring",
  "rustls-pki-types",

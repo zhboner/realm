@@ -43,17 +43,46 @@ jobs:
       - name: compile
         run: cross build --release --target=${{ matrix.target }}
       - name: upload unix binary
-        if: "!contains(matrix.target, 'windows')"
+        if: ${{ !contains(matrix.target, 'windows') }}
         uses: actions/upload-artifact@v4
         with:
           name: realm-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/realm
       - name: upload windows binary
-        if: "contains(matrix.target, 'windows')"
+        if: ${{ contains(matrix.target, 'windows') }}
         uses: actions/upload-artifact@v4
         with:
           name: realm-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/realm.exe
+  build-corss-mips:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target:
+          - mips-unknown-linux-gnu
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-gnu
+          - mipsel-unknown-linux-musl
+          - mips64-unknown-linux-gnuabi64
+          - mips64-unknown-linux-muslabi64
+          - mips64el-unknown-linux-gnuabi64
+          - mips64el-unknown-linux-muslabi64
+    steps:
+      - uses: actions/checkout@v4
+      - name: install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+            toolchain: nightly
+            targets: 'x86_64-unknown-linux-gnu'
+      - name: install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: compile
+        run: RUSTFLAGS='-C target-feature=-crt-static' cross build --profile=release-thin --no-default-features --features default-ring --target=${{ matrix.target }}
+      - name: upload unix-mips binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: realm-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release-thin/realm
   build-windows:
     runs-on: windows-latest
     strategy:
