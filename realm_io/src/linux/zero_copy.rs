@@ -43,6 +43,11 @@ impl Drop for Pipe {
     }
 }
 
+/// # Safety
+///
+/// Parameter `n` must satisfy 0 <= n <= isize::MAX
+///
+/// This constraint is enforced by the kernel's system call API, not by this wrapper function
 #[inline]
 fn splice_n(r: RawFd, w: RawFd, n: usize) -> isize {
     use libc::{loff_t, SPLICE_F_MOVE, SPLICE_F_NONBLOCK};
@@ -67,7 +72,7 @@ where
     type StreamW = SW;
 
     fn poll_read_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamR) -> Poll<Result<usize>> {
-        stream.poll_read_raw(cx, || splice_n(stream.as_raw_fd(), self.buf.1, usize::MAX))
+        stream.poll_read_raw(cx, || splice_n(stream.as_raw_fd(), self.buf.1, isize::MAX as usize))
     }
 
     fn poll_write_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamW) -> Poll<Result<usize>> {
@@ -88,7 +93,7 @@ where
     type StreamW = SW;
 
     fn poll_read_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamR) -> Poll<Result<usize>> {
-        stream.poll_read_raw(cx, || splice_n(stream.as_raw_fd(), self.buf.1, usize::MAX))
+        stream.poll_read_raw(cx, || splice_n(stream.as_raw_fd(), self.buf.1, isize::MAX as usize))
     }
 
     fn poll_write_buf(&mut self, cx: &mut Context<'_>, stream: &mut Self::StreamW) -> Poll<Result<usize>> {
