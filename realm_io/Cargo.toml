@@ -1,6 +1,6 @@
 [package]
 name = "realm_io"
-version = "0.5.1"
+version = "0.5.3"
 authors = ["zephyr <i@zephyr.moe>"]
 description = "Realm's high performance IO collections."
 repository = "https://github.com/zhboner/realm"
