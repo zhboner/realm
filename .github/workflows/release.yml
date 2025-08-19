@@ -48,10 +48,6 @@ jobs:
           mkdir -p release-${{ matrix.target }}
           cd release-${{ matrix.target }}
           tar -C ../target/${{ matrix.target }}/release -zcf realm-${{ matrix.target }}.tar.gz realm.exe
-      - name: add signature
-        run: |
-          cd release-${{ matrix.target }}
-          sha256sum realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
       - name: release
         uses: softprops/action-gh-release@v1
         env:
@@ -87,10 +83,6 @@ jobs:
           mkdir -p release-${{ matrix.target }}
           cd release-${{ matrix.target }}
           tar -C ../target/${{ matrix.target }}/release-thin -zcf realm-${{ matrix.target }}.tar.gz realm
-      - name: add signature
-        run: |
-          cd release-${{ matrix.target }}
-          sha256sum realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
       - name: release
         uses: softprops/action-gh-release@v1
         env:
@@ -117,7 +109,6 @@ jobs:
           mkdir -p release-${{ matrix.target }}
           cd release-${{ matrix.target }}
           tar -C ../target/${{ matrix.target }}/release/ -zcf realm-${{ matrix.target }}.tar.gz realm.exe
-          openssl dgst -sha256 -r realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
       - name: release
         uses: softprops/action-gh-release@v1
         env:
@@ -148,7 +139,6 @@ jobs:
           mkdir -p release-${{ matrix.target }}
           cd release-${{ matrix.target }}
           tar -C ../target/${{ matrix.target }}/release/ -zcf realm-${{ matrix.target }}.tar.gz realm
-          shasum -a 256 realm-${{ matrix.target }}.tar.gz > realm-${{ matrix.target }}.sha256
       - name: release
         uses: softprops/action-gh-release@v1
         env:
