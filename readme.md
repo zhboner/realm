@@ -118,6 +118,7 @@ A high efficiency relay tool
 Usage: realm [FLAGS] [OPTIONS]
 
 Commands:
+  api      start HTTP API server for instance management
   convert  convert your legacy configuration into an advanced one
 
 FLAGS:
@@ -208,6 +209,16 @@ Convert a legacy config file:
 realm convert old.json
 ```
 
+Start HTTP API server:
+
+```shell
+# Start without authentication (development only)
+realm api --port 8080
+
+# Start with API key authentication (recommended)
+realm api --port 8080 --api-key "your-secure-api-key-here"
+```
+
 ## Configuration
 
 TOML Example
@@ -263,6 +274,37 @@ remote = "www.google.com:443"
 </details>
 
 [See more examples here](./examples).
+
+## HTTP API
+
+Realm now supports HTTP API for managing instances with OpenAPI standard and API key authentication.
+
+### Quick Start
+
+```shell
+# Start without authentication (not recommended for production)
+./target/release/realm api --port 8080
+
+# Start with API key authentication (recommended)
+./target/release/realm api --port 8080 --api-key "your-secure-api-key-here"
+```
+
+### API Endpoints
+
+- `GET /instances` - List all instances
+- `POST /instances` - Create a new instance
+- `GET /instances/{id}` - Get instance details
+- `PUT /instances/{id}` - Update instance configuration
+- `DELETE /instances/{id}` - Delete instance
+- `POST /instances/{id}/start` - Start a stopped instance
+- `POST /instances/{id}/stop` - Stop a running instance
+- `POST /instances/{id}/restart` - Restart an instance
+
+### OpenAPI Documentation
+
+Visit `http://localhost:8080/swagger-ui` for interactive API documentation.
+
+For complete API documentation with examples, security best practices, and advanced configurations, see [readme.api.md](readme.api.md).
 
 ## Overview
 

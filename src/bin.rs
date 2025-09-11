@@ -4,6 +4,7 @@ use cfg_if::cfg_if;
 use realm::cmd;
 use realm::conf::{Config, FullConf, LogConf, DnsConf, EndpointInfo};
 use realm::ENV_CONFIG;
+use realm::api;
 
 cfg_if! {
     if #[cfg(feature = "mi-malloc")] {
@@ -40,6 +41,14 @@ fn main() {
                 let mut conf = FullConf::from_conf_file(&conf);
                 conf.apply_global_opts().apply_cmd_opts(opts);
                 conf
+            }
+            CmdInput::Api(port, api_key) => {
+                tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(api::start_api_server(port, api_key));
+                std::process::exit(0);
             }
             CmdInput::None => std::process::exit(0),
         }
