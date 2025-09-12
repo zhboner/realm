@@ -1,527 +1,624 @@
-# Realm API Documentation
+# Realm HTTP API Documentation
 
-Realm supports HTTP API for managing instances with OpenAPI standard and API key authentication.
+Realm provides HTTP API for dynamic instance management with two deployment modes: basic mode for simple use cases and hybrid mode for enterprise deployments with global configuration management.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Deployment Modes](#deployment-modes)
 - [API Authentication](#api-authentication)
-- [API Endpoints](#api-endpoints)
-- [Complete API Usage Examples](#complete-api-usage-examples)
-- [Instance Management Examples](#instance-management-examples)
-- [Advanced Configuration Examples](#advanced-configuration-examples)
-- [Security Best Practices](#security-best-practices)
+- [Global Configuration Architecture](#global-configuration-architecture)
+- [API Reference](#api-reference)
+- [Instance Configuration Fields](#instance-configuration-fields)
+- [Usage Examples](#usage-examples)
+- [Best Practices](#best-practices)
 - [Error Handling](#error-handling)
 
 ## Quick Start
 
 ### Start API Server
 
-```shell
-# Start without authentication (not recommended for production)
-./target/release/realm api --port 8080
+```bash
+# Basic mode
+realm api --port 8080 --api-key "your-api-key"
 
-# Start with API key authentication (recommended)
-./target/release/realm api --port 8080 --api-key "your-secure-api-key-here"
+# Hybrid mode
+realm api -c config.json --port 8080 --api-key "your-api-key"
 ```
 
-### Basic Usage
+### Create First Proxy Instance
 
 ```bash
-# Create a simple proxy instance
 curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "listen": "127.0.0.1:1080",
-    "remote": "example.com:80"
+    "listen": "127.0.0.1:8080",
+    "remote": "httpbin.org:80"
   }'
-
-# List all instances
-curl -H "X-API-Key: your-secure-api-key-here" \
-     http://localhost:8080/instances
 ```
+
+## Deployment Modes
+
+### Basic Mode
+
+```bash
+realm api --port 8080 --api-key "your-api-key"
+```
+
+**Use Cases:**
+- Development and testing environments
+- Simple proxy scenarios
+- Standalone instance deployments
+
+**Features:**
+- Each instance uses default log/DNS settings
+- No shared configuration between instances
+- Minimal resource usage
+
+### Hybrid Mode (Recommended)
+
+```bash
+realm api -c global-config.json --port 8080 --api-key "your-api-key"
+```
+
+**Use Cases:**
+- Production environments
+- Enterprise applications
+- Centralized management requirements
+
+**Features:**
+- Global shared logging configuration
+- Centralized DNS settings and caching
+- Default network configuration inheritance
+- Better resource management and observability
 
 ## API Authentication
 
-The API uses API key authentication via the `X-API-Key` header. If no API key is configured, authentication is disabled (not recommended for production environments).
-
-### Authentication Headers
+### Security Configuration
 
 ```bash
-curl -H "X-API-Key: your-secure-api-key-here" \
-     http://localhost:8080/instances
+# Development mode
+realm api
+
+# Production mode
+realm api --port 8080 --api-key "your-secure-api-key"
 ```
 
-### Generate Secure API Key
+### Request Headers
+
+When authentication is enabled, all requests must include the authentication header:
 
 ```bash
-# Generate a 32-byte hex string
-openssl rand -hex 32
-
-# Or use /dev/urandom
-head -c 32 /dev/urandom | xxd -p -c 32
+curl -H "X-API-Key: your-api-key" http://localhost:8080/instances
 ```
 
-## API Endpoints
+## Global Configuration Architecture
+
+### Configuration Hierarchy
+
+```
+Global Configuration (Process Level)
+├── log: Shared logging system
+├── dns: Shared DNS resolution and caching
+└── network: Default network settings
+    │
+    └── Instance Configuration (Endpoint Level)
+        ├── Endpoint-specific settings
+        ├── Network configuration overrides (optional)
+        └── Transport configuration (optional)
+```
+
+### Configuration Inheritance Priority
+
+1. **Instance-level network settings** - Explicit overrides
+2. **Global-level network settings** - Inherited default values
+3. **Built-in default values** - System defaults
+
+### Global Configuration Example
+
+```json
+{
+  "log": {
+    "level": "info",
+    "output": "/var/log/realm-api.log"
+  },
+  "dns": {
+    "mode": "ipv4_then_ipv6",
+    "nameservers": ["8.8.8.8:53", "1.1.1.1:53"],
+    "timeout": 5,
+    "cache_size": 256
+  },
+  "network": {
+    "tcp_keepalive": 60,
+    "tcp_timeout": 10,
+    "udp_timeout": 30,
+    "send_proxy": false,
+    "accept_proxy": false
+  },
+  "endpoints": []
+}
+```
+
+## API Reference
+
+### Instance Management
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/instances` | List all instances |
-| POST | `/instances` | Create a new instance |
-| GET | `/instances/{id}` | Get instance details |
-| PUT | `/instances/{id}` | Update instance configuration |
-| DELETE | `/instances/{id}` | Delete instance |
-| POST | `/instances/{id}/start` | Start a stopped instance |
-| POST | `/instances/{id}/stop` | Stop a running instance |
-| POST | `/instances/{id}/restart` | Restart an instance |
+| `GET` | `/instances` | List all instances |
+| `POST` | `/instances` | Create new instance |
+| `GET` | `/instances/{id}` | Get instance details |
+| `PUT` | `/instances/{id}` | Update instance configuration |
+| `DELETE` | `/instances/{id}` | Delete instance |
 
-### OpenAPI Documentation
+### Instance Control
 
-Visit `http://localhost:8080/swagger-ui` for interactive API documentation.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/instances/{id}/start` | Start instance |
+| `POST` | `/instances/{id}/stop` | Stop instance |
+| `POST` | `/instances/{id}/restart` | Restart instance |
 
-## Complete API Usage Examples
+### Documentation
 
-### 1. Basic TCP Proxy Instance
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/swagger-ui` | Interactive API documentation |
+| `GET` | `/api-docs/openapi.json` | OpenAPI specification |
 
-Create a simple TCP proxy instance:
+## Instance Configuration Fields
 
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:1080",
-    "remote": "example.com:80"
-  }'
-```
+### Complete Configuration Structure (21 Fields)
 
-Response:
+#### Required Fields (2)
+
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "config": {
-    "listen": "127.0.0.1:1080",
-    "remote": "example.com:80"
-  },
-  "status": "Running"
+  "listen": "0.0.0.0:8080",        // Listen address and port
+  "remote": "target.com:80"        // Target server address
 }
 ```
 
-### 2. UDP and TCP Proxy Instance
+#### Load Balancing Fields (2)
 
-Create an instance that handles both TCP and UDP traffic:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "0.0.0.0:53",
-    "remote": "8.8.8.8:53",
-    "network": {
-      "use_udp": true
-    }
-  }'
-```
-
-### 3. Load Balancing Instance
-
-Create an instance with load balancing across multiple backends:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:8080",
-    "remote": "backend1.example.com:80",
-    "extra_remotes": [
-      "backend2.example.com:80",
-      "backend3.example.com:80"
-    ],
-    "balance": "roundrobin: 3, 2, 1"
-  }'
-```
-
-### 4. Instance with Network Configuration
-
-Create an instance with custom network settings:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:8443",
-    "remote": "secure.example.com:443",
-    "network": {
-      "tcp_timeout": 10,
-      "udp_timeout": 60,
-      "tcp_keepalive": 30,
-      "tcp_keepalive_probe": 5
-    }
-  }'
-```
-
-### 5. Instance with Interface Binding
-
-Create an instance bound to specific network interfaces:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "192.168.1.100:8080",
-    "remote": "api.example.com:443",
-    "interface": "eth0",
-    "listen_interface": "eth0"
-  }'
-```
-
-### 6. Instance with Through Configuration
-
-Create an instance that sends traffic through a specific IP:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:3128",
-    "remote": "proxy.example.com:8080",
-    "through": "10.0.0.1"
-  }'
-```
-
-### 7. Instance with Transport Layer Security
-
-Create an instance with TLS/SSL support:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:8443",
-    "remote": "secure.example.com:443",
-    "listen_transport": "tls:cert.pem,key.pem",
-    "remote_transport": "tls:ca.pem"
-  }'
-```
-
-### 8. Instance with WebSocket Support
-
-Create an instance with WebSocket transport:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:8080",
-    "remote": "ws.example.com:80",
-    "remote_transport": "ws:/websocket"
-  }'
-```
-
-### 9. Instance with Proxy Protocol
-
-Create an instance with proxy protocol support:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:8080",
-    "remote": "backend.example.com:80",
-    "network": {
-      "send_proxy": true,
-      "send_proxy_version": 2,
-      "accept_proxy": false
-    }
-  }'
-```
-
-### 10. MPTCP Enabled Instance
-
-Create an instance with MPTCP support:
-
-```bash
-curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:8080",
-    "remote": "mptcp.example.com:80",
-    "network": {
-      "send_mptcp": true,
-      "accept_mptcp": true
-    }
-  }'
-```
-
-## Instance Management Examples
-
-### List All Instances
-
-```bash
-curl -H "X-API-Key: your-secure-api-key-here" \
-     http://localhost:8080/instances
-```
-
-Response:
 ```json
-[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "config": {
-      "listen": "127.0.0.1:1080",
-      "remote": "example.com:80"
-    },
-    "status": "Running"
-  },
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440001",
-    "config": {
-      "listen": "127.0.0.1:8080",
-      "remote": "api.example.com:443"
-    },
-    "status": "Running"
+{
+  "extra_remotes": ["server2:80", "server3:80"],  // Additional servers
+  "balance": "roundrobin: 3, 2, 1"                // Load balancing strategy
+}
+```
+
+#### Network Interface Fields (3)
+
+```json
+{
+  "through": "192.168.1.100",      // Outbound IP binding
+  "interface": "eth0",             // Outbound network interface
+  "listen_interface": "lo"         // Listen network interface
+}
+```
+
+#### Transport Encryption Fields (2)
+
+```json
+{
+  "listen_transport": "tls;servername=api.example.com;cert=/etc/ssl/cert.pem;key=/etc/ssl/key.pem",
+  "remote_transport": "ws;host=backend.com;path=/tunnel;tls;sni=backend.com"
+}
+```
+
+#### Network Protocol Fields (12)
+
+```json
+{
+  "network": {
+    "no_tcp": false,               // Disable TCP
+    "use_udp": true,              // Enable UDP
+    "ipv6_only": false,           // IPv6 only mode
+    "send_mptcp": true,           // Send multipath TCP
+    "accept_mptcp": true,         // Accept multipath TCP
+    "tcp_timeout": 30,            // TCP connection timeout (seconds)
+    "udp_timeout": 60,            // UDP connection timeout (seconds)
+    "tcp_keepalive": 120,         // TCP keepalive interval (seconds)
+    "tcp_keepalive_probe": 5,     // TCP keepalive probe count
+    "send_proxy": true,           // Send Proxy Protocol
+    "accept_proxy": true,         // Accept Proxy Protocol
+    "send_proxy_version": 2,      // Proxy Protocol version
+    "accept_proxy_timeout": 10    // Proxy Protocol timeout
   }
-]
-```
-
-### Get Specific Instance
-
-```bash
-curl -H "X-API-Key: your-secure-api-key-here" \
-     http://localhost:8080/instances/550e8400-e29b-41d4-a716-446655440000
-```
-
-### Update Instance Configuration
-
-```bash
-curl -X PUT http://localhost:8080/instances/550e8400-e29b-41d4-a716-446655440000 \
-  -H "X-API-Key: your-secure-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listen": "127.0.0.1:1080",
-    "remote": "updated.example.com:80",
-    "network": {
-      "tcp_timeout": 15
-    }
-  }'
-```
-
-### Start Instance
-
-```bash
-curl -X POST http://localhost:8080/instances/550e8400-e29b-41d4-a716-446655440000/start \
-  -H "X-API-Key: your-secure-api-key-here"
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "config": {
-    "listen": "127.0.0.1:1080",
-    "remote": "example.com:80"
-  },
-  "status": "Running"
 }
 ```
 
-### Stop Instance
+## Usage Examples
 
-```bash
-curl -X POST http://localhost:8080/instances/550e8400-e29b-41d4-a716-446655440000/stop \
-  -H "X-API-Key: your-secure-api-key-here"
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "config": {
-    "listen": "127.0.0.1:1080",
-    "remote": "example.com:80"
-  },
-  "status": "Stopped"
-}
-```
-
-### Restart Instance
-
-```bash
-curl -X POST http://localhost:8080/instances/550e8400-e29b-41d4-a716-446655440000/restart \
-  -H "X-API-Key: your-secure-api-key-here"
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "config": {
-    "listen": "127.0.0.1:1080",
-    "remote": "example.com:80"
-  },
-  "status": "Running"
-}
-```
-
-### Delete Instance
-
-```bash
-curl -X DELETE http://localhost:8080/instances/550e8400-e29b-41d4-a716-446655440000 \
-  -H "X-API-Key: your-secure-api-key-here"
-```
-
-## Advanced Configuration Examples
-
-### High-Performance Instance
+### 1. Simple HTTP Proxy
 
 ```bash
 curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "listen": "127.0.0.1:8080",
+    "remote": "httpbin.org:80"
+  }'
+```
+
+### 2. Load Balanced Proxy
+
+```bash
+curl -X POST http://localhost:8080/instances \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "listen": "0.0.0.0:443",
-    "remote": "backend.example.com:443",
+    "remote": "web1.internal:443",
+    "extra_remotes": ["web2.internal:443", "web3.internal:443"],
+    "balance": "roundrobin: 3, 2, 1",
     "network": {
-      "tcp_timeout": 3,
-      "tcp_keepalive": 10,
-      "tcp_keepalive_probe": 3,
-      "send_mptcp": true,
-      "accept_mptcp": true
+      "tcp_keepalive": 60,
+      "send_proxy": true,
+      "send_proxy_version": 2
     }
   }'
 ```
 
-### IPv6-Only Instance
+### 3. TLS Termination Proxy
 
 ```bash
 curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "listen": "[::1]:8080",
-    "remote": "[2001:db8::1]:80",
-    "network": {
-      "ipv6_only": true
-    }
+    "listen": "0.0.0.0:443",
+    "remote": "internal-app:8080",
+    "listen_transport": "tls;servername=api.example.com;cert=/etc/ssl/cert.pem;key=/etc/ssl/key.pem"
   }'
 ```
 
-### Complex Load Balancing Setup
+### 4. WebSocket Tunnel
 
 ```bash
 curl -X POST http://localhost:8080/instances \
-  -H "X-API-Key: your-secure-api-key-here" \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "listen": "127.0.0.1:80",
-    "remote": "web1.example.com:80",
-    "extra_remotes": [
-      "web2.example.com:80",
-      "web3.example.com:80",
-      "web4.example.com:80"
-    ],
-    "balance": "iphash: 1, 1, 1, 1",
+    "listen": "127.0.0.1:1080",
+    "remote": "tunnel-server.example.com:443",
+    "remote_transport": "ws;host=tunnel-server.example.com;path=/tunnel;tls;sni=tunnel-server.example.com"
+  }'
+```
+
+### 5. Game Server Proxy
+
+```bash
+curl -X POST http://localhost:8080/instances \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "listen": "0.0.0.0:25565",
+    "remote": "gameserver.internal:25565",
     "network": {
-      "tcp_timeout": 5,
-      "tcp_keepalive": 15
+      "use_udp": true,
+      "tcp_keepalive": 300,
+      "udp_timeout": 180
     }
   }'
 ```
 
-## Security Best Practices
-
-### 1. Always Use API Key Authentication
+### 6. Instance Management Operations
 
 ```bash
-# Generate a secure API key
-openssl rand -hex 32
+# List all instances
+curl -H "X-API-Key: your-api-key" http://localhost:8080/instances
 
-# Start server with authentication
-./realm api --port 8080 --api-key "your-generated-secure-key"
+# Get instance details
+curl -H "X-API-Key: your-api-key" \
+     http://localhost:8080/instances/{instance-id}
+
+# Stop instance
+curl -X POST -H "X-API-Key: your-api-key" \
+     http://localhost:8080/instances/{instance-id}/stop
+
+# Update instance configuration
+curl -X PUT http://localhost:8080/instances/{instance-id} \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "listen": "127.0.0.1:8080",
+    "remote": "new-backend.example.com:80"
+  }'
+
+# Delete instance
+curl -X DELETE -H "X-API-Key: your-api-key" \
+     http://localhost:8080/instances/{instance-id}
 ```
 
-### 2. Use HTTPS in Production
+## Best Practices
 
-Configure a reverse proxy (nginx, caddy, etc.) with TLS termination:
+### Production Deployment
+
+#### 1. Use Hybrid Mode
+
+```bash
+# Create global configuration file
+cat > /etc/realm/global.json << EOF
+{
+  "log": {
+    "level": "info",
+    "output": "/var/log/realm/api.log"
+  },
+  "dns": {
+    "mode": "ipv4_then_ipv6",
+    "nameservers": ["8.8.8.8:53", "1.1.1.1:53"],
+    "cache_size": 512
+  },
+  "network": {
+    "tcp_keepalive": 60,
+    "tcp_timeout": 10
+  },
+  "endpoints": []
+}
+EOF
+
+# Start API server
+realm api -c /etc/realm/global.json --port 8080 --api-key "${REALM_API_KEY}"
+```
+
+#### 2. Security Configuration
+
+```bash
+# Generate strong API key
+export REALM_API_KEY=$(openssl rand -hex 32)
+
+# Create dedicated user
+useradd -r -s /bin/false realm
+
+# Run with restricted permissions
+sudo -u realm realm api -c /etc/realm/global.json --port 8080 --api-key "${REALM_API_KEY}"
+```
+
+#### 3. Reverse Proxy Configuration
 
 ```nginx
+# nginx configuration example
 server {
     listen 443 ssl;
-    server_name your-api.example.com;
-
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-
+    server_name api.realm.example.com;
+    
     location / {
         proxy_pass http://localhost:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
 
-### 3. Network Security
+### Container Deployment
 
-- Bind API server to localhost or internal network only
-- Use firewall rules to restrict access
-- Implement rate limiting
+#### Docker Compose
 
-### 4. API Key Management
+```yaml
+version: '3.8'
+services:
+  realm-api:
+    image: realm:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./global.json:/etc/realm/global.json:ro
+      - ./logs:/var/log/realm
+    environment:
+      - REALM_API_KEY=${REALM_API_KEY}
+    command: >
+      realm api 
+      -c /etc/realm/global.json 
+      --port 8080 
+      --api-key "${REALM_API_KEY}"
+    restart: unless-stopped
+```
 
-- Rotate API keys regularly
-- Use different keys for different clients/applications
-- Store API keys securely (environment variables, secret management systems)
+#### Kubernetes
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realm-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: realm-api
+  template:
+    metadata:
+      labels:
+        app: realm-api
+    spec:
+      containers:
+      - name: realm-api
+        image: realm:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REALM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: realm-secrets
+              key: api-key
+        volumeMounts:
+        - name: config
+          mountPath: /etc/realm
+        command:
+          - realm
+          - api
+          - -c
+          - /etc/realm/global.json
+          - --port
+          - "8080"
+          - --api-key
+          - $(REALM_API_KEY)
+      volumes:
+      - name: config
+        configMap:
+          name: realm-config
+```
+
+### Monitoring and Logging
+
+```bash
+# Monitor API server logs
+tail -f /var/log/realm/api.log
+
+# Monitor system resources
+top -p $(pgrep realm)
+
+# Check instance status
+curl -s -H "X-API-Key: ${REALM_API_KEY}" \
+     http://localhost:8080/instances | \
+     jq '.[] | {id: .id, status: .status, listen: .config.listen}'
+```
+
+### Performance Optimization
+
+#### DNS Configuration Optimization
+
+```json
+{
+  "dns": {
+    "mode": "ipv4_then_ipv6",
+    "cache_size": 1024,
+    "timeout": 3,
+    "nameservers": ["8.8.8.8:53", "1.1.1.1:53"]
+  }
+}
+```
+
+#### Network Optimization
+
+```json
+{
+  "network": {
+    "tcp_keepalive": 60,
+    "tcp_timeout": 10,
+    "send_mptcp": true,
+    "accept_mptcp": true
+  }
+}
+```
+
+#### System Limits
+
+```bash
+# Increase file descriptor limit
+ulimit -n 65536
+
+# Increase network connection queue
+sysctl net.core.somaxconn=65536
+```
 
 ## Error Handling
 
-The API returns appropriate HTTP status codes:
+### HTTP Status Codes
 
-- `200` - Success
-- `201` - Instance created
-- `400` - Invalid configuration
-- `401` - Authentication failed
-- `404` - Instance not found
-- `409` - Instance already in requested state
-- `500` - Internal server error
+| Status Code | Meaning | Description |
+|--------|------|------|
+| `200` | Success | 请求Success处理 |
+| `201` | Created | 实例创建Success |
+| `204` | No Content | 实例删除Success |
+| `400` | Bad Request | Invalid JSON or configuration |
+| `401` | Unauthorized | Missing or invalid API key |
+| `404` | Not Found | Instance ID does not exist |
+| `409` | Conflict | Instance already in requested state |
+| `500` | Server Error | Internal configuration or system error |
 
-Error response examples:
+### Common Error Responses
+
+#### Configuration Error
 
 ```json
 {
-  "error": "Invalid listen address format"
+  "error": "Invalid configuration",
+  "details": "listen address already in use"
 }
 ```
 
-```json
-{
-  "error": "Authentication required"
-}
-```
+#### Authentication Error
 
 ```json
 {
-  "error": "Instance already running"
+  "error": "Unauthorized",
+  "details": "Invalid or missing API key"
 }
 ```
 
+#### Instance Not Found
+
 ```json
 {
-  "error": "Instance already stopped"
+  "error": "Instance not found",
+  "details": "No instance with ID 12345678-1234-5678-9abc-123456789abc"
+}
+```
+
+### Troubleshooting
+
+#### Common Issues and Solutions
+
+**1. Port Already in Use**
+
+```bash
+# Check port usage
+lsof -i :8080
+
+# Terminate process if needed
+kill $(lsof -t -i :8080)
+```
+
+**2. Permission Denied**
+
+```bash
+# Ports < 1024 require root privileges
+sudo realm api --port 80 --api-key "key"
+
+# Or use higher port number
+realm api --port 8080 --api-key "key"
+```
+
+**3. Configuration File Issues**
+
+```bash
+# Check if file exists
+ls -la /path/to/config.json
+
+# Verify JSON format
+jq . /path/to/config.json
+```
+
+**4. Instance Creation Failed**
+
+```bash
+# View detailed logs
+tail -f /var/log/realm/api.log
+
+# Check target server connectivity
+telnet target-server.com 80
+```
+
+### Debug Mode
+
+Enable detailed logging for debugging:
+
+```json
+{
+  "log": {
+    "level": "debug",
+    "output": "/var/log/realm/debug.log"
+  }
 }
 ```
 
 ---
 
-For more information about Realm configuration options, see the main [README.md](README.md).
+📖 **Related Documentation:** [Main Documentation](readme.md) | [Configuration Examples](examples/) | [Deployment Guide](readme.container.md)

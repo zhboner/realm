@@ -33,13 +33,21 @@ pub fn add_api(app: Command) -> Command {
         .about("start HTTP API server for instance management")
         .allow_missing_positional(true)
         .arg(
+            clap::Arg::new("config")
+                .short('c')
+                .long("config")
+                .value_name("FILE")
+                .help("Configuration file for global settings (log, dns, network)")
+                .display_order(0),
+        )
+        .arg(
             clap::Arg::new("port")
                 .short('p')
                 .long("port")
                 .value_name("PORT")
                 .help("Port to bind the API server")
                 .default_value("8080")
-                .display_order(0),
+                .display_order(1),
         )
         .arg(
             clap::Arg::new("api-key")
@@ -47,7 +55,7 @@ pub fn add_api(app: Command) -> Command {
                 .long("api-key")
                 .value_name("KEY")
                 .help("API key for authentication (optional)")
-                .display_order(1),
+                .display_order(2),
         );
 
     app.subcommand(api)

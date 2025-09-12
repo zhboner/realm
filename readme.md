@@ -212,11 +212,14 @@ realm convert old.json
 Start HTTP API server:
 
 ```shell
-# Start without authentication (development only)
-realm api --port 8080
-
-# Start with API key authentication (recommended)
+# Start without global configuration (basic mode)
 realm api --port 8080 --api-key "your-secure-api-key-here"
+
+# Start with global configuration (hybrid mode)
+realm api -c global-config.json --port 8080 --api-key "your-secure-api-key-here"
+
+# Development mode without authentication
+realm api
 ```
 
 ## Configuration
@@ -277,17 +280,47 @@ remote = "www.google.com:443"
 
 ## HTTP API
 
-Realm now supports HTTP API for managing instances with OpenAPI standard and API key authentication.
+Realm supports HTTP API for dynamic instance management with two deployment modes:
 
-### Quick Start
+### Deployment Modes
 
+#### Basic Mode
 ```shell
-# Start without authentication (not recommended for production)
-./target/release/realm api --port 8080
-
-# Start with API key authentication (recommended)
-./target/release/realm api --port 8080 --api-key "your-secure-api-key-here"
+# API server only - instances are created without shared global configuration
+realm api --port 8080 --api-key "your-secure-api-key-here"
 ```
+
+#### Hybrid Mode
+```shell
+# API server with global configuration for log, DNS, and default network settings
+realm api -c global-config.json --port 8080 --api-key "your-secure-api-key-here"
+```
+
+Global configuration example (`global-config.json`):
+```json
+{
+  "log": {
+    "level": "info",
+    "output": "/var/log/realm-api.log"
+  },
+  "dns": {
+    "mode": "ipv4_then_ipv6",
+    "nameservers": ["8.8.8.8:53", "1.1.1.1:53"],
+    "cache_size": 256
+  },
+  "network": {
+    "tcp_keepalive": 60,
+    "tcp_timeout": 10,
+    "send_proxy": false
+  },
+  "endpoints": []
+}
+```
+
+In hybrid mode:
+- Global log and DNS settings are applied to the entire process
+- Global network settings serve as defaults for all created instances
+- Instances can override specific network settings as needed
 
 ### API Endpoints
 

@@ -15,7 +15,7 @@ use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 use headers::HeaderName;
 
-use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf};
+use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf, FullConf};
 use realm_core::tcp::run_tcp;
 use realm_core::udp::run_udp;
 
@@ -62,6 +62,7 @@ pub enum InstanceStatus {
 pub struct AppState {
     pub instances: Arc<AsyncMutex<HashMap<String, InstanceData>>>,
     pub api_key: Option<String>,
+    pub global_config: Option<FullConf>,
 }
 
 pub struct InstanceData {
@@ -94,8 +95,12 @@ async fn list_instances(State(state): State<AppState>) -> Json<Vec<Instance>> {
 )]
 async fn create_instance(
     State(state): State<AppState>,
-    Json(config): Json<EndpointConf>,
+    Json(mut config): Json<EndpointConf>,
 ) -> Result<Json<Instance>, StatusCode> {
+    if let Some(global_config) = &state.global_config {
+        config.network.take_field(&global_config.network);
+    }
+
     let id = uuid::Uuid::new_v4().to_string();
     let instance = Instance {
         id: id.clone(),
@@ -407,10 +412,45 @@ fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<
 )]
 struct ApiDoc;
 
-pub async fn start_api_server(port: u16, api_key: Option<String>) {
+pub async fn start_api_server(port: u16, api_key: Option<String>, global_config: Option<FullConf>) {
+    if let Some(ref config) = global_config {
+        let log_conf = config.log.clone();
+        if !log_conf.is_empty() {
+            let (level, output) = log_conf.clone().build();
+            fern::Dispatch::new()
+                .format(|out, message, record| {
+                    out.finish(format_args!(
+                        "{}[{}][{}]{}",
+                        chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                        record.target(),
+                        record.level(),
+                        message
+                    ))
+                })
+                .level(level)
+                .chain(output)
+                .apply()
+                .unwrap_or_else(|e| eprintln!("Failed to setup logger: {}", e));
+            println!("Global log configured: {}", log_conf);
+        }
+
+        let dns_conf = config.dns.clone();
+        if !dns_conf.is_empty() {
+            let (conf, opts) = dns_conf.clone().build();
+            realm_core::dns::build_lazy(conf, opts);
+            println!("Global DNS configured: {}", dns_conf);
+        }
+
+        #[cfg(feature = "transport")]
+        {
+            realm_core::kaminari::install_tls_provider();
+        }
+    }
+
     let state = AppState {
         instances: Arc::new(AsyncMutex::new(HashMap::new())),
         api_key: api_key.clone(),
+        global_config,
     };
 
     let app = Router::new()

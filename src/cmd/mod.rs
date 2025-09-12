@@ -17,7 +17,7 @@ mod flag;
 pub enum CmdInput {
     Config(String, CmdOverride),
     Endpoint(EndpointConf, CmdOverride),
-    Api(u16, Option<String>),
+    Api(u16, Option<String>, Option<String>),
     None,
 }
 
@@ -35,7 +35,6 @@ pub fn scan() -> CmdInput {
     let app = flag::add_all(app);
     let app = sub::add_all(app);
 
-    // do other things
     let mut app2 = app.clone();
     let matches = app.get_matches();
 
@@ -58,12 +57,12 @@ pub fn scan() -> CmdInput {
         Some(("api", sub_matches)) => {
             let port: u16 = sub_matches.get_one::<String>("port").unwrap().parse().unwrap();
             let api_key = sub_matches.get_one::<String>("api-key").cloned();
-            return CmdInput::Api(port, api_key);
+            let config_file = sub_matches.get_one::<String>("config").cloned();
+            return CmdInput::Api(port, api_key, config_file);
         }
         _ => {}
     };
 
-    // start
     handle_matches(matches)
 }
 
@@ -78,8 +77,6 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
         use realm_syscall::get_nofile_limit;
         use realm_syscall::set_nofile_limit;
         use realm_syscall::bump_nofile_limit;
-
-        // set
         if let Some(nofile) = matches.get_one::<String>("nofile") {
             if let Ok(nofile) = nofile.parse::<u64>() {
                 let _ = set_nofile_limit(nofile);
@@ -90,7 +87,6 @@ fn handle_matches(matches: ArgMatches) -> CmdInput {
             let _ = bump_nofile_limit();
         }
 
-        // get
         if let Ok((soft, hard)) = get_nofile_limit() {
             println!("fd: soft={}, hard={}", soft, hard);
         }

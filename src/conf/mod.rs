@@ -52,7 +52,7 @@ pub struct CmdOverride {
     pub network: NetConf,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct FullConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Config::is_empty")]

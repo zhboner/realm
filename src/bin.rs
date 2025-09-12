@@ -42,12 +42,20 @@ fn main() {
                 conf.apply_global_opts().apply_cmd_opts(opts);
                 conf
             }
-            CmdInput::Api(port, api_key) => {
+            CmdInput::Api(port, api_key, config_file) => {
+                let global_conf = if let Some(config_file) = config_file {
+                    let mut conf = FullConf::from_conf_file(&config_file);
+                    conf.apply_global_opts();
+                    Some(conf)
+                } else {
+                    None
+                };
+                
                 tokio::runtime::Builder::new_multi_thread()
                     .enable_all()
                     .build()
                     .unwrap()
-                    .block_on(api::start_api_server(port, api_key));
+                    .block_on(api::start_api_server(port, api_key, global_conf));
                 std::process::exit(0);
             }
             CmdInput::None => std::process::exit(0),
