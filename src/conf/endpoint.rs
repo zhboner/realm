@@ -9,9 +9,11 @@ use realm_core::balance::Balancer;
 #[cfg(feature = "transport")]
 use realm_core::kaminari::mix::{MixAccept, MixConnect};
 
+use utoipa::ToSchema;
+
 use super::{Config, NetConf, NetInfo};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EndpointConf {
     pub listen: String,
 

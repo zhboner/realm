@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use realm_core::endpoint::{BindOpts, ConnectOpts};
+use utoipa::ToSchema;
 
 use super::Config;
 use crate::consts::{TCP_TIMEOUT, UDP_TIMEOUT};
@@ -7,7 +8,7 @@ use crate::consts::{TCP_KEEPALIVE, TCP_KEEPALIVE_PROBE};
 use crate::consts::PROXY_PROTOCOL_VERSION;
 use crate::consts::PROXY_PROTOCOL_TIMEOUT;
 
-#[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
+#[derive(Serialize, Debug, Deserialize, Clone, Copy, Default, ToSchema)]
 pub struct NetConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]

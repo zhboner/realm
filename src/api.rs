@@ -4,26 +4,26 @@ use axum::{
     response::Json,
     routing::{delete, get, post, put},
     Router,
-    middleware::from_fn,
+    middleware::from_fn_with_state,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::task::JoinHandle;
-use utoipa::OpenApi;
+use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
-use headers::{Header, HeaderName, HeaderValue};
+use headers::HeaderName;
 
-use crate::conf::{EndpointConf, FullConf, EndpointInfo, Config};
+use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf};
 use realm_core::tcp::run_tcp;
 use realm_core::udp::run_udp;
 
 static X_API_KEY: HeaderName = HeaderName::from_static("x-api-key");
 
 async fn auth_middleware(
-    headers: HeaderMap,
     State(state): State<AppState>,
+    headers: HeaderMap,
     request: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> Result<axum::response::Response, StatusCode> {
@@ -44,14 +44,14 @@ async fn auth_middleware(
     Err(StatusCode::UNAUTHORIZED)
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, ToSchema)]
 pub struct Instance {
     pub id: String,
     pub config: EndpointConf,
     pub status: InstanceStatus,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, ToSchema)]
 pub enum InstanceStatus {
     Running,
     Stopped,
@@ -175,7 +175,7 @@ async fn update_instance(
             udp_handle.abort();
         }
 
-        let endpoint_info = config.build();
+        let endpoint_info = config.clone().build();
         let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
             Ok(handles) => handles,
             Err(e) => {
@@ -222,7 +222,7 @@ async fn start_instance(
             }
         }
 
-        let endpoint_info = data.instance.config.build();
+        let endpoint_info = data.instance.config.clone().build();
         let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
             Ok(handles) => handles,
             Err(e) => {
@@ -306,7 +306,7 @@ async fn restart_instance(
             udp_handle.abort();
         }
 
-        let endpoint_info = data.instance.config.build();
+        let endpoint_info = data.instance.config.clone().build();
         let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
             Ok(handles) => handles,
             Err(e) => {
@@ -399,7 +399,7 @@ fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<
         restart_instance,
     ),
     components(
-        schemas(Instance, InstanceStatus, EndpointConf)
+        schemas(Instance, InstanceStatus, EndpointConf, NetConf)
     ),
     tags(
         (name = "realm", description = "Realm instance management API")
@@ -423,7 +423,7 @@ pub async fn start_api_server(port: u16, api_key: Option<String>) {
         .route("/instances/:id/stop", post(stop_instance))
         .route("/instances/:id/restart", post(restart_instance))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .layer(from_fn(auth_middleware))
+        .layer(from_fn_with_state(state.clone(), auth_middleware))
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", port);
