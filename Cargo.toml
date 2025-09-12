@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.9.2"
+version = "2.9.3"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -50,7 +50,7 @@ serde_json = "1"
 # web api
 axum = "0.7"
 utoipa = { version = "4", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "7", features = ["axum"] }
+utoipa-swagger-ui = { version = "7", features = ["axum", "vendored"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors"] }
 uuid = { version = "1", features = ["v4"] }
