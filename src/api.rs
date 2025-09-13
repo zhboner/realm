@@ -11,7 +11,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::task::JoinHandle;
-use utoipa::{OpenApi, ToSchema};
+use utoipa::{OpenApi, ToSchema, Modify};
+use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa_swagger_ui::SwaggerUi;
 use headers::HeaderName;
 
@@ -75,7 +76,12 @@ pub struct InstanceData {
     get,
     path = "/instances",
     responses(
-        (status = 200, description = "List all instances", body = Vec<Instance>)
+        (status = 200, description = "List all instances", body = Vec<Instance>),
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn list_instances(State(state): State<AppState>) -> Json<Vec<Instance>> {
@@ -90,7 +96,14 @@ async fn list_instances(State(state): State<AppState>) -> Json<Vec<Instance>> {
     request_body = EndpointConf,
     responses(
         (status = 201, description = "Instance created", body = Instance),
-        (status = 400, description = "Invalid configuration")
+        (status = 400, description = "Invalid configuration - malformed request body"),
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 409, description = "Conflict - instance with this configuration already exists"),
+        (status = 422, description = "Unprocessable entity - configuration validation failed"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn create_instance(
@@ -141,7 +154,12 @@ async fn create_instance(
     params(("id" = String, Path, description = "Instance ID")),
     responses(
         (status = 200, description = "Instance found", body = Instance),
-        (status = 404, description = "Instance not found")
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 404, description = "Instance not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn get_instance(
@@ -163,7 +181,15 @@ async fn get_instance(
     request_body = EndpointConf,
     responses(
         (status = 200, description = "Instance updated", body = Instance),
-        (status = 404, description = "Instance not found")
+        (status = 400, description = "Invalid configuration - malformed request body"),
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 404, description = "Instance not found"),
+        (status = 409, description = "Conflict - cannot update running instance"),
+        (status = 422, description = "Unprocessable entity - configuration validation failed"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn update_instance(
@@ -210,8 +236,13 @@ async fn update_instance(
     params(("id" = String, Path, description = "Instance ID")),
     responses(
         (status = 200, description = "Instance started", body = Instance),
+        (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
-        (status = 409, description = "Instance already running")
+        (status = 409, description = "Conflict - instance already running"),
+        (status = 500, description = "Internal server error - failed to start instance")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn start_instance(
@@ -256,8 +287,13 @@ async fn start_instance(
     params(("id" = String, Path, description = "Instance ID")),
     responses(
         (status = 200, description = "Instance stopped", body = Instance),
+        (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
-        (status = 409, description = "Instance already stopped")
+        (status = 409, description = "Conflict - instance already stopped"),
+        (status = 500, description = "Internal server error - failed to stop instance")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn stop_instance(
@@ -295,7 +331,13 @@ async fn stop_instance(
     params(("id" = String, Path, description = "Instance ID")),
     responses(
         (status = 200, description = "Instance restarted", body = Instance),
-        (status = 404, description = "Instance not found")
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 404, description = "Instance not found"),
+        (status = 409, description = "Conflict - instance cannot be restarted"),
+        (status = 500, description = "Internal server error - failed to restart instance")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn restart_instance(
@@ -340,7 +382,13 @@ async fn restart_instance(
     params(("id" = String, Path, description = "Instance ID")),
     responses(
         (status = 204, description = "Instance deleted"),
-        (status = 404, description = "Instance not found")
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 404, description = "Instance not found"),
+        (status = 409, description = "Conflict - cannot delete running instance"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 async fn delete_instance(
@@ -391,6 +439,18 @@ fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<
     Ok((tcp_handle, udp_handle))
 }
 
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "api_key",
+            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("X-API-Key"))),
+        );
+    }
+}
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -406,6 +466,7 @@ fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<
     components(
         schemas(Instance, InstanceStatus, EndpointConf, NetConf)
     ),
+    modifiers(&SecurityAddon),
     tags(
         (name = "realm", description = "Realm instance management API")
     )
@@ -452,7 +513,7 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
         global_config: Some(config),
     };
 
-    let app = Router::new()
+    let api_routes = Router::new()
         .route("/instances", get(list_instances))
         .route("/instances", post(create_instance))
         .route("/instances/:id", get(get_instance))
@@ -461,8 +522,11 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
         .route("/instances/:id/start", post(start_instance))
         .route("/instances/:id/stop", post(stop_instance))
         .route("/instances/:id/restart", post(restart_instance))
+        .layer(from_fn_with_state(state.clone(), auth_middleware));
+
+    let app = Router::new()
+        .merge(api_routes)
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .layer(from_fn_with_state(state.clone(), auth_middleware))
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", port);
