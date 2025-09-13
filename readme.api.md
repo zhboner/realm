@@ -532,103 +532,58 @@ sysctl net.core.somaxconn=65536
 
 ### HTTP Status Codes
 
-| Status Code | Meaning | Description |
-|--------|------|------|
-| `200` | Success | 请求Success处理 |
-| `201` | Created | 实例创建Success |
-| `204` | No Content | 实例删除Success |
-| `400` | Bad Request | Invalid JSON or configuration |
-| `401` | Unauthorized | Missing or invalid API key |
-| `404` | Not Found | Instance ID does not exist |
-| `409` | Conflict | Instance already in requested state |
-| `500` | Server Error | Internal configuration or system error |
+#### GET /instances
+- `200` - Successfully listed all instances
+- `401` - Unauthorized access
+- `500` - Internal server error
 
-### Common Error Responses
+#### POST /instances
+- `201` - Instance created successfully
+- `400` - Invalid configuration or malformed request
+- `401` - Unauthorized access
+- `409` - Instance with similar configuration already exists
+- `422` - Configuration validation failed
+- `500` - Failed to create instance
 
-#### Configuration Error
+#### GET /instances/{id}
+- `200` - Instance found and returned
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `500` - Internal server error
 
-```json
-{
-  "error": "Invalid configuration",
-  "details": "listen address already in use"
-}
-```
+#### PUT /instances/{id}
+- `200` - Instance updated successfully
+- `400` - Invalid configuration or malformed request
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `409` - Cannot update running instance
+- `422` - Configuration validation failed
+- `500` - Failed to update instance
 
-#### Authentication Error
+#### DELETE /instances/{id}
+- `204` - Instance deleted successfully
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `409` - Cannot delete running instance
+- `500` - Failed to delete instance
 
-```json
-{
-  "error": "Unauthorized",
-  "details": "Invalid or missing API key"
-}
-```
+#### POST /instances/{id}/start
+- `200` - Instance started successfully
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `409` - Instance already running
+- `500` - Failed to start instance
 
-#### Instance Not Found
+#### POST /instances/{id}/stop
+- `200` - Instance stopped successfully
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `409` - Instance already stopped
+- `500` - Failed to stop instance
 
-```json
-{
-  "error": "Instance not found",
-  "details": "No instance with ID 12345678-1234-5678-9abc-123456789abc"
-}
-```
-
-### Troubleshooting
-
-#### Common Issues and Solutions
-
-**1. Port Already in Use**
-
-```bash
-# Check port usage
-lsof -i :8080
-
-# Terminate process if needed
-kill $(lsof -t -i :8080)
-```
-
-**2. Permission Denied**
-
-```bash
-# Ports < 1024 require root privileges
-sudo realm api --port 80 --api-key "key"
-
-# Or use higher port number
-realm api --port 8080 --api-key "key"
-```
-
-**3. Configuration File Issues**
-
-```bash
-# Check if file exists
-ls -la /path/to/config.json
-
-# Verify JSON format
-jq . /path/to/config.json
-```
-
-**4. Instance Creation Failed**
-
-```bash
-# View detailed logs
-tail -f /var/log/realm/api.log
-
-# Check target server connectivity
-telnet target-server.com 80
-```
-
-### Debug Mode
-
-Enable detailed logging for debugging:
-
-```json
-{
-  "log": {
-    "level": "debug",
-    "output": "/var/log/realm/debug.log"
-  }
-}
-```
-
----
-
-📖 **Related Documentation:** [Main Documentation](readme.md) | [Configuration Examples](examples/) | [Deployment Guide](readme.container.md)
+#### POST /instances/{id}/restart
+- `200` - Instance restarted successfully
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `409` - Instance cannot be restarted
+- `500` - Failed to restart instance
