@@ -413,44 +413,43 @@ fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<
 struct ApiDoc;
 
 pub async fn start_api_server(port: u16, api_key: Option<String>, global_config: Option<FullConf>) {
-    if let Some(ref config) = global_config {
-        let log_conf = config.log.clone();
-        if !log_conf.is_empty() {
-            let (level, output) = log_conf.clone().build();
-            fern::Dispatch::new()
-                .format(|out, message, record| {
-                    out.finish(format_args!(
-                        "{}[{}][{}]{}",
-                        chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                        record.target(),
-                        record.level(),
-                        message
-                    ))
-                })
-                .level(level)
-                .chain(output)
-                .apply()
-                .unwrap_or_else(|e| eprintln!("Failed to setup logger: {}", e));
-            println!("Global log configured: {}", log_conf);
-        }
+    let config = global_config.unwrap_or_else(|| {
+        println!("No configuration file provided, using default global settings");
+        FullConf::default()
+    });
 
-        let dns_conf = config.dns.clone();
-        if !dns_conf.is_empty() {
-            let (conf, opts) = dns_conf.clone().build();
-            realm_core::dns::build_lazy(conf, opts);
-            println!("Global DNS configured: {}", dns_conf);
-        }
+    let log_conf = config.log.clone();
+    let (level, output) = log_conf.clone().build();
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}]{}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(level)
+        .chain(output)
+        .apply()
+        .unwrap_or_else(|e| eprintln!("Failed to setup logger: {}", e));
+    println!("Global log configured: {}", log_conf);
 
-        #[cfg(feature = "transport")]
-        {
-            realm_core::kaminari::install_tls_provider();
-        }
+    let dns_conf = config.dns.clone();
+    let (conf, opts) = dns_conf.clone().build();
+    realm_core::dns::build_lazy(conf, opts);
+    println!("Global DNS configured: {}", dns_conf);
+
+    #[cfg(feature = "transport")]
+    {
+        realm_core::kaminari::install_tls_provider();
     }
 
     let state = AppState {
         instances: Arc::new(AsyncMutex::new(HashMap::new())),
         api_key: api_key.clone(),
-        global_config,
+        global_config: Some(config),
     };
 
     let app = Router::new()
