@@ -48,14 +48,6 @@ pub fn add_api(app: Command) -> Command {
                 .help("Port to bind the API server")
                 .default_value("8080")
                 .display_order(1),
-        )
-        .arg(
-            clap::Arg::new("api-key")
-                .short('k')
-                .long("api-key")
-                .value_name("KEY")
-                .help("API key for authentication (optional)")
-                .display_order(2),
         );
 
     app.subcommand(api)

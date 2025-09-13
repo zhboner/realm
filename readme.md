@@ -212,14 +212,16 @@ realm convert old.json
 Start HTTP API server:
 
 ```shell
-# Start without global configuration (basic mode)
-realm api --port 8080 --api-key "your-secure-api-key-here"
+# Default global configuration with authentication
+export REALM_API_KEY="your-secure-api-key-here"
+realm api --port 8080
 
-# Start with global configuration (hybrid mode)
-realm api -c global-config.json --port 8080 --api-key "your-secure-api-key-here"
+# Custom global configuration with authentication
+export REALM_API_KEY="your-secure-api-key-here"
+realm api -c global-config.json --port 8080
 
-# Development mode without authentication
-realm api
+# Default global configuration without authentication
+realm api --port 8080
 ```
 
 ## Configuration
@@ -286,14 +288,16 @@ Realm supports HTTP API for dynamic instance management with two deployment mode
 
 #### Basic Mode
 ```shell
-# API server only - instances are created without shared global configuration
-realm api --port 8080 --api-key "your-secure-api-key-here"
+# API server with environment variable authentication (default global configuration)
+export REALM_API_KEY="your-secure-api-key-here"
+realm api --port 8080
 ```
 
 #### Hybrid Mode
 ```shell
-# API server with global configuration for log, DNS, and default network settings
-realm api -c global-config.json --port 8080 --api-key "your-secure-api-key-here"
+# API server with environment variable authentication (custom global configuration)
+export REALM_API_KEY="your-secure-api-key-here"
+realm api -c global-config.json --port 8080
 ```
 
 Global configuration example (`global-config.json`):

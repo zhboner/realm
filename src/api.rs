@@ -466,11 +466,12 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", port);
-    if let Some(key) = &api_key {
+    if let Some(_key) = &api_key {
         println!("Starting API server on {} with authentication enabled", addr);
-        println!("API Key: {}", key);
+        println!("API key loaded from REALM_API_KEY environment variable");
     } else {
         println!("Starting API server on {} without authentication", addr);
+        println!("Set REALM_API_KEY environment variable to enable authentication");
     }
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();

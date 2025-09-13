@@ -19,11 +19,13 @@ Realm provides HTTP API for dynamic instance management with two deployment mode
 ### Start API Server
 
 ```bash
-# Basic mode
-realm api --port 8080 --api-key "your-api-key"
+# Default global configuration with authentication
+export REALM_API_KEY="your-api-key"
+realm api --port 8080
 
-# Hybrid mode
-realm api -c config.json --port 8080 --api-key "your-api-key"
+# Custom global configuration with authentication
+export REALM_API_KEY="your-api-key"
+realm api -c config.json --port 8080
 ```
 
 ### Create First Proxy Instance
@@ -43,7 +45,8 @@ curl -X POST http://localhost:8080/instances \
 ### Basic Mode
 
 ```bash
-realm api --port 8080 --api-key "your-api-key"
+export REALM_API_KEY="your-api-key"
+realm api --port 8080
 ```
 
 **Use Cases:**
@@ -59,7 +62,8 @@ realm api --port 8080 --api-key "your-api-key"
 ### Hybrid Mode (Recommended)
 
 ```bash
-realm api -c global-config.json --port 8080 --api-key "your-api-key"
+export REALM_API_KEY="your-api-key"
+realm api -c global-config.json --port 8080
 ```
 
 **Use Cases:**
@@ -78,12 +82,19 @@ realm api -c global-config.json --port 8080 --api-key "your-api-key"
 ### Security Configuration
 
 ```bash
-# Development mode
+# Development mode (no authentication)
 realm api
 
-# Production mode
-realm api --port 8080 --api-key "your-secure-api-key"
+# Production mode with authentication
+export REALM_API_KEY="your-secure-api-key"
+realm api --port 8080
 ```
+
+**Security Best Practices:**
+- Use `REALM_API_KEY` environment variable for authentication
+- Use strong, randomly generated API keys: `openssl rand -hex 32`
+- Rotate API keys regularly
+- Use HTTPS/TLS in production deployments
 
 ### Request Headers
 
@@ -213,7 +224,7 @@ Global Configuration (Process Level)
 ```json
 {
   "network": {
-    "no_tcp": false,               // Disable TCP
+    "no_tcp": false,              // Disable TCP
     "use_udp": true,              // Enable UDP
     "ipv6_only": false,           // IPv6 only mode
     "send_mptcp": true,           // Send multipath TCP
@@ -362,7 +373,8 @@ cat > /etc/realm/global.json << EOF
 EOF
 
 # Start API server
-realm api -c /etc/realm/global.json --port 8080 --api-key "${REALM_API_KEY}"
+export REALM_API_KEY=$(openssl rand -hex 32)
+realm api -c /etc/realm/global.json --port 8080
 ```
 
 #### 2. Security Configuration
@@ -375,7 +387,8 @@ export REALM_API_KEY=$(openssl rand -hex 32)
 useradd -r -s /bin/false realm
 
 # Run with restricted permissions
-sudo -u realm realm api -c /etc/realm/global.json --port 8080 --api-key "${REALM_API_KEY}"
+sudo -u realm env REALM_API_KEY="${REALM_API_KEY}" \
+  realm api -c /etc/realm/global.json --port 8080
 ```
 
 #### 3. Reverse Proxy Configuration
@@ -414,8 +427,7 @@ services:
     command: >
       realm api 
       -c /etc/realm/global.json 
-      --port 8080 
-      --api-key "${REALM_API_KEY}"
+      --port 8080
     restart: unless-stopped
 ```
 
@@ -457,8 +469,6 @@ spec:
           - /etc/realm/global.json
           - --port
           - "8080"
-          - --api-key
-          - $(REALM_API_KEY)
       volumes:
       - name: config
         configMap:

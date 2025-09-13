@@ -1,4 +1,5 @@
 use clap::{Command, ArgMatches};
+use std::env;
 
 use realm_core::realm_io;
 use realm_core::realm_syscall;
@@ -9,6 +10,7 @@ use crate::conf::{Config, LogConf, DnsConf, NetConf};
 
 use crate::VERSION;
 use crate::consts::FEATURES;
+use crate::ENV_API_KEY;
 
 mod sub;
 mod flag;
@@ -56,7 +58,7 @@ pub fn scan() -> CmdInput {
         }
         Some(("api", sub_matches)) => {
             let port: u16 = sub_matches.get_one::<String>("port").unwrap().parse().unwrap();
-            let api_key = sub_matches.get_one::<String>("api-key").cloned();
+            let api_key = env::var(ENV_API_KEY).ok();
             let config_file = sub_matches.get_one::<String>("config").cloned();
             return CmdInput::Api(port, api_key, config_file);
         }
