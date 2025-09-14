@@ -2,21 +2,23 @@ use axum::{
     extract::{Path, State},
     http::{StatusCode, HeaderMap},
     response::Json,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
     middleware::from_fn_with_state,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::{env, fs, path::Path as StdPath};
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::task::JoinHandle;
+use chrono::Utc;
 use utoipa::{OpenApi, ToSchema, Modify};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa_swagger_ui::SwaggerUi;
 use headers::HeaderName;
 
-use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf, FullConf};
+use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf, FullConf, PersistedInstance};
 use realm_core::tcp::run_tcp;
 use realm_core::udp::run_udp;
 
@@ -50,6 +52,17 @@ pub struct Instance {
     pub id: String,
     pub config: EndpointConf,
     pub status: InstanceStatus,
+    #[serde(default = "default_auto_start")]
+    pub auto_start: bool,
+}
+
+fn default_auto_start() -> bool {
+    true
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct InstanceAutoStartUpdate {
+    pub auto_start: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, ToSchema)]
@@ -60,10 +73,140 @@ pub enum InstanceStatus {
 }
 
 #[derive(Clone)]
+pub enum PersistenceMode {
+    Hybrid {
+        config_file: String,
+    },
+    SelfManaged {
+        storage_path: String,
+    },
+}
+
+#[derive(Clone)]
+pub struct PersistenceManager {
+    mode: PersistenceMode,
+    global_config: Option<FullConf>,
+}
+
+impl PersistenceManager {
+    pub fn new(config_file: Option<String>, global_config: Option<FullConf>) -> Self {
+        let mode = match config_file {
+            Some(file) => PersistenceMode::Hybrid { config_file: file },
+            None => {
+                let storage_path = env::var("REALM_INSTANCE_STORE")
+                    .unwrap_or_else(|_| "./instances/realm.json".to_string());
+                PersistenceMode::SelfManaged { storage_path }
+            }
+        };
+        
+        PersistenceManager { mode, global_config }
+    }
+
+    pub async fn save_instances(&self, instances: &HashMap<String, InstanceData>) -> Result<(), Box<dyn std::error::Error>> {
+        let persisted_instances: Vec<PersistedInstance> = instances
+            .values()
+            .map(|data| PersistedInstance {
+                id: data.instance.id.clone(),
+                config: data.instance.config.clone(),
+                status: match &data.instance.status {
+                    InstanceStatus::Running => "Running".to_string(),
+                    InstanceStatus::Stopped => "Stopped".to_string(),
+                    InstanceStatus::Failed(e) => format!("Failed({})", e),
+                },
+                auto_start: data.instance.auto_start,
+                created_at: Utc::now().to_rfc3339(),
+                updated_at: Some(Utc::now().to_rfc3339()),
+            })
+            .collect();
+
+        match &self.mode {
+            PersistenceMode::Hybrid { config_file } => {
+                self.save_hybrid_config(config_file, persisted_instances).await
+            }
+            PersistenceMode::SelfManaged { storage_path } => {
+                self.save_self_managed_config(storage_path, persisted_instances).await
+            }
+        }
+    }
+
+    fn create_instances_snapshot(instances: &HashMap<String, InstanceData>) -> HashMap<String, InstanceData> {
+        instances.iter().map(|(k, v)| (k.clone(), InstanceData {
+            instance: v.instance.clone(),
+            tcp_handle: None,
+            udp_handle: None,
+        })).collect()
+    }
+
+    async fn save_hybrid_config(&self, config_file: &str, instances: Vec<PersistedInstance>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut config = if StdPath::new(config_file).exists() {
+            FullConf::from_conf_file(config_file)
+        } else {
+            self.global_config.clone().unwrap_or_default()
+        };
+        
+        config.instances = instances;
+        self.atomic_write(config_file, &config).await
+    }
+
+    async fn save_self_managed_config(&self, storage_path: &str, instances: Vec<PersistedInstance>) -> Result<(), Box<dyn std::error::Error>> {
+        let config = FullConf {
+            log: self.create_default_log_config(),
+            dns: self.create_default_dns_config(), 
+            network: self.create_default_network_config(),
+            endpoints: vec![],
+            instances,
+        };
+
+        if let Some(parent) = StdPath::new(storage_path).parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        self.atomic_write(storage_path, &config).await
+    }
+
+    async fn atomic_write(&self, file_path: &str, config: &FullConf) -> Result<(), Box<dyn std::error::Error>> {
+        let temp_file = format!("{}.tmp", file_path);
+        let content = serde_json::to_string_pretty(config)?;
+        
+        fs::write(&temp_file, content)?;
+        fs::rename(&temp_file, file_path)?;
+        
+        Ok(())
+    }
+
+    pub fn load_instances(&self) -> Result<Vec<PersistedInstance>, Box<dyn std::error::Error>> {
+        let config_path = match &self.mode {
+            PersistenceMode::Hybrid { config_file } => config_file.clone(),
+            PersistenceMode::SelfManaged { storage_path } => storage_path.clone(),
+        };
+
+        if !StdPath::new(&config_path).exists() {
+            return Ok(vec![]);
+        }
+
+        let config = FullConf::from_conf_file(&config_path);
+        Ok(config.instances)
+    }
+
+    fn create_default_log_config(&self) -> crate::conf::LogConf {
+        crate::conf::LogConf::default()
+    }
+
+    fn create_default_dns_config(&self) -> crate::conf::DnsConf {
+        crate::conf::DnsConf::default()
+    }
+
+    fn create_default_network_config(&self) -> crate::conf::NetConf {
+        crate::conf::NetConf::default()
+    }
+}
+
+#[derive(Clone)]
 pub struct AppState {
     pub instances: Arc<AsyncMutex<HashMap<String, InstanceData>>>,
     pub api_key: Option<String>,
     pub global_config: Option<FullConf>,
+    pub persistence: Option<PersistenceManager>,
 }
 
 pub struct InstanceData {
@@ -96,10 +239,7 @@ async fn list_instances(State(state): State<AppState>) -> Json<Vec<Instance>> {
     request_body = EndpointConf,
     responses(
         (status = 201, description = "Instance created", body = Instance),
-        (status = 400, description = "Invalid configuration - malformed request body"),
         (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 409, description = "Conflict - instance with this configuration already exists"),
-        (status = 422, description = "Unprocessable entity - configuration validation failed"),
         (status = 500, description = "Internal server error")
     ),
     security(
@@ -119,6 +259,7 @@ async fn create_instance(
         id: id.clone(),
         config: config.clone(),
         status: InstanceStatus::Running,
+        auto_start: true,
     };
 
     let endpoint_info = config.build();
@@ -145,6 +286,17 @@ async fn create_instance(
         tcp_handle,
         udp_handle,
     });
+    
+    if let Some(persistence) = &state.persistence {
+        let persistence_clone = persistence.clone();
+        let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+        tokio::spawn(async move {
+            if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                eprintln!("Failed to save instances: {}", e);
+            }
+        });
+    }
+    
     Ok(Json(instance))
 }
 
@@ -181,11 +333,8 @@ async fn get_instance(
     request_body = EndpointConf,
     responses(
         (status = 200, description = "Instance updated", body = Instance),
-        (status = 400, description = "Invalid configuration - malformed request body"),
         (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
-        (status = 409, description = "Conflict - cannot update running instance"),
-        (status = 422, description = "Unprocessable entity - configuration validation failed"),
         (status = 500, description = "Internal server error")
     ),
     security(
@@ -224,6 +373,58 @@ async fn update_instance(
         data.udp_handle = udp_handle;
         let instance = data.instance.clone();
         instances.insert(id, data);
+        
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+        
+        Ok(Json(instance))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+#[utoipa::path(
+    patch,
+    path = "/instances/{id}",
+    params(("id" = String, Path, description = "Instance ID")),
+    request_body = InstanceAutoStartUpdate,
+    responses(
+        (status = 200, description = "Instance auto-start setting updated", body = Instance),
+        (status = 401, description = "Unauthorized - API key required or invalid"),
+        (status = 404, description = "Instance not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+async fn patch_instance_auto_start(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(update): Json<InstanceAutoStartUpdate>,
+) -> Result<Json<Instance>, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(data) = instances.get_mut(&id) {
+        data.instance.auto_start = update.auto_start;
+        let instance = data.instance.clone();
+        
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+        
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
@@ -239,7 +440,7 @@ async fn update_instance(
         (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
         (status = 409, description = "Conflict - instance already running"),
-        (status = 500, description = "Internal server error - failed to start instance")
+        (status = 500, description = "Internal server error")
     ),
     security(
         ("api_key" = [])
@@ -275,6 +476,17 @@ async fn start_instance(
         data.udp_handle = udp_handle;
         let instance = data.instance.clone();
         instances.insert(id, data);
+        
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+        
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
@@ -290,7 +502,7 @@ async fn start_instance(
         (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
         (status = 409, description = "Conflict - instance already stopped"),
-        (status = 500, description = "Internal server error - failed to stop instance")
+        (status = 500, description = "Internal server error")
     ),
     security(
         ("api_key" = [])
@@ -319,6 +531,17 @@ async fn stop_instance(
         data.instance.status = InstanceStatus::Stopped;
         let instance = data.instance.clone();
         instances.insert(id, data);
+        
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+        
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
@@ -333,8 +556,7 @@ async fn stop_instance(
         (status = 200, description = "Instance restarted", body = Instance),
         (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
-        (status = 409, description = "Conflict - instance cannot be restarted"),
-        (status = 500, description = "Internal server error - failed to restart instance")
+        (status = 500, description = "Internal server error")
     ),
     security(
         ("api_key" = [])
@@ -370,6 +592,17 @@ async fn restart_instance(
         data.udp_handle = udp_handle;
         let instance = data.instance.clone();
         instances.insert(id, data);
+        
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+        
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
@@ -384,7 +617,6 @@ async fn restart_instance(
         (status = 204, description = "Instance deleted"),
         (status = 401, description = "Unauthorized - API key required or invalid"),
         (status = 404, description = "Instance not found"),
-        (status = 409, description = "Conflict - cannot delete running instance"),
         (status = 500, description = "Internal server error")
     ),
     security(
@@ -403,6 +635,17 @@ async fn delete_instance(
         if let Some(udp_handle) = data.udp_handle {
             udp_handle.abort();
         }
+        
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+        
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(StatusCode::NOT_FOUND)
@@ -458,13 +701,14 @@ impl Modify for SecurityAddon {
         create_instance,
         get_instance,
         update_instance,
+        patch_instance_auto_start,
         delete_instance,
         start_instance,
         stop_instance,
         restart_instance,
     ),
     components(
-        schemas(Instance, InstanceStatus, EndpointConf, NetConf)
+        schemas(Instance, InstanceStatus, InstanceAutoStartUpdate, EndpointConf, NetConf)
     ),
     modifiers(&SecurityAddon),
     tags(
@@ -473,7 +717,7 @@ impl Modify for SecurityAddon {
 )]
 struct ApiDoc;
 
-pub async fn start_api_server(port: u16, api_key: Option<String>, global_config: Option<FullConf>) {
+pub async fn start_api_server(port: u16, api_key: Option<String>, global_config: Option<FullConf>, config_file: Option<String>) {
     let config = global_config.unwrap_or_else(|| {
         println!("No configuration file provided, using default global settings");
         FullConf::default()
@@ -507,10 +751,64 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
         realm_core::kaminari::install_tls_provider();
     }
 
+    let persistence = PersistenceManager::new(config_file, Some(config.clone()));
+    
+    let mut restored_instances = HashMap::new();
+    match persistence.load_instances() {
+        Ok(persisted_instances) => {
+            println!("Loading {} saved instances...", persisted_instances.len());
+            for persisted in persisted_instances {
+                let status = match persisted.status.as_str() {
+                    "Running" => InstanceStatus::Stopped, 
+                    "Stopped" => InstanceStatus::Stopped,
+                    s if s.starts_with("Failed(") => InstanceStatus::Failed(s.strip_prefix("Failed(").unwrap_or("Unknown error").strip_suffix(")").unwrap_or("Unknown error").to_string()),
+                    _ => InstanceStatus::Stopped,
+                };
+                
+                let instance = Instance {
+                    id: persisted.id.clone(),
+                    config: persisted.config.clone(),
+                    status,
+                    auto_start: persisted.auto_start,
+                };
+                
+                let instance_data = InstanceData {
+                    instance,
+                    tcp_handle: None,
+                    udp_handle: None,
+                };
+                
+                restored_instances.insert(persisted.id.clone(), instance_data);
+                
+                if persisted.auto_start && persisted.status != "Failed" {
+                    if let Some(data) = restored_instances.get_mut(&persisted.id) {
+                        let endpoint_info = data.instance.config.clone().build();
+                        match start_realm_endpoint(endpoint_info) {
+                            Ok((tcp_handle, udp_handle)) => {
+                                data.instance.status = InstanceStatus::Running;
+                                data.tcp_handle = tcp_handle;
+                                data.udp_handle = udp_handle;
+                                println!("Auto-started instance: {}", persisted.id);
+                            }
+                            Err(e) => {
+                                data.instance.status = InstanceStatus::Failed(e.to_string());
+                                eprintln!("Failed to auto-start instance {}: {}", persisted.id, e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to load instances: {}", e);
+        }
+    }
+
     let state = AppState {
-        instances: Arc::new(AsyncMutex::new(HashMap::new())),
+        instances: Arc::new(AsyncMutex::new(restored_instances)),
         api_key: api_key.clone(),
         global_config: Some(config),
+        persistence: Some(persistence),
     };
 
     let api_routes = Router::new()
@@ -518,6 +816,7 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
         .route("/instances", post(create_instance))
         .route("/instances/:id", get(get_instance))
         .route("/instances/:id", put(update_instance))
+        .route("/instances/:id", patch(patch_instance_auto_start))
         .route("/instances/:id", delete(delete_instance))
         .route("/instances/:id/start", post(start_instance))
         .route("/instances/:id/stop", post(stop_instance))

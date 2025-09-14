@@ -1,12 +1,13 @@
 # Realm HTTP API Documentation
 
-Realm provides HTTP API for dynamic instance management with two deployment modes: basic mode for simple use cases and hybrid mode for enterprise deployments with global configuration management.
+Realm provides HTTP API for dynamic instance management with two deployment modes: basic mode for simple use cases and hybrid mode for enterprise deployments with global configuration management and instance persistence.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
 - [Deployment Modes](#deployment-modes)
 - [API Authentication](#api-authentication)
+- [Instance Persistence](#instance-persistence)
 - [Global Configuration Architecture](#global-configuration-architecture)
 - [API Reference](#api-reference)
 - [Instance Configuration Fields](#instance-configuration-fields)
@@ -104,6 +105,107 @@ When authentication is enabled, all requests must include the authentication hea
 curl -H "X-API-Key: your-api-key" http://localhost:8080/instances
 ```
 
+## Instance Persistence
+
+Realm API supports instance persistence, automatically saving and restoring instance configurations across server restarts.
+
+### Persistence Modes
+
+#### 1. Hybrid Mode
+
+When using `-c` parameter with a configuration file:
+
+```bash
+realm api -c global-config.json --port 8080
+```
+
+- Instance configurations are saved in the existing configuration file's `instances` array
+- Fully backward compatible - existing configuration files need no modifications
+- `endpoints` array is ignored by API - only global settings (log/dns/network) are used
+- `instances` array stores dynamic instances created via API
+
+Example configuration file:
+```json
+{
+  "log": {
+    "level": "info",
+    "output": "/var/log/realm-api.log"
+  },
+  "network": {
+    "tcp_keepalive": 60,
+    "tcp_timeout": 10
+  },
+  "endpoints": [
+    {
+      "listen": "0.0.0.0:9000",
+      "remote": "static-server.com:80"
+    }
+  ],
+  "instances": [
+    {
+      "id": "uuid-1",
+      "config": {
+        "listen": "0.0.0.0:8080",
+        "remote": "dynamic-server.com:80"
+      },
+      "status": "Running",
+      "auto_start": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+#### 2. Self-Managed Mode
+
+When no configuration file is specified:
+
+```bash
+realm api --port 8080
+```
+
+- Automatically creates independent instance storage: `./instances/realm.json`
+- Includes default global configuration + instance configurations
+- Storage path can be customized via `REALM_INSTANCE_STORE` environment variable
+
+```bash
+export REALM_INSTANCE_STORE="/var/lib/realm/instances.json"
+realm api --port 8080
+```
+
+### Instance Lifecycle
+
+#### Auto-Start Behavior
+- Instances with `auto_start: true` are automatically started when the API server starts
+- Failed instances are not auto-started
+- Use the PATCH endpoint to control auto-start behavior:
+
+```bash
+curl -X PATCH http://localhost:8080/instances/{id} \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"auto_start": false}'
+```
+
+#### Persistence Events
+- Instance creation
+- Configuration updates
+- Start/stop/restart operations
+- Auto-start setting changes
+- Instance deletion
+
+#### Data Integrity
+- Atomic writes using temporary files + rename
+- Write failures don't affect runtime operations
+- Failed operations are logged for monitoring
+
+### Backward Compatibility
+
+- All existing API interfaces remain unchanged
+- Existing configuration file formats are fully compatible
+- Behavior without persistence enabled is identical to previous versions
+- Progressive adoption - users can choose whether to enable persistence
+
 ## Global Configuration Architecture
 
 ### Configuration Hierarchy
@@ -161,6 +263,7 @@ Global Configuration (Process Level)
 | `POST` | `/instances` | Create new instance |
 | `GET` | `/instances/{id}` | Get instance details |
 | `PUT` | `/instances/{id}` | Update instance configuration |
+| `PATCH` | `/instances/{id}` | Update instance auto-start setting |
 | `DELETE` | `/instances/{id}` | Delete instance |
 
 ### Instance Control
@@ -340,6 +443,12 @@ curl -X PUT http://localhost:8080/instances/{instance-id} \
     "remote": "new-backend.example.com:80"
   }'
 
+# Update auto-start setting
+curl -X PATCH http://localhost:8080/instances/{instance-id} \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"auto_start": false}'
+
 # Delete instance
 curl -X DELETE -H "X-API-Key: your-api-key" \
      http://localhost:8080/instances/{instance-id}
@@ -391,7 +500,27 @@ sudo -u realm env REALM_API_KEY="${REALM_API_KEY}" \
   realm api -c /etc/realm/global.json --port 8080
 ```
 
-#### 3. Reverse Proxy Configuration
+#### 3. Instance Persistence Configuration
+
+```bash
+# Production persistence with backup
+export REALM_INSTANCE_STORE="/var/lib/realm/instances.json"
+
+# Ensure directory exists with correct permissions
+mkdir -p /var/lib/realm
+chown realm:realm /var/lib/realm
+chmod 750 /var/lib/realm
+
+# Setup automatic backups
+cat > /etc/cron.d/realm-backup << EOF
+0 */6 * * * realm cp /var/lib/realm/instances.json /var/lib/realm/instances.json.backup.\$(date +\%Y\%m\%d\%H)
+EOF
+
+# For hybrid mode, backup the entire configuration
+cp /etc/realm/global.json /etc/realm/global.json.backup.$(date +%Y%m%d)
+```
+
+#### 4. Reverse Proxy Configuration
 
 ```nginx
 # nginx configuration example
@@ -539,11 +668,8 @@ sysctl net.core.somaxconn=65536
 
 #### POST /instances
 - `201` - Instance created successfully
-- `400` - Invalid configuration or malformed request
 - `401` - Unauthorized access
-- `409` - Instance with similar configuration already exists
-- `422` - Configuration validation failed
-- `500` - Failed to create instance
+- `500` - Internal server error
 
 #### GET /instances/{id}
 - `200` - Instance found and returned
@@ -553,37 +679,38 @@ sysctl net.core.somaxconn=65536
 
 #### PUT /instances/{id}
 - `200` - Instance updated successfully
-- `400` - Invalid configuration or malformed request
 - `401` - Unauthorized access
 - `404` - Instance not found
-- `409` - Cannot update running instance
-- `422` - Configuration validation failed
-- `500` - Failed to update instance
+- `500` - Internal server error
+
+#### PATCH /instances/{id}
+- `200` - Instance auto-start setting updated successfully
+- `401` - Unauthorized access
+- `404` - Instance not found
+- `500` - Internal server error
 
 #### DELETE /instances/{id}
 - `204` - Instance deleted successfully
 - `401` - Unauthorized access
 - `404` - Instance not found
-- `409` - Cannot delete running instance
-- `500` - Failed to delete instance
+- `500` - Internal server error
 
 #### POST /instances/{id}/start
 - `200` - Instance started successfully
 - `401` - Unauthorized access
 - `404` - Instance not found
 - `409` - Instance already running
-- `500` - Failed to start instance
+- `500` - Internal server error
 
 #### POST /instances/{id}/stop
 - `200` - Instance stopped successfully
 - `401` - Unauthorized access
 - `404` - Instance not found
 - `409` - Instance already stopped
-- `500` - Failed to stop instance
+- `500` - Internal server error
 
 #### POST /instances/{id}/restart
 - `200` - Instance restarted successfully
 - `401` - Unauthorized access
 - `404` - Instance not found
-- `409` - Instance cannot be restarted
-- `500` - Failed to restart instance
+- `500` - Internal server error

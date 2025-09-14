@@ -43,8 +43,8 @@ fn main() {
                 conf
             }
             CmdInput::Api(port, api_key, config_file) => {
-                let global_conf = if let Some(config_file) = config_file {
-                    let mut conf = FullConf::from_conf_file(&config_file);
+                let global_conf = if let Some(config_file) = &config_file {
+                    let mut conf = FullConf::from_conf_file(config_file);
                     conf.apply_global_opts();
                     Some(conf)
                 } else {
@@ -55,7 +55,7 @@ fn main() {
                     .enable_all()
                     .build()
                     .unwrap()
-                    .block_on(api::start_api_server(port, api_key, global_conf));
+                    .block_on(api::start_api_server(port, api_key, global_conf, config_file));
                 std::process::exit(0);
             }
             CmdInput::None => std::process::exit(0),
