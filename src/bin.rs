@@ -4,6 +4,7 @@ use cfg_if::cfg_if;
 use realm::cmd;
 use realm::conf::{Config, FullConf, LogConf, DnsConf, EndpointInfo};
 use realm::ENV_CONFIG;
+#[cfg(feature = "api")]
 use realm::api;
 
 cfg_if! {
@@ -42,6 +43,7 @@ fn main() {
                 conf.apply_global_opts().apply_cmd_opts(opts);
                 conf
             }
+            #[cfg(feature = "api")]
             CmdInput::Api(port, api_key, config_file) => {
                 let global_conf = if let Some(config_file) = &config_file {
                     let mut conf = FullConf::from_conf_file(config_file);

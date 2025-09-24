@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.9.6"
+version = "2.9.7"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -48,14 +48,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 # web api
-axum = "0.7"
-utoipa = { version = "4", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "7", features = ["axum", "vendored"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors"] }
-uuid = { version = "1", features = ["v4"] }
-tempfile = "3"
-headers = "0.4"
+axum = { version = "0.7", optional = true }
+uuid = { version = "1", optional = true, default-features = false, features = ["v4"] }
+headers = { version = "0.4", default-features = false, optional = true }
 
 # malloc
 mimalloc = { version = "0.1", optional = true, default-features = false }
@@ -85,6 +80,7 @@ multi-thread = ["tokio/rt-multi-thread", "realm_core/multi-thread"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
 page-alloc = ["mmap-allocator"]
+api = ["axum", "uuid", "headers"]
 
 
 [profile.release]

@@ -13,14 +13,14 @@ use std::{env, fs, path::Path as StdPath};
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::task::JoinHandle;
 use chrono::Utc;
-use utoipa::{OpenApi, ToSchema, Modify};
-use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
-use utoipa_swagger_ui::SwaggerUi;
+
 use headers::HeaderName;
 
-use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf, FullConf, PersistedInstance};
+use crate::conf::{EndpointConf, EndpointInfo, Config, FullConf, PersistedInstance};
 use realm_core::tcp::run_tcp;
 use realm_core::udp::run_udp;
+
+pub const ENV_API_KEY: &str = "REALM_API_KEY";
 
 static X_API_KEY: HeaderName = HeaderName::from_static("x-api-key");
 
@@ -47,7 +47,7 @@ async fn auth_middleware(
     Err(StatusCode::UNAUTHORIZED)
 }
 
-#[derive(Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Instance {
     pub id: String,
     pub config: EndpointConf,
@@ -60,12 +60,12 @@ fn default_auto_start() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct InstanceAutoStartUpdate {
     pub auto_start: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum InstanceStatus {
     Running,
     Stopped,
@@ -74,12 +74,8 @@ pub enum InstanceStatus {
 
 #[derive(Clone)]
 pub enum PersistenceMode {
-    Hybrid {
-        config_file: String,
-    },
-    SelfManaged {
-        storage_path: String,
-    },
+    Hybrid { config_file: String },
+    SelfManaged { storage_path: String },
 }
 
 #[derive(Clone)]
@@ -93,16 +89,19 @@ impl PersistenceManager {
         let mode = match config_file {
             Some(file) => PersistenceMode::Hybrid { config_file: file },
             None => {
-                let storage_path = env::var("REALM_INSTANCE_STORE")
-                    .unwrap_or_else(|_| "./instances/realm.json".to_string());
+                let storage_path =
+                    env::var("REALM_INSTANCE_STORE").unwrap_or_else(|_| "./instances/realm.json".to_string());
                 PersistenceMode::SelfManaged { storage_path }
             }
         };
-        
+
         PersistenceManager { mode, global_config }
     }
 
-    pub async fn save_instances(&self, instances: &HashMap<String, InstanceData>) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn save_instances(
+        &self,
+        instances: &HashMap<String, InstanceData>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let persisted_instances: Vec<PersistedInstance> = instances
             .values()
             .map(|data| PersistedInstance {
@@ -120,9 +119,7 @@ impl PersistenceManager {
             .collect();
 
         match &self.mode {
-            PersistenceMode::Hybrid { config_file } => {
-                self.save_hybrid_config(config_file, persisted_instances).await
-            }
+            PersistenceMode::Hybrid { config_file } => self.save_hybrid_config(config_file, persisted_instances).await,
             PersistenceMode::SelfManaged { storage_path } => {
                 self.save_self_managed_config(storage_path, persisted_instances).await
             }
@@ -130,28 +127,44 @@ impl PersistenceManager {
     }
 
     fn create_instances_snapshot(instances: &HashMap<String, InstanceData>) -> HashMap<String, InstanceData> {
-        instances.iter().map(|(k, v)| (k.clone(), InstanceData {
-            instance: v.instance.clone(),
-            tcp_handle: None,
-            udp_handle: None,
-        })).collect()
+        instances
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    InstanceData {
+                        instance: v.instance.clone(),
+                        tcp_handle: None,
+                        udp_handle: None,
+                    },
+                )
+            })
+            .collect()
     }
 
-    async fn save_hybrid_config(&self, config_file: &str, instances: Vec<PersistedInstance>) -> Result<(), Box<dyn std::error::Error>> {
+    async fn save_hybrid_config(
+        &self,
+        config_file: &str,
+        instances: Vec<PersistedInstance>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let mut config = if StdPath::new(config_file).exists() {
             FullConf::from_conf_file(config_file)
         } else {
             self.global_config.clone().unwrap_or_default()
         };
-        
+
         config.instances = instances;
         self.atomic_write(config_file, &config).await
     }
 
-    async fn save_self_managed_config(&self, storage_path: &str, instances: Vec<PersistedInstance>) -> Result<(), Box<dyn std::error::Error>> {
+    async fn save_self_managed_config(
+        &self,
+        storage_path: &str,
+        instances: Vec<PersistedInstance>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let config = FullConf {
             log: self.create_default_log_config(),
-            dns: self.create_default_dns_config(), 
+            dns: self.create_default_dns_config(),
             network: self.create_default_network_config(),
             endpoints: vec![],
             instances,
@@ -167,10 +180,10 @@ impl PersistenceManager {
     async fn atomic_write(&self, file_path: &str, config: &FullConf) -> Result<(), Box<dyn std::error::Error>> {
         let temp_file = format!("{}.tmp", file_path);
         let content = serde_json::to_string_pretty(config)?;
-        
+
         fs::write(&temp_file, content)?;
         fs::rename(&temp_file, file_path)?;
-        
+
         Ok(())
     }
 
@@ -215,37 +228,12 @@ pub struct InstanceData {
     pub udp_handle: Option<JoinHandle<()>>,
 }
 
-#[utoipa::path(
-    get,
-    path = "/instances",
-    responses(
-        (status = 200, description = "List all instances", body = Vec<Instance>),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
 async fn list_instances(State(state): State<AppState>) -> Json<Vec<Instance>> {
     let instances = state.instances.lock().await;
     let list: Vec<Instance> = instances.values().map(|data| data.instance.clone()).collect();
     Json(list)
 }
 
-#[utoipa::path(
-    post,
-    path = "/instances",
-    request_body = EndpointConf,
-    responses(
-        (status = 201, description = "Instance created", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
 async fn create_instance(
     State(state): State<AppState>,
     Json(mut config): Json<EndpointConf>,
@@ -271,22 +259,28 @@ async fn create_instance(
                 status: InstanceStatus::Failed(e.to_string()),
                 ..instance
             };
-            instances.insert(id.clone(), InstanceData {
-                instance: failed_instance.clone(),
-                tcp_handle: None,
-                udp_handle: None,
-            });
+            instances.insert(
+                id.clone(),
+                InstanceData {
+                    instance: failed_instance.clone(),
+                    tcp_handle: None,
+                    udp_handle: None,
+                },
+            );
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
 
     let mut instances = state.instances.lock().await;
-    instances.insert(id, InstanceData {
-        instance: instance.clone(),
-        tcp_handle,
-        udp_handle,
-    });
-    
+    instances.insert(
+        id,
+        InstanceData {
+            instance: instance.clone(),
+            tcp_handle,
+            udp_handle,
+        },
+    );
+
     if let Some(persistence) = &state.persistence {
         let persistence_clone = persistence.clone();
         let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -296,28 +290,11 @@ async fn create_instance(
             }
         });
     }
-    
+
     Ok(Json(instance))
 }
 
-#[utoipa::path(
-    get,
-    path = "/instances/{id}",
-    params(("id" = String, Path, description = "Instance ID")),
-    responses(
-        (status = 200, description = "Instance found", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
-async fn get_instance(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Instance>, StatusCode> {
+async fn get_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
     let instances = state.instances.lock().await;
     if let Some(data) = instances.get(&id) {
         Ok(Json(data.instance.clone()))
@@ -326,21 +303,6 @@ async fn get_instance(
     }
 }
 
-#[utoipa::path(
-    put,
-    path = "/instances/{id}",
-    params(("id" = String, Path, description = "Instance ID")),
-    request_body = EndpointConf,
-    responses(
-        (status = 200, description = "Instance updated", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
 async fn update_instance(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -373,7 +335,7 @@ async fn update_instance(
         data.udp_handle = udp_handle;
         let instance = data.instance.clone();
         instances.insert(id, data);
-        
+
         if let Some(persistence) = &state.persistence {
             let persistence_clone = persistence.clone();
             let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -383,28 +345,13 @@ async fn update_instance(
                 }
             });
         }
-        
+
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
     }
 }
 
-#[utoipa::path(
-    patch,
-    path = "/instances/{id}",
-    params(("id" = String, Path, description = "Instance ID")),
-    request_body = InstanceAutoStartUpdate,
-    responses(
-        (status = 200, description = "Instance auto-start setting updated", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
 async fn patch_instance_auto_start(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -414,7 +361,7 @@ async fn patch_instance_auto_start(
     if let Some(data) = instances.get_mut(&id) {
         data.instance.auto_start = update.auto_start;
         let instance = data.instance.clone();
-        
+
         if let Some(persistence) = &state.persistence {
             let persistence_clone = persistence.clone();
             let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -424,32 +371,14 @@ async fn patch_instance_auto_start(
                 }
             });
         }
-        
+
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
     }
 }
 
-#[utoipa::path(
-    post,
-    path = "/instances/{id}/start",
-    params(("id" = String, Path, description = "Instance ID")),
-    responses(
-        (status = 200, description = "Instance started", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 409, description = "Conflict - instance already running"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
-async fn start_instance(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Instance>, StatusCode> {
+async fn start_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
     let mut instances = state.instances.lock().await;
     if let Some(mut data) = instances.remove(&id) {
         if data.tcp_handle.is_some() || data.udp_handle.is_some() {
@@ -476,7 +405,7 @@ async fn start_instance(
         data.udp_handle = udp_handle;
         let instance = data.instance.clone();
         instances.insert(id, data);
-        
+
         if let Some(persistence) = &state.persistence {
             let persistence_clone = persistence.clone();
             let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -486,32 +415,14 @@ async fn start_instance(
                 }
             });
         }
-        
+
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
     }
 }
 
-#[utoipa::path(
-    post,
-    path = "/instances/{id}/stop",
-    params(("id" = String, Path, description = "Instance ID")),
-    responses(
-        (status = 200, description = "Instance stopped", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 409, description = "Conflict - instance already stopped"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
-async fn stop_instance(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Instance>, StatusCode> {
+async fn stop_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
     let mut instances = state.instances.lock().await;
     if let Some(mut data) = instances.remove(&id) {
         if data.tcp_handle.is_none() && data.udp_handle.is_none() {
@@ -531,7 +442,7 @@ async fn stop_instance(
         data.instance.status = InstanceStatus::Stopped;
         let instance = data.instance.clone();
         instances.insert(id, data);
-        
+
         if let Some(persistence) = &state.persistence {
             let persistence_clone = persistence.clone();
             let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -541,31 +452,14 @@ async fn stop_instance(
                 }
             });
         }
-        
+
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
     }
 }
 
-#[utoipa::path(
-    post,
-    path = "/instances/{id}/restart",
-    params(("id" = String, Path, description = "Instance ID")),
-    responses(
-        (status = 200, description = "Instance restarted", body = Instance),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
-async fn restart_instance(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Instance>, StatusCode> {
+async fn restart_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
     let mut instances = state.instances.lock().await;
     if let Some(mut data) = instances.remove(&id) {
         if let Some(tcp_handle) = data.tcp_handle.take() {
@@ -592,7 +486,7 @@ async fn restart_instance(
         data.udp_handle = udp_handle;
         let instance = data.instance.clone();
         instances.insert(id, data);
-        
+
         if let Some(persistence) = &state.persistence {
             let persistence_clone = persistence.clone();
             let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -602,31 +496,14 @@ async fn restart_instance(
                 }
             });
         }
-        
+
         Ok(Json(instance))
     } else {
         Err(StatusCode::NOT_FOUND)
     }
 }
 
-#[utoipa::path(
-    delete,
-    path = "/instances/{id}",
-    params(("id" = String, Path, description = "Instance ID")),
-    responses(
-        (status = 204, description = "Instance deleted"),
-        (status = 401, description = "Unauthorized - API key required or invalid"),
-        (status = 404, description = "Instance not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("api_key" = [])
-    )
-)]
-async fn delete_instance(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<StatusCode, StatusCode> {
+async fn delete_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, StatusCode> {
     let mut instances = state.instances.lock().await;
     if let Some(data) = instances.remove(&id) {
         if let Some(tcp_handle) = data.tcp_handle {
@@ -635,7 +512,7 @@ async fn delete_instance(
         if let Some(udp_handle) = data.udp_handle {
             udp_handle.abort();
         }
-        
+
         if let Some(persistence) = &state.persistence {
             let persistence_clone = persistence.clone();
             let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
@@ -645,14 +522,16 @@ async fn delete_instance(
                 }
             });
         }
-        
+
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(StatusCode::NOT_FOUND)
     }
 }
 
-fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<JoinHandle<()>>, Option<JoinHandle<()>>)> {
+fn start_realm_endpoint(
+    endpoint_info: EndpointInfo,
+) -> std::io::Result<(Option<JoinHandle<()>>, Option<JoinHandle<()>>)> {
     let EndpointInfo {
         endpoint,
         no_tcp,
@@ -682,42 +561,13 @@ fn start_realm_endpoint(endpoint_info: EndpointInfo) -> std::io::Result<(Option<
     Ok((tcp_handle, udp_handle))
 }
 
-struct SecurityAddon;
 
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "api_key",
-            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("X-API-Key"))),
-        );
-    }
-}
-
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        list_instances,
-        create_instance,
-        get_instance,
-        update_instance,
-        patch_instance_auto_start,
-        delete_instance,
-        start_instance,
-        stop_instance,
-        restart_instance,
-    ),
-    components(
-        schemas(Instance, InstanceStatus, InstanceAutoStartUpdate, EndpointConf, NetConf)
-    ),
-    modifiers(&SecurityAddon),
-    tags(
-        (name = "realm", description = "Realm instance management API")
-    )
-)]
-struct ApiDoc;
-
-pub async fn start_api_server(port: u16, api_key: Option<String>, global_config: Option<FullConf>, config_file: Option<String>) {
+pub async fn start_api_server(
+    port: u16,
+    api_key: Option<String>,
+    global_config: Option<FullConf>,
+    config_file: Option<String>,
+) {
     let config = global_config.unwrap_or_else(|| {
         println!("No configuration file provided, using default global settings");
         FullConf::default()
@@ -752,34 +602,40 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
     }
 
     let persistence = PersistenceManager::new(config_file, Some(config.clone()));
-    
+
     let mut restored_instances = HashMap::new();
     match persistence.load_instances() {
         Ok(persisted_instances) => {
             println!("Loading {} saved instances...", persisted_instances.len());
             for persisted in persisted_instances {
                 let status = match persisted.status.as_str() {
-                    "Running" => InstanceStatus::Stopped, 
+                    "Running" => InstanceStatus::Stopped,
                     "Stopped" => InstanceStatus::Stopped,
-                    s if s.starts_with("Failed(") => InstanceStatus::Failed(s.strip_prefix("Failed(").unwrap_or("Unknown error").strip_suffix(")").unwrap_or("Unknown error").to_string()),
+                    s if s.starts_with("Failed(") => InstanceStatus::Failed(
+                        s.strip_prefix("Failed(")
+                            .unwrap_or("Unknown error")
+                            .strip_suffix(")")
+                            .unwrap_or("Unknown error")
+                            .to_string(),
+                    ),
                     _ => InstanceStatus::Stopped,
                 };
-                
+
                 let instance = Instance {
                     id: persisted.id.clone(),
                     config: persisted.config.clone(),
                     status,
                     auto_start: persisted.auto_start,
                 };
-                
+
                 let instance_data = InstanceData {
                     instance,
                     tcp_handle: None,
                     udp_handle: None,
                 };
-                
+
                 restored_instances.insert(persisted.id.clone(), instance_data);
-                
+
                 if persisted.auto_start && persisted.status != "Failed" {
                     if let Some(data) = restored_instances.get_mut(&persisted.id) {
                         let endpoint_info = data.instance.config.clone().build();
@@ -825,7 +681,6 @@ pub async fn start_api_server(port: u16, api_key: Option<String>, global_config:
 
     let app = Router::new()
         .merge(api_routes)
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", port);

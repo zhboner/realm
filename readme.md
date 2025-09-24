@@ -337,10 +337,6 @@ In hybrid mode:
 - `POST /instances/{id}/stop` - Stop a running instance
 - `POST /instances/{id}/restart` - Restart an instance
 
-### OpenAPI Documentation
-
-Visit `http://localhost:8080/swagger-ui` for interactive API documentation.
-
 For complete API documentation with examples, security best practices, and advanced configurations, see [readme.api.md](readme.api.md).
 
 ## Overview
