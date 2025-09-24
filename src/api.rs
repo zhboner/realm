@@ -22,6 +22,8 @@ use crate::conf::{EndpointConf, EndpointInfo, Config, NetConf, FullConf, Persist
 use realm_core::tcp::run_tcp;
 use realm_core::udp::run_udp;
 
+pub const ENV_API_KEY: &str = "REALM_API_KEY";
+
 static X_API_KEY: HeaderName = HeaderName::from_static("x-api-key");
 
 async fn auth_middleware(
