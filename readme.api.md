@@ -274,13 +274,6 @@ Global Configuration (Process Level)
 | `POST` | `/instances/{id}/stop` | Stop instance |
 | `POST` | `/instances/{id}/restart` | Restart instance |
 
-### Documentation
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/swagger-ui` | Interactive API documentation |
-| `GET` | `/api-docs/openapi.json` | OpenAPI specification |
-
 ## Instance Configuration Fields
 
 ### Complete Configuration Structure (21 Fields)
