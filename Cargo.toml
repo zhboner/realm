@@ -66,7 +66,7 @@ tokio = { version = "1", features = ["macros"] }
 
 
 [features]
-default = ["proxy", "balance", "multi-thread", "transport", "transport-tls-awslc", "batched-udp", "brutal-shutdown"]
+default = ["proxy", "balance", "multi-thread", "transport", "transport-tls-awslc", "batched-udp", "brutal-shutdown", "api"]
 default-ring = ["proxy", "balance", "multi-thread", "transport", "transport-tls-ring", "batched-udp", "brutal-shutdown"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
