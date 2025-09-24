@@ -1,6 +1,6 @@
 [package]
 name = "realm"
-version = "2.9.2"
+version = "2.9.8"
 authors = ["zhboner <zhboner@gmail.com>"]
 edition = "2021"
 
@@ -47,6 +47,11 @@ toml = "0.9"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
+# web api
+axum = { version = "0.7", optional = true }
+uuid = { version = "1", optional = true, default-features = false, features = ["v4"] }
+headers = { version = "0.4", default-features = false, optional = true }
+
 # malloc
 mimalloc = { version = "0.1", optional = true, default-features = false }
 
@@ -61,8 +66,8 @@ tokio = { version = "1", features = ["macros"] }
 
 
 [features]
-default = ["proxy", "balance", "multi-thread", "transport", "transport-tls-awslc", "batched-udp", "brutal-shutdown"]
-default-ring = ["proxy", "balance", "multi-thread", "transport", "transport-tls-ring", "batched-udp", "brutal-shutdown"]
+default = ["proxy", "balance", "multi-thread", "transport", "transport-tls-awslc", "batched-udp", "brutal-shutdown", "api"]
+default-ring = ["proxy", "balance", "multi-thread", "transport", "transport-tls-ring", "batched-udp", "brutal-shutdown", "api"]
 hook = ["realm_core/hook"]
 proxy = ["realm_core/proxy"]
 brutal-shutdown = ["realm_core/brutal-shutdown"]
@@ -75,6 +80,7 @@ multi-thread = ["tokio/rt-multi-thread", "realm_core/multi-thread"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
 page-alloc = ["mmap-allocator"]
+api = ["axum", "uuid", "headers"]
 
 
 [profile.release]

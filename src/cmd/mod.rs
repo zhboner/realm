@@ -17,6 +17,8 @@ mod flag;
 pub enum CmdInput {
     Config(String, CmdOverride),
     Endpoint(EndpointConf, CmdOverride),
+    #[cfg(feature = "api")]
+    Api(u16, Option<String>, Option<String>),
     None,
 }
 
@@ -53,6 +55,15 @@ pub fn scan() -> CmdInput {
         Some(("convert", sub_matches)) => {
             sub::handle_convert(sub_matches);
             return CmdInput::None;
+        }
+        #[cfg(feature = "api")]
+        Some(("api", sub_matches)) => {
+            use crate::api::ENV_API_KEY;
+            use std::env;
+            let port: u16 = sub_matches.get_one::<String>("port").unwrap().parse().unwrap();
+            let api_key = env::var(ENV_API_KEY).ok();
+            let config_file = sub_matches.get_one::<String>("config").cloned();
+            return CmdInput::Api(port, api_key, config_file);
         }
         _ => {}
     };

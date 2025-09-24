@@ -118,6 +118,7 @@ A high efficiency relay tool
 Usage: realm [FLAGS] [OPTIONS]
 
 Commands:
+  api      start HTTP API server for instance management
   convert  convert your legacy configuration into an advanced one
 
 FLAGS:
@@ -208,6 +209,21 @@ Convert a legacy config file:
 realm convert old.json
 ```
 
+Start HTTP API server:
+
+```shell
+# Default global configuration with authentication
+export REALM_API_KEY="your-secure-api-key-here"
+realm api --port 8080
+
+# Custom global configuration with authentication
+export REALM_API_KEY="your-secure-api-key-here"
+realm api -c global-config.json --port 8080
+
+# Default global configuration without authentication
+realm api --port 8080
+```
+
 ## Configuration
 
 TOML Example
@@ -263,6 +279,65 @@ remote = "www.google.com:443"
 </details>
 
 [See more examples here](./examples).
+
+## HTTP API
+
+Realm supports HTTP API for dynamic instance management with two deployment modes:
+
+### Deployment Modes
+
+#### Basic Mode
+```shell
+# API server with environment variable authentication (default global configuration)
+export REALM_API_KEY="your-secure-api-key-here"
+realm api --port 8080
+```
+
+#### Hybrid Mode
+```shell
+# API server with environment variable authentication (custom global configuration)
+export REALM_API_KEY="your-secure-api-key-here"
+realm api -c global-config.json --port 8080
+```
+
+Global configuration example (`global-config.json`):
+```json
+{
+  "log": {
+    "level": "info",
+    "output": "/var/log/realm-api.log"
+  },
+  "dns": {
+    "mode": "ipv4_then_ipv6",
+    "nameservers": ["8.8.8.8:53", "1.1.1.1:53"],
+    "cache_size": 256
+  },
+  "network": {
+    "tcp_keepalive": 60,
+    "tcp_timeout": 10,
+    "send_proxy": false
+  },
+  "endpoints": []
+}
+```
+
+In hybrid mode:
+- Global log and DNS settings are applied to the entire process
+- Global network settings serve as defaults for all created instances
+- Instances can override specific network settings as needed
+
+### API Endpoints
+
+- `GET /instances` - List all instances
+- `POST /instances` - Create a new instance
+- `GET /instances/{id}` - Get instance details
+- `PUT /instances/{id}` - Update instance configuration
+- `DELETE /instances/{id}` - Delete instance
+- `POST /instances/{id}/start` - Start a stopped instance
+- `POST /instances/{id}/stop` - Stop a running instance
+- `POST /instances/{id}/restart` - Restart an instance
+
+For complete API documentation with examples, security best practices, and advanced configurations, see [readme.api.md](readme.api.md).
 
 ## Overview
 

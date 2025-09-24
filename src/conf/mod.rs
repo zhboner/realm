@@ -52,7 +52,23 @@ pub struct CmdOverride {
     pub network: NetConf,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PersistedInstance {
+    pub id: String,
+    pub config: EndpointConf,
+    pub status: String,
+    #[serde(default = "default_auto_start")]
+    pub auto_start: bool,
+    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
+fn default_auto_start() -> bool {
+    true
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct FullConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Config::is_empty")]
@@ -67,6 +83,10 @@ pub struct FullConf {
     pub network: NetConf,
 
     pub endpoints: Vec<EndpointConf>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub instances: Vec<PersistedInstance>,
 }
 
 impl FullConf {
@@ -77,6 +97,7 @@ impl FullConf {
             dns,
             network,
             endpoints,
+            instances: vec![],
         }
     }
 

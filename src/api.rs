@@ -1,0 +1,696 @@
+use axum::{
+    extract::{Path, State},
+    http::{StatusCode, HeaderMap},
+    response::Json,
+    routing::{delete, get, patch, post, put},
+    Router,
+    middleware::from_fn_with_state,
+};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::{env, fs, path::Path as StdPath};
+use tokio::sync::Mutex as AsyncMutex;
+use tokio::task::JoinHandle;
+use chrono::Utc;
+
+use headers::HeaderName;
+
+use crate::conf::{EndpointConf, EndpointInfo, Config, FullConf, PersistedInstance};
+use realm_core::tcp::run_tcp;
+use realm_core::udp::run_udp;
+
+pub const ENV_API_KEY: &str = "REALM_API_KEY";
+
+static X_API_KEY: HeaderName = HeaderName::from_static("x-api-key");
+
+async fn auth_middleware(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, StatusCode> {
+    if state.api_key.is_none() {
+        return Ok(next.run(request).await);
+    }
+
+    if let Some(api_key_header) = headers.get(&X_API_KEY) {
+        if let Ok(provided_key) = api_key_header.to_str() {
+            if let Some(expected_key) = &state.api_key {
+                if provided_key == expected_key {
+                    return Ok(next.run(request).await);
+                }
+            }
+        }
+    }
+
+    Err(StatusCode::UNAUTHORIZED)
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Instance {
+    pub id: String,
+    pub config: EndpointConf,
+    pub status: InstanceStatus,
+    #[serde(default = "default_auto_start")]
+    pub auto_start: bool,
+}
+
+fn default_auto_start() -> bool {
+    true
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct InstanceAutoStartUpdate {
+    pub auto_start: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub enum InstanceStatus {
+    Running,
+    Stopped,
+    Failed(String),
+}
+
+#[derive(Clone)]
+pub enum PersistenceMode {
+    Hybrid { config_file: String },
+    SelfManaged { storage_path: String },
+}
+
+#[derive(Clone)]
+pub struct PersistenceManager {
+    mode: PersistenceMode,
+    global_config: Option<FullConf>,
+}
+
+impl PersistenceManager {
+    pub fn new(config_file: Option<String>, global_config: Option<FullConf>) -> Self {
+        let mode = match config_file {
+            Some(file) => PersistenceMode::Hybrid { config_file: file },
+            None => {
+                let storage_path =
+                    env::var("REALM_INSTANCE_STORE").unwrap_or_else(|_| "./instances/realm.json".to_string());
+                PersistenceMode::SelfManaged { storage_path }
+            }
+        };
+
+        PersistenceManager { mode, global_config }
+    }
+
+    pub async fn save_instances(
+        &self,
+        instances: &HashMap<String, InstanceData>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let persisted_instances: Vec<PersistedInstance> = instances
+            .values()
+            .map(|data| PersistedInstance {
+                id: data.instance.id.clone(),
+                config: data.instance.config.clone(),
+                status: match &data.instance.status {
+                    InstanceStatus::Running => "Running".to_string(),
+                    InstanceStatus::Stopped => "Stopped".to_string(),
+                    InstanceStatus::Failed(e) => format!("Failed({})", e),
+                },
+                auto_start: data.instance.auto_start,
+                created_at: Utc::now().to_rfc3339(),
+                updated_at: Some(Utc::now().to_rfc3339()),
+            })
+            .collect();
+
+        match &self.mode {
+            PersistenceMode::Hybrid { config_file } => self.save_hybrid_config(config_file, persisted_instances).await,
+            PersistenceMode::SelfManaged { storage_path } => {
+                self.save_self_managed_config(storage_path, persisted_instances).await
+            }
+        }
+    }
+
+    fn create_instances_snapshot(instances: &HashMap<String, InstanceData>) -> HashMap<String, InstanceData> {
+        instances
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    InstanceData {
+                        instance: v.instance.clone(),
+                        tcp_handle: None,
+                        udp_handle: None,
+                    },
+                )
+            })
+            .collect()
+    }
+
+    async fn save_hybrid_config(
+        &self,
+        config_file: &str,
+        instances: Vec<PersistedInstance>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut config = if StdPath::new(config_file).exists() {
+            FullConf::from_conf_file(config_file)
+        } else {
+            self.global_config.clone().unwrap_or_default()
+        };
+
+        config.instances = instances;
+        self.atomic_write(config_file, &config).await
+    }
+
+    async fn save_self_managed_config(
+        &self,
+        storage_path: &str,
+        instances: Vec<PersistedInstance>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let config = FullConf {
+            log: self.create_default_log_config(),
+            dns: self.create_default_dns_config(),
+            network: self.create_default_network_config(),
+            endpoints: vec![],
+            instances,
+        };
+
+        if let Some(parent) = StdPath::new(storage_path).parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        self.atomic_write(storage_path, &config).await
+    }
+
+    async fn atomic_write(&self, file_path: &str, config: &FullConf) -> Result<(), Box<dyn std::error::Error>> {
+        let temp_file = format!("{}.tmp", file_path);
+        let content = serde_json::to_string_pretty(config)?;
+
+        fs::write(&temp_file, content)?;
+        fs::rename(&temp_file, file_path)?;
+
+        Ok(())
+    }
+
+    pub fn load_instances(&self) -> Result<Vec<PersistedInstance>, Box<dyn std::error::Error>> {
+        let config_path = match &self.mode {
+            PersistenceMode::Hybrid { config_file } => config_file.clone(),
+            PersistenceMode::SelfManaged { storage_path } => storage_path.clone(),
+        };
+
+        if !StdPath::new(&config_path).exists() {
+            return Ok(vec![]);
+        }
+
+        let config = FullConf::from_conf_file(&config_path);
+        Ok(config.instances)
+    }
+
+    fn create_default_log_config(&self) -> crate::conf::LogConf {
+        crate::conf::LogConf::default()
+    }
+
+    fn create_default_dns_config(&self) -> crate::conf::DnsConf {
+        crate::conf::DnsConf::default()
+    }
+
+    fn create_default_network_config(&self) -> crate::conf::NetConf {
+        crate::conf::NetConf::default()
+    }
+}
+
+#[derive(Clone)]
+pub struct AppState {
+    pub instances: Arc<AsyncMutex<HashMap<String, InstanceData>>>,
+    pub api_key: Option<String>,
+    pub global_config: Option<FullConf>,
+    pub persistence: Option<PersistenceManager>,
+}
+
+pub struct InstanceData {
+    pub instance: Instance,
+    pub tcp_handle: Option<JoinHandle<()>>,
+    pub udp_handle: Option<JoinHandle<()>>,
+}
+
+async fn list_instances(State(state): State<AppState>) -> Json<Vec<Instance>> {
+    let instances = state.instances.lock().await;
+    let list: Vec<Instance> = instances.values().map(|data| data.instance.clone()).collect();
+    Json(list)
+}
+
+async fn create_instance(
+    State(state): State<AppState>,
+    Json(mut config): Json<EndpointConf>,
+) -> Result<Json<Instance>, StatusCode> {
+    if let Some(global_config) = &state.global_config {
+        config.network.take_field(&global_config.network);
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let instance = Instance {
+        id: id.clone(),
+        config: config.clone(),
+        status: InstanceStatus::Running,
+        auto_start: true,
+    };
+
+    let endpoint_info = config.build();
+    let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
+        Ok(handles) => handles,
+        Err(e) => {
+            let mut instances = state.instances.lock().await;
+            let failed_instance = Instance {
+                status: InstanceStatus::Failed(e.to_string()),
+                ..instance
+            };
+            instances.insert(
+                id.clone(),
+                InstanceData {
+                    instance: failed_instance.clone(),
+                    tcp_handle: None,
+                    udp_handle: None,
+                },
+            );
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    let mut instances = state.instances.lock().await;
+    instances.insert(
+        id,
+        InstanceData {
+            instance: instance.clone(),
+            tcp_handle,
+            udp_handle,
+        },
+    );
+
+    if let Some(persistence) = &state.persistence {
+        let persistence_clone = persistence.clone();
+        let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+        tokio::spawn(async move {
+            if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                eprintln!("Failed to save instances: {}", e);
+            }
+        });
+    }
+
+    Ok(Json(instance))
+}
+
+async fn get_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
+    let instances = state.instances.lock().await;
+    if let Some(data) = instances.get(&id) {
+        Ok(Json(data.instance.clone()))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn update_instance(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(config): Json<EndpointConf>,
+) -> Result<Json<Instance>, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(mut data) = instances.remove(&id) {
+        if let Some(tcp_handle) = data.tcp_handle.take() {
+            tcp_handle.abort();
+        }
+        if let Some(udp_handle) = data.udp_handle.take() {
+            udp_handle.abort();
+        }
+
+        let endpoint_info = config.clone().build();
+        let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
+            Ok(handles) => handles,
+            Err(e) => {
+                data.instance.status = InstanceStatus::Failed(e.to_string());
+                data.tcp_handle = None;
+                data.udp_handle = None;
+                instances.insert(id.clone(), data);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        };
+
+        data.instance.config = config;
+        data.instance.status = InstanceStatus::Running;
+        data.tcp_handle = tcp_handle;
+        data.udp_handle = udp_handle;
+        let instance = data.instance.clone();
+        instances.insert(id, data);
+
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+
+        Ok(Json(instance))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn patch_instance_auto_start(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(update): Json<InstanceAutoStartUpdate>,
+) -> Result<Json<Instance>, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(data) = instances.get_mut(&id) {
+        data.instance.auto_start = update.auto_start;
+        let instance = data.instance.clone();
+
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+
+        Ok(Json(instance))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn start_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(mut data) = instances.remove(&id) {
+        if data.tcp_handle.is_some() || data.udp_handle.is_some() {
+            if matches!(data.instance.status, InstanceStatus::Running) {
+                instances.insert(id, data);
+                return Err(StatusCode::CONFLICT);
+            }
+        }
+
+        let endpoint_info = data.instance.config.clone().build();
+        let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
+            Ok(handles) => handles,
+            Err(e) => {
+                data.instance.status = InstanceStatus::Failed(e.to_string());
+                data.tcp_handle = None;
+                data.udp_handle = None;
+                instances.insert(id.clone(), data);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        };
+
+        data.instance.status = InstanceStatus::Running;
+        data.tcp_handle = tcp_handle;
+        data.udp_handle = udp_handle;
+        let instance = data.instance.clone();
+        instances.insert(id, data);
+
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+
+        Ok(Json(instance))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn stop_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(mut data) = instances.remove(&id) {
+        if data.tcp_handle.is_none() && data.udp_handle.is_none() {
+            if !matches!(data.instance.status, InstanceStatus::Running) {
+                instances.insert(id, data);
+                return Err(StatusCode::CONFLICT);
+            }
+        }
+
+        if let Some(tcp_handle) = data.tcp_handle.take() {
+            tcp_handle.abort();
+        }
+        if let Some(udp_handle) = data.udp_handle.take() {
+            udp_handle.abort();
+        }
+
+        data.instance.status = InstanceStatus::Stopped;
+        let instance = data.instance.clone();
+        instances.insert(id, data);
+
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+
+        Ok(Json(instance))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn restart_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Instance>, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(mut data) = instances.remove(&id) {
+        if let Some(tcp_handle) = data.tcp_handle.take() {
+            tcp_handle.abort();
+        }
+        if let Some(udp_handle) = data.udp_handle.take() {
+            udp_handle.abort();
+        }
+
+        let endpoint_info = data.instance.config.clone().build();
+        let (tcp_handle, udp_handle) = match start_realm_endpoint(endpoint_info) {
+            Ok(handles) => handles,
+            Err(e) => {
+                data.instance.status = InstanceStatus::Failed(e.to_string());
+                data.tcp_handle = None;
+                data.udp_handle = None;
+                instances.insert(id.clone(), data);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        };
+
+        data.instance.status = InstanceStatus::Running;
+        data.tcp_handle = tcp_handle;
+        data.udp_handle = udp_handle;
+        let instance = data.instance.clone();
+        instances.insert(id, data);
+
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+
+        Ok(Json(instance))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn delete_instance(State(state): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, StatusCode> {
+    let mut instances = state.instances.lock().await;
+    if let Some(data) = instances.remove(&id) {
+        if let Some(tcp_handle) = data.tcp_handle {
+            tcp_handle.abort();
+        }
+        if let Some(udp_handle) = data.udp_handle {
+            udp_handle.abort();
+        }
+
+        if let Some(persistence) = &state.persistence {
+            let persistence_clone = persistence.clone();
+            let instances_snapshot = PersistenceManager::create_instances_snapshot(&instances);
+            tokio::spawn(async move {
+                if let Err(e) = persistence_clone.save_instances(&instances_snapshot).await {
+                    eprintln!("Failed to save instances: {}", e);
+                }
+            });
+        }
+
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+fn start_realm_endpoint(
+    endpoint_info: EndpointInfo,
+) -> std::io::Result<(Option<JoinHandle<()>>, Option<JoinHandle<()>>)> {
+    let EndpointInfo {
+        endpoint,
+        no_tcp,
+        use_udp,
+    } = endpoint_info;
+
+    let mut tcp_handle = None;
+    let mut udp_handle = None;
+
+    if use_udp {
+        let endpoint_clone = endpoint.clone();
+        udp_handle = Some(tokio::spawn(async move {
+            if let Err(e) = run_udp(endpoint_clone).await {
+                log::error!("UDP endpoint failed: {}", e);
+            }
+        }));
+    }
+
+    if !no_tcp {
+        tcp_handle = Some(tokio::spawn(async move {
+            if let Err(e) = run_tcp(endpoint).await {
+                log::error!("TCP endpoint failed: {}", e);
+            }
+        }));
+    }
+
+    Ok((tcp_handle, udp_handle))
+}
+
+
+pub async fn start_api_server(
+    port: u16,
+    api_key: Option<String>,
+    global_config: Option<FullConf>,
+    config_file: Option<String>,
+) {
+    let config = global_config.unwrap_or_else(|| {
+        println!("No configuration file provided, using default global settings");
+        FullConf::default()
+    });
+
+    let log_conf = config.log.clone();
+    let (level, output) = log_conf.clone().build();
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}]{}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(level)
+        .chain(output)
+        .apply()
+        .unwrap_or_else(|e| eprintln!("Failed to setup logger: {}", e));
+    println!("Global log configured: {}", log_conf);
+
+    let dns_conf = config.dns.clone();
+    let (conf, opts) = dns_conf.clone().build();
+    realm_core::dns::build_lazy(conf, opts);
+    println!("Global DNS configured: {}", dns_conf);
+
+    #[cfg(feature = "transport")]
+    {
+        realm_core::kaminari::install_tls_provider();
+    }
+
+    let persistence = PersistenceManager::new(config_file, Some(config.clone()));
+
+    let mut restored_instances = HashMap::new();
+    match persistence.load_instances() {
+        Ok(persisted_instances) => {
+            println!("Loading {} saved instances...", persisted_instances.len());
+            for persisted in persisted_instances {
+                let status = match persisted.status.as_str() {
+                    "Running" => InstanceStatus::Stopped,
+                    "Stopped" => InstanceStatus::Stopped,
+                    s if s.starts_with("Failed(") => InstanceStatus::Failed(
+                        s.strip_prefix("Failed(")
+                            .unwrap_or("Unknown error")
+                            .strip_suffix(")")
+                            .unwrap_or("Unknown error")
+                            .to_string(),
+                    ),
+                    _ => InstanceStatus::Stopped,
+                };
+
+                let instance = Instance {
+                    id: persisted.id.clone(),
+                    config: persisted.config.clone(),
+                    status,
+                    auto_start: persisted.auto_start,
+                };
+
+                let instance_data = InstanceData {
+                    instance,
+                    tcp_handle: None,
+                    udp_handle: None,
+                };
+
+                restored_instances.insert(persisted.id.clone(), instance_data);
+
+                if persisted.auto_start && persisted.status != "Failed" {
+                    if let Some(data) = restored_instances.get_mut(&persisted.id) {
+                        let endpoint_info = data.instance.config.clone().build();
+                        match start_realm_endpoint(endpoint_info) {
+                            Ok((tcp_handle, udp_handle)) => {
+                                data.instance.status = InstanceStatus::Running;
+                                data.tcp_handle = tcp_handle;
+                                data.udp_handle = udp_handle;
+                                println!("Auto-started instance: {}", persisted.id);
+                            }
+                            Err(e) => {
+                                data.instance.status = InstanceStatus::Failed(e.to_string());
+                                eprintln!("Failed to auto-start instance {}: {}", persisted.id, e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to load instances: {}", e);
+        }
+    }
+
+    let state = AppState {
+        instances: Arc::new(AsyncMutex::new(restored_instances)),
+        api_key: api_key.clone(),
+        global_config: Some(config),
+        persistence: Some(persistence),
+    };
+
+    let api_routes = Router::new()
+        .route("/instances", get(list_instances))
+        .route("/instances", post(create_instance))
+        .route("/instances/:id", get(get_instance))
+        .route("/instances/:id", put(update_instance))
+        .route("/instances/:id", patch(patch_instance_auto_start))
+        .route("/instances/:id", delete(delete_instance))
+        .route("/instances/:id/start", post(start_instance))
+        .route("/instances/:id/stop", post(stop_instance))
+        .route("/instances/:id/restart", post(restart_instance))
+        .layer(from_fn_with_state(state.clone(), auth_middleware));
+
+    let app = Router::new()
+        .merge(api_routes)
+        .with_state(state);
+
+    let addr = format!("0.0.0.0:{}", port);
+    if let Some(_key) = &api_key {
+        println!("Starting API server on {} with authentication enabled", addr);
+        println!("API key loaded from REALM_API_KEY environment variable");
+    } else {
+        println!("Starting API server on {} without authentication", addr);
+        println!("Set REALM_API_KEY environment variable to enable authentication");
+    }
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}

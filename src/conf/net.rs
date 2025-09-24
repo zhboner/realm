@@ -7,6 +7,7 @@ use crate::consts::{TCP_KEEPALIVE, TCP_KEEPALIVE_PROBE};
 use crate::consts::PROXY_PROTOCOL_VERSION;
 use crate::consts::PROXY_PROTOCOL_TIMEOUT;
 
+
 #[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
 pub struct NetConf {
     #[serde(default)]
