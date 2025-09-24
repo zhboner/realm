@@ -11,7 +11,6 @@ use realm_core::kaminari::mix::{MixAccept, MixConnect};
 
 use super::{Config, NetConf, NetInfo};
 
-#[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EndpointConf {
     pub listen: String,

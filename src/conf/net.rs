@@ -8,7 +8,6 @@ use crate::consts::PROXY_PROTOCOL_VERSION;
 use crate::consts::PROXY_PROTOCOL_TIMEOUT;
 
 
-#[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 #[derive(Serialize, Debug, Deserialize, Clone, Copy, Default)]
 pub struct NetConf {
     #[serde(default)]

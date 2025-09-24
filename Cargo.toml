@@ -49,10 +49,8 @@ serde_json = "1"
 
 # web api
 axum = { version = "0.7", optional = true }
-utoipa = { version = "4", optional = true, features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "7", optional = true, features = ["axum", "vendored"] }
-uuid = { version = "1", optional = true, features = ["v4"] }
-headers = { version = "0.4", optional = true }
+uuid = { version = "1", optional = true, default-features = false, features = ["v4"] }
+headers = { version = "0.4", default-features = false, optional = true }
 
 # malloc
 mimalloc = { version = "0.1", optional = true, default-features = false }
@@ -82,7 +80,7 @@ multi-thread = ["tokio/rt-multi-thread", "realm_core/multi-thread"]
 jemalloc = ["jemallocator"]
 mi-malloc = ["mimalloc"]
 page-alloc = ["mmap-allocator"]
-api = ["axum", "utoipa", "utoipa-swagger-ui", "uuid", "headers"]
+api = ["axum", "uuid", "headers"]
 
 
 [profile.release]
