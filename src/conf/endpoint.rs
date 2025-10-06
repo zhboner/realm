@@ -27,6 +27,10 @@ pub struct EndpointConf {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub failover: Option<bool>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub through: Option<String>,
 
     #[serde(default)]
@@ -91,9 +95,9 @@ impl EndpointConf {
     }
 
     #[cfg(feature = "balance")]
-    fn build_balancer(&self) -> Balancer {
+    fn build_balancer(&self, config: Option<realm_core::balance::HealthCheckConfig>) -> Balancer {
         if let Some(s) = &self.balance {
-            Balancer::parse_from_str(s)
+            Balancer::parse_from_str(s, config)
         } else {
             Balancer::default()
         }
@@ -163,11 +167,22 @@ impl Config for EndpointConf {
             mut conn_opts,
             no_tcp,
             use_udp,
+            max_fails,
+            fail_timeout_ms,
         } = self.network.build();
 
         #[cfg(feature = "balance")]
         {
-            conn_opts.balancer = self.build_balancer();
+            let failover_enabled = self.failover.unwrap_or(false) && !self.extra_remotes.is_empty();
+            let health_config = if failover_enabled {
+                Some(realm_core::balance::HealthCheckConfig {
+                    max_fails,
+                    fail_timeout_secs: (fail_timeout_ms / 1000) as u32,
+                })
+            } else {
+                None
+            };
+            conn_opts.balancer = self.build_balancer(health_config);
         }
 
         #[cfg(feature = "transport")]
@@ -221,6 +236,7 @@ impl Config for EndpointConf {
             network: Default::default(),
             extra_remotes: Vec::new(),
             balance: None,
+            failover: None,
         }
     }
 }
