@@ -29,6 +29,7 @@ def_feat!(FEATURE_MIMALLOC, "mimalloc");
 def_feat!(FEATURE_JEMALLOC, "jemalloc");
 def_feat!(FEATURE_MULTI_THREAD, "multi-thread");
 def_feat!(FEATURE_TRANSPORT, "transport");
+def_feat!(FEATURE_BATCHED_UDP, "batched-udp");
 def_feat!(FEATURE_BRUTAL_SHUTDOWN, "brutal-shutdown");
 
 pub struct Features {
@@ -39,6 +40,7 @@ pub struct Features {
     pub proxy: bool,
     pub balance: bool,
     pub transport: bool,
+    pub batched_udp: bool,
     pub brutal_shutdown: bool,
 }
 
@@ -50,6 +52,7 @@ pub const FEATURES: Features = Features {
     proxy: FEATURE_PROXY,
     balance: FEATURE_BALANCE,
     transport: FEATURE_TRANSPORT,
+    batched_udp: FEATURE_BATCHED_UDP,
     brutal_shutdown: FEATURE_BRUTAL_SHUTDOWN,
 };
 
@@ -67,6 +70,7 @@ impl Display for Features {
         disp_feat!(proxy, "proxy");
         disp_feat!(balance, "balance");
         disp_feat!(brutal_shutdown, "brutal");
+        disp_feat!(batched_udp, "batched-udp");
         disp_feat!(transport, "transport");
         disp_feat!(multi_thread, "multi-thread");
         disp_feat!(mimalloc, "mimalloc");
