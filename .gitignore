@@ -1,3 +1,6 @@
 /target
 /debug
 .DS_Store
+.vscode
+.helix
+
