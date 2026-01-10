@@ -16,7 +16,7 @@ pub struct SockAddrStore {
 }
 
 impl SockAddrStore {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             #[cfg(all(target_os = "linux", feature = "batched-udp"))]
             inner: realm_io::mmsg::SockAddrStore::new(),
@@ -62,7 +62,7 @@ pub struct PacketRef<'buf, 'addr> {
 }
 
 impl Packet {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             buf: [0u8; PACKET_SIZE],
             addr: SockAddrStore::new(),
