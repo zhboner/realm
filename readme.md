@@ -78,6 +78,8 @@ The `realm` binary will be available in `target/release`.
 
 Default: proxy + balance + transport + transport-tls-awslc + batched-udp + brutal-shutdown + multi-thread.
 
+Deafult-Slim: batched-udp + brutal-shutdown + multi-thread.
+
 See also: [Cargo.toml](Cargo.toml).
 
 Examples:
