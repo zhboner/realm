@@ -5,22 +5,18 @@ use libloading::Library;
 
 use super::call_ffi;
 
-static mut LOAD: bool = false;
 static mut DYLIB: OnceCell<Library> = OnceCell::new();
 
 /// Load a dynamic library.
 ///
 /// This is not thread-safe and must be called before interacting with FFI.
 pub fn load_dylib(path: &str) {
-    unsafe {
-        DYLIB.set(Library::new(path).unwrap()).unwrap();
-        LOAD = true;
-    }
+    unsafe { DYLIB.set(Library::new(path).unwrap()).unwrap() }
 }
 
 /// Check if the dynamic library is loaded.
 pub fn is_loaded() -> bool {
-    unsafe { LOAD }
+    unsafe { DYLIB.get().is_some() }
 }
 
 /// Get the required length of first packet.

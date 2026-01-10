@@ -1,6 +1,6 @@
 [package]
 name = "realm_hook"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["zephyr <i@zephyr.moe>"]
 description = "Realm's flexible hooks."
 repository = "https://github.com/zhboner/realm"
@@ -13,4 +13,4 @@ license = "MIT"
 
 [dependencies]
 once_cell = "1"
-libloading = "0.8"
+libloading = "0.9"
