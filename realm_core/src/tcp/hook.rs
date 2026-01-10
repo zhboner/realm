@@ -1,4 +1,4 @@
-use std::io::{Result, Error, ErrorKind};
+use std::io::{Result, Error};
 
 use tokio::net::TcpStream;
 use realm_hook::pre_conn::{self, first_pkt_len, decide_remote_idx};
@@ -28,6 +28,6 @@ pub async fn pre_connect_hook<'a>(
     match idx {
         0 => Ok(raddr),
         i if i >= 1 && i <= idx => Ok(&extra_raddrs[i as usize - 1]),
-        _ => Err(Error::other, "rejected by pre-connect hook"),
+        _ => Err(Error::other("rejected by pre-connect hook")),
     }
 }
