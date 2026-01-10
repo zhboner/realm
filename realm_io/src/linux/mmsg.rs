@@ -6,9 +6,9 @@ use std::os::unix::io::RawFd;
 
 use crate::AsyncRawIO;
 
+pub use store::SockAddrStore;
 pub use store::{MmsgHdrStore, Const, Mutable};
 pub use store::{MmsgRef, MmsgMutRef};
-pub use store::{SockAddrStore, SOCK_STORE_LEN};
 pub type MmsgHdr<'a, 'b, 'iov, 'ctrl> = MmsgHdrStore<'a, 'b, 'iov, 'ctrl, Const>;
 pub type MmsgHdrMut<'a, 'b, 'iov, 'ctrl> = MmsgHdrStore<'a, 'b, 'iov, 'ctrl, Mutable>;
 
@@ -69,9 +69,8 @@ mod store {
     use std::marker::PhantomData;
     use std::io::{IoSlice, IoSliceMut};
     use std::net::SocketAddr;
-    use socket2::SockAddr;
+    use socket2::{SockAddr, SockAddrStorage};
     use libc::{msghdr, mmsghdr};
-    use libc::{sockaddr_storage, socklen_t};
 
     /// Marker.
     #[derive(Debug, Clone, Copy)]
@@ -273,13 +272,12 @@ mod store {
     #[repr(C)]
     pub struct SockAddrStore(pub(crate) SockAddr);
 
-    /// Size of [`libc::sockaddr_storage`].
-    pub const SOCK_STORE_LEN: socklen_t = mem::size_of::<sockaddr_storage>() as socklen_t;
-
     impl SockAddrStore {
         /// New zeroed storage.
-        pub const fn new() -> Self {
-            Self(unsafe { SockAddr::new(mem::zeroed::<sockaddr_storage>(), SOCK_STORE_LEN) })
+        pub fn new() -> Self {
+            let store = SockAddrStorage::zeroed();
+            let sizeof = store.size_of();
+            Self(unsafe { SockAddr::new(store, sizeof) })
         }
     }
 
