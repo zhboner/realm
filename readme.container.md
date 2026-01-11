@@ -4,13 +4,17 @@ Github workflow pushes the images to [Github Container Registry](https://ghcr.io
 
 Image list:
 
-- `ghcr.io/zhboner/realm:latest` standard realm image
-- `ghcr.io/zhboner/realm-slim:latest` tailored realm image with only TCP+UDP support
+- `ghcr.io/zhboner/realm2:latest` standard realm image
+- `ghcr.io/zhboner/realm2-slim:latest` tailored realm image with only TCP+UDP support
 
 ## Notice
-The [package](https://github.com/zhboner/realm/pkgs/container/realm) is no longer accessible. See https://github.com/zhboner/realm/issues/61.
+~~The [package](https://github.com/zhboner/realm/pkgs/container/realm) is no longer accessible. See https://github.com/zhboner/realm/issues/61.~~ `realm` remains private while `realm2` is public. Please use `realm2` or `realm2-slim` instead:
+```bash
+docker run ghcr.io/zhboner/realm2:latest
+```
 
-As it was mentioned in the [comment](https://github.com/zhboner/realm/issues/61#issuecomment-1145760482) that, users could build their own images based on the released binaries:
+
+As it was mentioned in the [issue](https://github.com/zhboner/realm/issues/61#issuecomment-1145760482) that, users could also build their own images based on the released binaries:
 ```dockerfile
 FROM alpine:latest
 
@@ -31,7 +35,7 @@ ENTRYPOINT ["/usr/bin/realm"]
 ## Docker
 
 ```bash
-docker run -d -p 9000:9000 ghcr.io/zhboner/realm:latest -l 0.0.0.0:9000 -r 192.168.233.2:9000
+docker run -d -p 9000:9000 ghcr.io/zhboner/realm2:latest -l 0.0.0.0:9000 -r 192.168.233.2:9000
 ```
 
 ## Docker Swarm (Docker Compose)
@@ -41,7 +45,7 @@ docker run -d -p 9000:9000 ghcr.io/zhboner/realm:latest -l 0.0.0.0:9000 -r 192.1
 version: '3'
 services:
   port-9000:
-    image: ghcr.io/zhboner/realm:latest
+    image: ghcr.io/zhboner/realm2:latest
     ports:
       - 9000:9000
     command: -l 0.0.0.0:9000 -r 192.168.233.2:9000
@@ -74,7 +78,7 @@ spec:
     spec:
       containers:
       - name: realm
-        image: ghcr.io/zhboner/realm:latest
+        image: ghcr.io/zhboner/realm2:latest
         args:
           - "-l=0.0.0.0:9000"
           - "-r=192.168.233.2:9000"
