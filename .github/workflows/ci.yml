@@ -16,7 +16,6 @@ jobs:
           components: clippy
       - run: cargo clippy
 
-      - uses: actions/checkout@v6
       - name: test core
         run: cargo test -p realm_core -v --no-fail-fast --features proxy
       - name: test binary
