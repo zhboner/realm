@@ -1,0 +1,31 @@
+name: build-mips
+description: build mips targets
+
+inputs:
+  target:
+    description: "The target triple to build"
+    required: true
+  outdir:
+    description: "The output directory"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: install toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: nightly
+        targets: "x86_64-unknown-linux-gnu"
+    - name: install cross-rs
+      run: cargo install cross --git https://github.com/cross-rs/cross
+      shell: bash
+    - name: build and copy binary
+      run: |
+        RUSTFLAGS='-C target-feature=-crt-static' cross build --release --no-default-features --features default-ring --target=${{ inputs.target }}
+        cp target/${{ inputs.target }}/release/realm ${{ inputs.outdir }}/realm
+      shell: bash
+    - name: build and copy binary (slim)
+      run: |
+        RUSTFLAGS='-C target-feature=-crt-static' cross build --release --no-default-features --features default-slim --target=${{ inputs.target }}
+        cp target/${{ inputs.target }}/release/realm ${{ inputs.outdir }}/realm-slim
+      shell: bash

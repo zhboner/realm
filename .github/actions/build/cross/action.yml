@@ -1,0 +1,41 @@
+name: build-cross
+description: build cross targets
+
+inputs:
+  target:
+    description: "The target triple to build"
+    required: true
+  outdir:
+    description: "The output directory"
+    required: true
+  mode:
+    description: "Set 'native' to build without cross-rs"
+    required: false
+    default: "cross"
+runs:
+  using: "composite"
+  steps:
+    - name: install toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: nightly
+        targets: ${{ inputs.target }}
+    - name: install cross-rs
+      if: ${{ inputs.mode != 'native' }}
+      run: cargo install cross --git https://github.com/cross-rs/cross
+      shell: bash
+    - name: alias cargo to cross
+      if: ${{ inputs.mode == 'native' }}
+      run: |
+        echo "cross() { cargo \"$@\" }" >> $GITHUB_ENV
+      shell: bash
+    - name: build and copy binary
+      run: |
+        cross build --release --target=${{ inputs.target }}
+        cp target/${{ inputs.target }}/release/realm${{ contains(inputs.target, 'windows') && '.exe' || '' }} ${{ inputs.outdir }}/realm
+      shell: bash
+    - name: build and copy binary (slim)
+      run: |
+        cross build --release --target=${{ inputs.target }} --no-default-features --features default-slim
+        cp target/${{ inputs.target }}/release/realm${{ contains(inputs.target, 'windows') && '.exe' || '' }} ${{ inputs.outdir }}/realm-slim
+      shell: bash

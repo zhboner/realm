@@ -1,11 +1,32 @@
 # Use realm in container
 
-We push the OCI-based image to [Github Container Registry](https://ghcr.io) with name: `ghcr.io/zhboner/realm`.
+Github workflow pushes the images to [Github Container Registry](https://ghcr.io).
 
-These are some tag of this image:
+Image list:
 
-- `latest`, `v1.*` base on debian:bullseye-silm, recommend
-- `alpine`, `v1.*-alpine` base on alpine:latest
+- `ghcr.io/zhboner/realm:latest` standard realm image
+- `ghcr.io/zhboner/realm-slim:latest` tailored realm image with only TCP+UDP support
+
+## Notice
+The [package](https://github.com/zhboner/realm/pkgs/container/realm) is no longer accessible. See https://github.com/zhboner/realm/issues/61.
+
+As it was mentioned in the [comment](https://github.com/zhboner/realm/issues/61#issuecomment-1145760482) that, users could build their own images based on the released binaries:
+```dockerfile
+FROM alpine:latest
+
+ARG VERSION="v2.3.4"
+
+WORKDIR /realm
+
+RUN wget https://github.com/zhboner/realm/releases/download/${VERSION}/realm-x86_64-unknown-linux-musl.tar.gz \
+  && tar -zxvf realm-x86_64-unknown-linux-musl.tar.gz \
+  && cp realm /usr/bin/realm \
+  && chmod +x /usr/bin/realm
+
+ENTRYPOINT ["/usr/bin/realm"]
+```
+
+**If there are non-official images, be careful and use at your own risk.**
 
 ## Docker
 
