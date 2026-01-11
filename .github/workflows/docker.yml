@@ -41,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/realm
+          images: ghcr.io/${{ github.repository_owner }}/realm2
       - name: build and push images
         uses: docker/build-push-action@v6
         with:
@@ -55,7 +55,7 @@ jobs:
         id: meta_slim
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/realm-slim
+          images: ghcr.io/${{ github.repository_owner }}/realm2-slim
       - name: build and push images
         uses: docker/build-push-action@v6
         with:
