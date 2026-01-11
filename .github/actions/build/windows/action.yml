@@ -1,0 +1,28 @@
+name: build-windows
+description: build windows targets
+
+inputs:
+  target:
+    description: "The target triple to build"
+    required: true
+  outdir:
+    description: "The output directory"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: install toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: nightly
+        targets: ${{ inputs.target }}
+    - name: build and copy binary
+      run: |
+        cargo build --release --target=${{ inputs.target }}
+        cp target/${{ inputs.target }}/release/realm.exe ${{ inputs.outdir }}/realm
+      shell: bash
+    - name: build and copy binary (slim)
+      run: |
+        cargo build --release --target=${{ inputs.target }} --no-default-features --features default-slim
+        cp target/${{ inputs.target }}/release/realm.exe ${{ inputs.outdir }}/realm-slim
+      shell: bash

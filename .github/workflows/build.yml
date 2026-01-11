@@ -1,11 +1,14 @@
-name: release
+name: build
 on:
   push:
-    tags:
-      - "v*.*.*"
+    paths-ignore: ["**.md"]
+    branches: [master, nightly]
+  pull_request:
+    paths-ignore: ["**.md"]
+    branches: [master]
 
 jobs:
-  release:
+  build:
     runs-on: >-
       ${{  
         contains(matrix.target, 'apple') && 'macos-latest' ||
@@ -81,13 +84,13 @@ jobs:
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
       # finalize
-      - name: gzip binaries
-        run: |
-          tar -C out/${{ matrix.target }} -zcf out/${{ matrix.target }}/realm-${{ matrix.target }}.tar.gz realm
-          tar -C out/${{ matrix.target }} -zcf out/${{ matrix.target }}/realm-slim-${{ matrix.target }}.tar.gz realm-slim
-      - name: release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: upload binary
+        uses: actions/upload-artifact@v6
         with:
-          files: out/${{ matrix.target }}/*.tar.gz
+          name: realm-${{ matrix.target }}
+          path: out/${{ matrix.target }}/realm
+      - name: upload binary (slim)
+        uses: actions/upload-artifact@v6
+        with:
+          name: realm-slim-${{ matrix.target }}
+          path: out/${{ matrix.target }}/realm-slim
