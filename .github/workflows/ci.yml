@@ -2,27 +2,21 @@ name: ci
 on:
   push:
     paths-ignore: ["**.md"]
-    branches: [ master ]
+    branches: [master]
   pull_request:
     paths-ignore: ["**.md"]
-    branches: [ master ]
+    branches: [master]
 jobs:
   clippy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/toolchain
         with:
-            toolchain: nightly
-            components: clippy
+          components: clippy
       - run: cargo clippy
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-            toolchain: nightly
+
+      - uses: actions/checkout@v6
       - name: test core
         run: cargo test -p realm_core -v --no-fail-fast --features proxy
       - name: test binary

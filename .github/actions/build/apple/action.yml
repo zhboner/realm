@@ -12,10 +12,9 @@ runs:
   using: "composite"
   steps:
     - name: install toolchain
-      uses: dtolnay/rust-toolchain@master
+      uses: ./.github/actions/toolchain
       with:
-        toolchain: nightly
-        targets: ${{ inputs.target }}
+        target: ${{ inputs.target }}
     - name: build and copy binary
       run: |
         cargo build --release --target=${{ inputs.target }}

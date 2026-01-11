@@ -16,19 +16,10 @@ runs:
   using: "composite"
   steps:
     - name: install toolchain
-      uses: dtolnay/rust-toolchain@master
+      uses: ./.github/actions/toolchain
       with:
-        toolchain: nightly
-        targets: ${{ inputs.target }}
-    - name: install cross-rs
-      if: ${{ inputs.mode != 'native' }}
-      run: cargo install cross --git https://github.com/cross-rs/cross
-      shell: bash
-    - name: alias cargo to cross
-      if: ${{ inputs.mode == 'native' }}
-      run: |
-        echo "cross() { cargo \"$@\" }" >> $GITHUB_ENV
-      shell: bash
+        target: ${{ inputs.target }}
+        cross: ${{ inputs.mode != 'native' && 'true' || 'false' }}
     - name: build and copy binary
       run: |
         cross build --release --target=${{ inputs.target }}
