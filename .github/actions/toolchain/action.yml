@@ -13,50 +13,13 @@ inputs:
     description: "additional components"
     required: false
     default: ""
+  write_build_cache:
+    description: "write build cache"
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
-    # rustup toolchain took too much storage
-    # - name: cache rustup toolchain
-    #   uses: actions/cache@v5
-    #   with:
-    #     path: |
-    #       ~/.rustup/toolchains
-    #       ~/.rustup/update-hashes
-    #       ~/.rustup/settings.toml
-    #     key: ${{ runner.os }}-rustup-${{ inputs.target }}-${{ hashFiles('rust-toolchain.toml') }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-rustup-${{ inputs.target }}-
-    #       ${{ runner.os }}-rustup-
-
-    - name: cache cargo
-      uses: actions/cache@v5
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          # ~/.cargo/bin
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-registry-
-
-    - name: cache cross-rs
-      if: ${{ inputs.cross == 'true' }}
-      uses: actions/cache@v5
-      with:
-        path: ~/.cargo/bin/cross
-        key: ${{ runner.os }}-cross-rs-${{ hashFiles('.github/actions/build/*/action.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-cross-rs-
-
-    - name: cache build target
-      uses: actions/cache@v5
-      with:
-        path: target
-        key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}-
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.target }}-target-
-
     # install rust toolchain
     - name: enable incremental compilation
       run: echo "CARGO_INCREMENTAL=1" >> "$GITHUB_ENV"
@@ -70,6 +33,29 @@ runs:
         toolchain: nightly
         targets: "${{ inputs.target }}"
         components: "${{ inputs.components }}"
+
+    - name: cache cross-rs
+      if: ${{ inputs.cross == 'true' }}
+      uses: actions/cache@v5
+      with:
+        path: ~/.cargo/bin/cross
+        key: ${{ runner.os }}-cross-rs-${{ hashFiles('.github/actions/build/*/action.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-cross-rs-
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        prefix-key: "rustc"
+        shared-key: "build"
+        key: ${{ runner.os }}-${{ inputs.target }}
+        add-job-id-key: "false"
+        add-rust-environment-hash-key: "false"
+        # workspace target directories are cached.
+        cache-targets: "true"
+        # only dependent crates will be cached.
+        cache-all-crates: "false"
+        cache-workspace-crates: "true"
+        save-if: ${{ github.ref == 'refs/heads/master' && inputs.write_build_cache == 'true' }}
 
     - name: install cross-rs
       if: ${{ inputs.cross == 'true' }}
