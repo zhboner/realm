@@ -6,8 +6,8 @@ on:
         required: true
         default: "test"
   push:
-    tags:
-      - "v*.*.*"
+    paths-ignore: ["**.md"]
+    branches: [master]
 
 jobs:
   docker:
