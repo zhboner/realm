@@ -13,7 +13,7 @@ inputs:
     description: "additional components"
     required: false
     default: ""
-  write_build_cache:
+  write-build-cache:
     description: "write build cache"
     required: false
     default: "true"
@@ -31,7 +31,7 @@ runs:
       continue-on-error: true
       with:
         toolchain: nightly
-        targets: "${{ inputs.target }}"
+        targets: "${{ inputs.cross == 'false' && inputs.target || 'x86_64-unknown-linux-gnu' }}"
         components: "${{ inputs.components }}"
 
     - name: cache cross-rs
@@ -39,23 +39,23 @@ runs:
       uses: actions/cache@v5
       with:
         path: ~/.cargo/bin/cross
-        key: ${{ runner.os }}-cross-rs-${{ hashFiles('.github/actions/build/*/action.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-cross-rs-
+        key: cross-${{ runner.os }}
+        restore-keys: cross-${{ runner.os }}
 
     - uses: Swatinem/rust-cache@v2
       with:
         prefix-key: "rustc"
-        shared-key: "build"
-        key: ${{ runner.os }}-${{ inputs.target }}
+        shared-key: ${{ inputs.target }}
         add-job-id-key: "false"
         add-rust-environment-hash-key: "false"
+        env-vars: ""
         # workspace target directories are cached.
         cache-targets: "true"
         # only dependent crates will be cached.
         cache-all-crates: "false"
         cache-workspace-crates: "true"
-        save-if: ${{ github.ref == 'refs/heads/master' && inputs.write_build_cache == 'true' }}
+        cache-bin: "false"
+        save-if: ${{ github.ref == 'refs/heads/master' }} # wtf?? adding input.write-build-cache doesn't work
 
     - name: install cross-rs
       if: ${{ inputs.cross == 'true' }}

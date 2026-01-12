@@ -32,7 +32,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           components: clippy
-          write_build_cache: false
+          write-build-cache: false
 
       - name: clippy
         run: cargo clippy
