@@ -43,7 +43,7 @@ chrono = "0.4"
 
 # command
 clap = { version = "4", features = ["string"] }
-toml = "0.9"
+toml = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
