@@ -3,7 +3,7 @@ use std::net::ToSocketAddrs;
 
 use serde::{Serialize, Deserialize};
 use realm_core::dns::config;
-use config::{LookupIpStrategy, NameServerConfig, Protocol};
+use config::{LookupIpStrategy, NameServerConfig, ConnectionConfig, ProtocolConfig};
 use config::{ResolverConfig, ResolverOpts};
 
 use super::Config;
@@ -93,13 +93,13 @@ impl From<String> for DnsProtocol {
     }
 }
 
-impl From<DnsProtocol> for Vec<Protocol> {
+impl From<DnsProtocol> for Vec<ProtocolConfig> {
     fn from(x: DnsProtocol) -> Self {
         use DnsProtocol::*;
         match x {
-            Tcp => vec![Protocol::Tcp],
-            Udp => vec![Protocol::Udp],
-            TcpAndUdp => vec![Protocol::Tcp, Protocol::Udp],
+            Tcp => vec![ProtocolConfig::Tcp],
+            Udp => vec![ProtocolConfig::Udp],
+            TcpAndUdp => vec![ProtocolConfig::Tcp, ProtocolConfig::Udp],
         }
     }
 }
@@ -124,7 +124,7 @@ pub struct DnsConf {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cache_size: Option<usize>,
+    pub cache_size: Option<u64>,
 
     // ResolverConfig
     #[serde(default)]
@@ -167,7 +167,7 @@ impl Display for DnsConf {
 
         let max_ttl = default!(max_ttl, 86400_u32);
 
-        let cache_size = default!(cache_size, 32_usize);
+        let cache_size = default!(cache_size, 32_u64);
 
         let protocol = default!(protocol);
 
@@ -236,42 +236,45 @@ impl Config for DnsConf {
             Some(opts)
         };
 
-        // parse into ResolverConfig
-        let protocol = protocol.unwrap_or_default();
-        if nameservers.is_none() && (protocol == DnsProtocol::default()) {
+        if matches!((&nameservers, &protocol), (&None, &None)) {
             return (None, opts);
         }
 
-        let mut conf = ResolverConfig::new();
-        let protocols: Vec<Protocol> = protocol.into();
-        let nameservers = match nameservers {
-            Some(addrs) => addrs
-                .iter()
-                .map(|x| x.to_socket_addrs().unwrap().next().unwrap())
-                .collect(),
+        // parse into ResolverConfig
+        fn tcp_and_udp(port: u16) -> [ConnectionConfig; 2] {
+            [ConnectionConfig::udp(), ConnectionConfig::tcp()].map(|mut cc| {
+                cc.port = port;
+                cc
+            })
+        }
+        let mut nameservers = match nameservers {
             None => {
                 use realm_core::dns::DnsConf as TrustDnsConf;
                 let TrustDnsConf { conf, .. } = TrustDnsConf::default();
-                let mut addrs: Vec<std::net::SocketAddr> = conf.name_servers().iter().map(|x| x.socket_addr).collect();
-                addrs.dedup();
-                addrs
+                conf.name_servers
             }
+            // [ip1:port1, ip2:port2] => [ip1:[port1, port2]]
+            Some(addrs) => addrs
+                .into_iter()
+                .map(|x| x.to_socket_addrs().unwrap().next().unwrap())
+                .fold(Vec::new(), |mut nss: Vec<NameServerConfig>, addr| {
+                    if let Some(slot) = nss.iter_mut().find(|ns| ns.ip == addr.ip()) {
+                        slot.connections.extend_from_slice(&tcp_and_udp(addr.port()))
+                    } else {
+                        nss.push(NameServerConfig::new(addr.ip(), true, tcp_and_udp(addr.port()).into()))
+                    }
+                    nss
+                }),
         };
 
-        for socket_addr in nameservers {
-            for protocol in protocols.clone() {
-                conf.add_name_server(NameServerConfig {
-                    socket_addr,
-                    protocol,
-                    tls_dns_name: None,
-                    trust_negative_responses: true,
-                    bind_addr: None,
-                    http_endpoint: None,
-                });
-            }
-        }
-
-        (Some(conf), opts)
+        let protocols: Vec<ProtocolConfig> = protocol.unwrap_or_default().into();
+        nameservers.retain_mut(|nss| {
+            nss.connections
+                .dedup_by(|a, b| a.port == b.port && a.protocol == b.protocol);
+            nss.connections.retain(|c| protocols.contains(&c.protocol));
+            !nss.connections.is_empty()
+        });
+        (Some(ResolverConfig::from_parts(None, Vec::new(), nameservers)), opts)
     }
 
     fn rst_field(&mut self, other: &Self) -> &mut Self {
@@ -309,7 +312,7 @@ impl Config for DnsConf {
             .and_then(|x| x.parse::<u32>().ok());
         let cache_size = matches
             .get_one::<String>("dns_cache_size")
-            .and_then(|x| x.parse::<usize>().ok());
+            .and_then(|x| x.parse::<u64>().ok());
 
         let protocol = matches
             .get_one::<String>("dns_protocol")

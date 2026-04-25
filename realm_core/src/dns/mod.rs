@@ -22,7 +22,6 @@ use crate::endpoint::RemoteAddr;
 pub mod config {
     use super::resolver;
     pub use resolver::config::*;
-    pub use resolver::proto::xfer::Protocol;
 }
 
 /// Dns config.
@@ -40,7 +39,7 @@ impl Default for DnsConf {
         let (conf, opts) = read_system_conf().unwrap_or_default();
 
         #[cfg(not(any(all(unix, not(target_os = "android")), windows)))]
-        let (conf, opts) = Default::default();
+        let (conf, opts) = (ResolverConfig::udp_and_tcp(&config::GOOGLE), Default::default());
 
         Self { conf, opts }
     }
@@ -49,13 +48,13 @@ impl Default for DnsConf {
 static mut DNS_CONF: OnceCell<DnsConf> = OnceCell::new();
 
 static mut DNS: Lazy<TokioResolver> = Lazy::new(|| {
-    use resolver::proto::runtime::TokioRuntimeProvider as Tokio;
-    use resolver::name_server::GenericConnector as Connect;
+    use resolver::net::runtime::TokioRuntimeProvider as Tokio;
 
     let DnsConf { conf, opts } = unsafe { DNS_CONF.take().unwrap() };
-    TokioResolver::builder_with_config(conf, Connect::new(Tokio::new()))
+    TokioResolver::builder_with_config(conf, Tokio::default())
         .with_options(opts)
         .build()
+        .unwrap()
 });
 
 /// Force initialization.
