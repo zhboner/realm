@@ -76,6 +76,7 @@ impl EndpointConf {
 
     fn build_send_through(&self) -> Option<SocketAddr> {
         let Self { through, .. } = self;
+        #[allow(clippy::question_mark)]
         let through = match through {
             Some(x) => x,
             None => return None,
