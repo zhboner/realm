@@ -11,7 +11,7 @@ jobs:
     runs-on: >-
       ${{  
         contains(matrix.target, 'apple') && 'macos-latest' ||
-        contains(matrix.target, 'windows') && 'windows-latest' ||
+        contains(matrix.target, 'msvc') && 'windows-latest' ||
         'ubuntu-22.04'
       }}
     strategy:

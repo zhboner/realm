@@ -12,7 +12,7 @@ jobs:
     runs-on: >-
       ${{  
         contains(matrix.target, 'apple') && 'macos-latest' ||
-        contains(matrix.target, 'windows') && 'windows-latest' ||
+        contains(matrix.target, 'msvc') && 'windows-latest' ||
         'ubuntu-22.04'
       }}
     strategy:
@@ -58,7 +58,7 @@ jobs:
         if: |
           !contains(matrix.target, 'mips') &&
           !contains(matrix.target, 'apple') &&
-          !contains(matrix.target, 'windows')
+          !contains(matrix.target, 'msvc')
         uses: ./.github/actions/build/cross
         with:
           target: ${{ matrix.target }}
@@ -72,7 +72,7 @@ jobs:
           outdir: out/${{ matrix.target }}
       # windows
       - name: build windows
-        if: contains(matrix.target, 'windows')
+        if: contains(matrix.target, 'msvc')
         uses: ./.github/actions/build/windows
         with:
           target: ${{ matrix.target }}
