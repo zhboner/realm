@@ -3,7 +3,7 @@ use std::mem::MaybeUninit;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
 use log::{info, debug};
-use bytes::{BytesMut, Buf};
+use bytes::{Buf, BytesMut};
 
 use proxy_protocol::ProxyHeader;
 use proxy_protocol::{version1 as v1, version2 as v2};
@@ -29,16 +29,13 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
     let mut client_addr = MaybeUninit::<SocketAddr>::uninit();
     let mut server_addr = MaybeUninit::<SocketAddr>::uninit();
 
-    // buf may not be used
-    let mut buf = MaybeUninit::<BytesMut>::uninit();
-
     // with src and dst got from header
     let mut fwd_hdr = false;
 
     // parse PROXY header from client and write log
     // may not get src and dst addr
     if accept_proxy {
-        let buf = buf.write(BytesMut::with_capacity(256));
+        let mut buf = BytesMut::with_capacity(256);
         buf.resize(256, 0);
 
         // FIXME: may not read the entire header
@@ -46,7 +43,7 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
         // The receiver may apply a short timeout and decide to
         // abort the connection if the protocol header is not seen
         // within a few seconds (at least 3 seconds to cover a TCP retransmit).
-        let peek_n = timeoutfut(src.peek(buf), accept_proxy_timeout).await??;
+        let peek_n = timeoutfut(src.peek(&mut buf), accept_proxy_timeout).await??;
 
         buf.truncate(peek_n);
         debug!("[tcp]peek initial {} bytes: {:#x}", peek_n, buf);
@@ -67,7 +64,7 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
 
         // header has been parsed, remove these bytes from sock buffer.
         buf.truncate(parsed_n);
-        src.read_exact(buf).await?;
+        src.read_exact(&mut buf).await?;
 
         // do not send header to server
         if !send_proxy {
