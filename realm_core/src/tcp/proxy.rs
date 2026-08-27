@@ -1,5 +1,5 @@
 use std::io::{Error, Result};
-use std::mem::MaybeUninit;
+use std::cell::OnceCell;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
 use log::{info, debug};
@@ -26,11 +26,8 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
         accept_proxy_timeout,
     } = opts;
 
-    let mut client_addr = MaybeUninit::<SocketAddr>::uninit();
-    let mut server_addr = MaybeUninit::<SocketAddr>::uninit();
-
-    // with src and dst got from header
-    let mut fwd_hdr = false;
+    let client_addr = OnceCell::<SocketAddr>::new();
+    let server_addr = OnceCell::<SocketAddr>::new();
 
     // parse PROXY header from client and write log
     // may not get src and dst addr
@@ -57,9 +54,8 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
 
         // handle parsed header, and print log
         if let Some((src, dst)) = handle_header(header) {
-            client_addr.write(src);
-            server_addr.write(dst);
-            fwd_hdr = true;
+            client_addr.set(src).unwrap();
+            server_addr.set(dst).unwrap();
         }
 
         // header has been parsed, remove these bytes from sock buffer.
@@ -73,21 +69,23 @@ pub async fn handle_proxy(src: &mut TcpStream, dst: &mut TcpStream, opts: ProxyO
     }
 
     // use real addr
-    if !fwd_hdr {
-        client_addr.write(src.peer_addr()?);
+    if !client_addr.get().is_some() {
+        client_addr.set(src.peer_addr()?).unwrap();
         // FIXME: what is the dst addr here? seems not defined in the doc
         // the doc only mentions that this field is similar to X-Origin-To
         // which is seldom used
-        server_addr.write(match unsafe { client_addr.assume_init_ref() } {
-            SocketAddr::V4(_) => SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0),
-            SocketAddr::V6(_) => SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0),
-        });
+        server_addr
+            .set(match client_addr.get().unwrap() {
+                SocketAddr::V4(_) => SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0),
+                SocketAddr::V6(_) => SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0),
+            })
+            .unwrap();
     }
 
     // Safety: sockaddr is always initialized
     // either parse from PROXY header or use real addr
-    let client_addr = unsafe { client_addr.assume_init() };
-    let server_addr = unsafe { server_addr.assume_init() };
+    let client_addr = client_addr.into_inner().unwrap();
+    let server_addr = server_addr.into_inner().unwrap();
 
     // write header
     let header = encode(make_header(client_addr, server_addr, send_proxy_version)).map_err(Error::other)?;
