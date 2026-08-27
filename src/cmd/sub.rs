@@ -42,6 +42,6 @@ pub fn handle_convert(matches: &ArgMatches) {
     if let Some(out) = matches.get_one::<String>("output") {
         fs::write(out, &data).unwrap();
     } else {
-        println!("{}", &data)
+        println!("{}", data)
     }
 }

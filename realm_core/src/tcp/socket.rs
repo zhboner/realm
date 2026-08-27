@@ -69,7 +69,7 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
     let keepalive = keepalive::build(conn_opts);
 
     for addr in resolve_addr(raddr).await?.iter() {
-        log::debug!("[tcp]{} resolved as {}", raddr, &addr);
+        log::debug!("[tcp]{} resolved as {}", raddr, addr);
 
         let socket = new_socket(&addr, *send_mptcp)?;
 
@@ -94,14 +94,14 @@ pub async fn connect(raddr: &RemoteAddr, conn_opts: &ConnectOpts) -> Result<TcpS
 
         match timeoutfut(socket.connect(addr), *connect_timeout).await {
             Ok(Ok(stream)) => {
-                log::debug!("[tcp]connect to {} as {}", raddr, &addr,);
+                log::debug!("[tcp]connect to {} as {}", raddr, addr,);
                 return Ok(stream);
             }
             Ok(Err(e)) => {
-                log::warn!("[tcp]connect to {} as {}: {}, try next ip", raddr, &addr, &e);
+                log::warn!("[tcp]connect to {} as {}: {}, try next ip", raddr, addr, e);
                 last_err = Some(e);
             }
-            Err(_) => log::warn!("[tcp]connect to {} as {} timeout, try next ip", raddr, &addr),
+            Err(_) => log::warn!("[tcp]connect to {} as {} timeout, try next ip", raddr, addr),
         }
     }
 

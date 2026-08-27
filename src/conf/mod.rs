@@ -87,7 +87,7 @@ impl FullConf {
             let conf = fs::read_to_string(file).unwrap_or_else(|e| panic!("failed to open {}: {}", file, e));
             match Self::from_conf_str(&conf) {
                 Ok(x) => return x,
-                Err(e) => panic!("failed to parse {}: {}", file, &e),
+                Err(e) => panic!("failed to parse {}: {}", file, e),
             }
         }
 

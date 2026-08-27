@@ -119,7 +119,7 @@ fn make_header(client_addr: SocketAddr, server_addr: SocketAddr, send_proxy_vers
 }
 
 fn make_header_v1(client_addr: SocketAddr, server_addr: SocketAddr) -> ProxyHeader {
-    debug!("[tcp]send proxy-protocol-v1: {} => {}", &client_addr, &server_addr);
+    debug!("[tcp]send proxy-protocol-v1: {} => {}", client_addr, server_addr);
 
     if client_addr.is_ipv4() {
         ProxyHeader::Version1 {
@@ -139,7 +139,7 @@ fn make_header_v1(client_addr: SocketAddr, server_addr: SocketAddr) -> ProxyHead
 }
 
 fn make_header_v2(client_addr: SocketAddr, server_addr: SocketAddr) -> ProxyHeader {
-    debug!("[tcp]send proxy-protocol-v2: {} => {}", &client_addr, &server_addr);
+    debug!("[tcp]send proxy-protocol-v2: {} => {}", client_addr, server_addr);
 
     ProxyHeader::Version2 {
         command: v2::ProxyCommand::Proxy,
@@ -182,11 +182,11 @@ fn handle_header_v1(addr: v1::ProxyAddresses) -> Option<(SocketAddr, SocketAddr)
             None
         }
         Ipv4 { source, destination } => {
-            info!("[tcp]accept proxy-protocol-v1: {} => {}", &source, &destination);
+            info!("[tcp]accept proxy-protocol-v1: {} => {}", source, destination);
             Some((SocketAddr::V4(source), SocketAddr::V4(destination)))
         }
         Ipv6 { source, destination } => {
-            info!("[tcp]accept proxy-protocol-v1: {} => {}", &source, &destination);
+            info!("[tcp]accept proxy-protocol-v1: {} => {}", source, destination);
             Some((SocketAddr::V6(source), SocketAddr::V6(destination)))
         }
     }
@@ -226,11 +226,11 @@ fn handle_header_v2(
 
     match addr {
         Address::Ipv4 { source, destination } => {
-            info!("[tcp]accept proxy-protocol-v2: {} => {}", &source, &destination);
+            info!("[tcp]accept proxy-protocol-v2: {} => {}", source, destination);
             Some((SocketAddr::V4(source), SocketAddr::V4(destination)))
         }
         Address::Ipv6 { source, destination } => {
-            info!("[tcp]accept proxy-protocol-v2: {} => {}", &source, &destination);
+            info!("[tcp]accept proxy-protocol-v2: {} => {}", source, destination);
             Some((SocketAddr::V6(source), SocketAddr::V6(destination)))
         }
         Address::Unspec => {

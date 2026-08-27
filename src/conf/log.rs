@@ -92,7 +92,7 @@ impl Config for LogConf {
                 .append(true)
                 .create(true)
                 .open(output)
-                .unwrap_or_else(|e| panic!("failed to open {}: {}", output, &e))
+                .unwrap_or_else(|e| panic!("failed to open {}: {}", output, e))
                 .into(),
         };
 

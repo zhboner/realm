@@ -176,14 +176,14 @@ impl Display for DnsConf {
             None => String::from("system"),
         };
 
-        write!(f, "mode={}, protocol={}, ", &mode, &protocol).unwrap();
+        write!(f, "mode={}, protocol={}, ", mode, protocol).unwrap();
         write!(
             f,
             "min-ttl={}, max-ttl={}, cache-size={}, ",
             min_ttl, max_ttl, cache_size
         )
         .unwrap();
-        write!(f, "servers={}", &nameservers)
+        write!(f, "servers={}", nameservers)
     }
 }
 

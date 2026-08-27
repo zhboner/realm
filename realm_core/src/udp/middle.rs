@@ -163,11 +163,11 @@ async fn send_back(
 
         let pkts = registry.iter().map(|pkt| pkt.ref_with_addr(&laddr_s));
         if let Err(e) = batched::send_all(&lsock, pkts).await {
-            log::error!("[udp]failed to sendto client{}: {}", &laddr, e);
+            log::error!("[udp]failed to sendto client{}: {}", laddr, e);
             break;
         }
     }
 
     sockmap.remove(&laddr);
-    log::debug!("[udp]remove association for {}", &laddr);
+    log::debug!("[udp]remove association for {}", laddr);
 }

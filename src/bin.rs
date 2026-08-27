@@ -70,7 +70,7 @@ fn start_from_conf(full: FullConf) {
 }
 
 fn setup_log(log: LogConf) {
-    println!("log: {}", &log);
+    println!("log: {}", log);
 
     let (level, output) = log.build();
     fern::Dispatch::new()
@@ -86,11 +86,11 @@ fn setup_log(log: LogConf) {
         .level(level)
         .chain(output)
         .apply()
-        .unwrap_or_else(|e| panic!("failed to setup logger: {}", &e))
+        .unwrap_or_else(|e| panic!("failed to setup logger: {}", e))
 }
 
 fn setup_dns(dns: DnsConf) {
-    println!("dns: {}", &dns);
+    println!("dns: {}", dns);
 
     let (conf, opts) = dns.build();
     realm::core::dns::build_lazy(conf, opts);

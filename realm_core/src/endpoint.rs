@@ -86,11 +86,11 @@ impl Display for RemoteAddr {
 
 impl Display for Endpoint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} -> [{}", &self.laddr, &self.raddr)?;
+        write!(f, "{} -> [{}", self.laddr, self.raddr)?;
         for raddr in self.extra_raddrs.iter() {
             write!(f, "|{}", raddr)?;
         }
-        write!(f, "]; options: {}; {}", &self.bind_opts, &self.conn_opts)
+        write!(f, "]; options: {}; {}", self.bind_opts, self.conn_opts)
     }
 }
 
