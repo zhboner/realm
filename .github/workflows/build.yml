@@ -61,17 +61,9 @@ jobs:
       # cross
       - name: build cross
         if: |
-          !contains(matrix.target, 'mips') &&
           !contains(matrix.target, 'apple') &&
           !contains(matrix.target, 'msvc')
         uses: ./.github/actions/build/cross
-        with:
-          target: ${{ matrix.target }}
-          outdir: out/${{ matrix.target }}
-      # mips
-      - name: build mips
-        if: contains(matrix.target, 'mips')
-        uses: ./.github/actions/build/mips
         with:
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}

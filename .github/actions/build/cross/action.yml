@@ -20,13 +20,46 @@ runs:
       with:
         target: ${{ inputs.target }}
         cross: ${{ inputs.mode != 'native' && 'true' || 'false' }}
-    - name: build and copy binary
+    - name: generate flags
+      id: flags
+      if: contains(inputs.target, 'mips')
       run: |
-        cross build --release --target=${{ inputs.target }}
-        cp target/${{ inputs.target }}/release/realm${{ contains(inputs.target, 'windows') && '.exe' || '' }} ${{ inputs.outdir }}/realm
+        echo "rustc=-C target-feature=-crt-static" >> "$GITHUB_OUTPUT"
+        echo "build-std=-Z build-std=core,std,alloc,proc_macro,panic_abort" >> "$GITHUB_OUTPUT"
+      shell: bash
+    - name: export build command
+      run: |
+        case "${{ inputs.mode }}" in
+          "cross")
+            cmd=cross build
+            ;;
+          "zigbuild")
+            cmd=cargo zigbuild
+            ;;
+          *)
+            cmd=cargo build
+            ;;
+        esac
+        echo "RUSTFLAGS=${{ steps.flags.outputs.rustc }}" >> "$GITHUB_ENV"
+        echo "RSBUILD=$cmd ${{ steps.flags.outputs.build-std }}" >> "$GITHUB_ENV"
+        echo "EXT=${{ contains(inputs.target, 'windows') && '.exe' || '' }}" >> "$GITHUB_ENV"
+      shell: bash
+
+    - name: build and copy binary
+      if: | 
+        !contains(inputs.target, 'mips')
+      run: |
+        ${{ env.RSBUILD }} --release --target=${{ inputs.target }}
+        cp target/${{ inputs.target }}/release/realm${{ env.EXT }} ${{ inputs.outdir }}/realm
+      shell: bash
+    - name: build and copy binary (mips)
+      if: contains(inputs.target, 'mips')
+      run: |
+        ${{ env.RSBUILD }} --release --target=${{ inputs.target }} --no-default-features --features default-ring
+        cp target/${{ inputs.target }}/release/realm${{ env.EXT }} ${{ inputs.outdir }}/realm
       shell: bash
     - name: build and copy binary (slim)
       run: |
-        cross build --release --target=${{ inputs.target }} --no-default-features --features default-slim
-        cp target/${{ inputs.target }}/release/realm${{ contains(inputs.target, 'windows') && '.exe' || '' }} ${{ inputs.outdir }}/realm-slim
+        ${{ env.RSBUILD }} --release --target=${{ inputs.target }} --no-default-features --features default-slim
+        cp target/${{ inputs.target }}/release/realm${{ env.EXT }} ${{ inputs.outdir }}/realm-slim
       shell: bash
