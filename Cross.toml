@@ -4,6 +4,22 @@ pre-build = [
   "apt install -y clang libclang-dev nasm"
 ]
 
+[target.x86_64-unknown-linux-gnu]
+zig = "2.17"
+pre-build = [
+  "apt update",
+  "DEBIAN_FRONTEND=noninteractive apt install -y clang libclang-dev nasm curl xz-utils",
+  "curl -sSfL https://github.com/rust-cross/cargo-zigbuild/releases/latest/download/cargo-zigbuild-installer.sh | CARGO_HOME=/usr/local sh"
+]
+
+[target.aarch64-unknown-linux-gnu]
+zig = "2.17"
+pre-build = [
+  "apt update",
+  "DEBIAN_FRONTEND=noninteractive apt install -y clang libclang-dev nasm curl xz-utils",
+  "curl -sSfL https://github.com/rust-cross/cargo-zigbuild/releases/latest/download/cargo-zigbuild-installer.sh | CARGO_HOME=/usr/local sh"
+]
+
 [target.mips-unknown-linux-gnu]
 image = "ghcr.io/cross-rs/mips-unknown-linux-gnu:main"
 build-std = ["core", "std", "alloc", "proc_macro", "panic_abort"]
