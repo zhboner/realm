@@ -1,8 +1,13 @@
 name: build
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        default: "test"
   push:
     paths-ignore: ["**.md"]
-    branches: [master]
+    branches: [master, build-test]
   pull_request:
     paths-ignore: ["**.md"]
     branches: [master]
