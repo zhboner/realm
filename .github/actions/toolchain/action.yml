@@ -69,7 +69,6 @@ runs:
         save-if: ${{ github.ref == 'refs/heads/master' }} # wtf?? adding input.write-build-cache doesn't work
 
     - name: install cross-rs
-      id: install-build-cmd
       if: ${{ inputs.cross == 'true' }}
       run: |
         if [ ! -f ~/.cargo/bin/cross ]; then
@@ -86,7 +85,6 @@ runs:
         version: "0.16.0"
 
     - name: install zigbuild
-      id: install-build-cmd
       if: ${{ inputs.zigbuild == 'true' }}
       run: |
         if [ ! -f ~/.cargo/bin/cargo-zigbuild ]; then

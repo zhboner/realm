@@ -31,13 +31,13 @@ runs:
       run: |
         case "${{ inputs.mode }}" in
           "cross")
-            cmd=cross build
+            cmd="cross build"
             ;;
           "zigbuild")
-            cmd=cargo zigbuild
+            cmd="cargo zigbuild"
             ;;
           *)
-            cmd=cargo build
+            cmd="cargo build"
             ;;
         esac
         echo "RUSTFLAGS=${{ steps.flags.outputs.rustc }}" >> "$GITHUB_ENV"
