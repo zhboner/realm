@@ -82,13 +82,13 @@ mod chash {
 
     macro_rules! c_add {
         ($a:expr, $b:expr) => {
-            unsafe { $a.unchecked_add($b) }
+            $a.wrapping_add($b)
         };
     }
 
     macro_rules! c_mul {
         ($a:expr, $b:expr) => {
-            unsafe { $a.unchecked_mul($b) }
+            $a.wrapping_mul($b)
         };
     }
 
