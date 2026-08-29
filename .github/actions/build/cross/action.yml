@@ -9,7 +9,7 @@ inputs:
     description: "The output directory"
     required: true
   mode:
-    description: "Set 'native' to build without cross-rs"
+    description: "Mode: native, cross, zigbuild"
     required: false
     default: "cross"
 runs:

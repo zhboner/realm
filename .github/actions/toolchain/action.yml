@@ -9,6 +9,10 @@ inputs:
     description: "install cross-rs"
     required: false
     default: "false"
+  zigbuild:
+    description: "install zigbuild"
+    required: false
+    default: "false"
   components:
     description: "additional components"
     required: false
@@ -27,7 +31,6 @@ runs:
 
     - name: install toolchain
       uses: dtolnay/rust-toolchain@master
-      id: rustup_install
       continue-on-error: true
       with:
         toolchain: nightly
@@ -41,6 +44,14 @@ runs:
         path: ~/.cargo/bin/cross
         key: cross-${{ runner.os }}
         restore-keys: cross-${{ runner.os }}
+
+    - name: cache zigbuild
+      if: ${{ inputs.zigbuild == 'true' }}
+      uses: actions/cache@v5
+      with:
+        path: ~/.cargo/bin/cargo-zigbuild
+        key: zigbuild-${{ runner.os }}
+        restore-keys: zigbuild-${{ runner.os }}
 
     - uses: Swatinem/rust-cache@v2
       with:
@@ -58,11 +69,29 @@ runs:
         save-if: ${{ github.ref == 'refs/heads/master' }} # wtf?? adding input.write-build-cache doesn't work
 
     - name: install cross-rs
+      id: install-build-cmd
       if: ${{ inputs.cross == 'true' }}
       run: |
         if [ ! -f ~/.cargo/bin/cross ]; then
           cargo install cross --git https://github.com/cross-rs/cross
         else
           echo "cross-rs already installed (cached)"
+        fi
+      shell: bash
+
+    - name: install zig
+      if: ${{ inputs.zigbuild == 'true' }}
+      uses: mlugg/setup-zig@v2
+      with:
+        version: "0.16.0"
+
+    - name: install zigbuild
+      id: install-build-cmd
+      if: ${{ inputs.zigbuild == 'true' }}
+      run: |
+        if [ ! -f ~/.cargo/bin/cargo-zigbuild ]; then
+          cargo install cargo-zigbuild --git https://github.com/rust-cross/cargo-zigbuild
+        else
+          echo "zigbuild already installed (cached)"
         fi
       shell: bash
