@@ -71,8 +71,10 @@ jobs:
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
       # cross-zigbuild-glibc
-      - name: build cross-zigbuild-glibc
+      - name: try build cross-zigbuild-glibc
+        id: try-zigbuild
         if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        continue-on-error: true # may fail on some targets due to compiler-rt issues
         uses: ./.github/actions/build/cross
         with:
           mode: zigbuild
@@ -105,13 +107,13 @@ jobs:
           name: realm-slim-${{ matrix.target }}
           path: out/${{ matrix.target }}/realm-slim
       - name: upload binary (cross-zigbuild-glibc)
-        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        if: ${{ steps.try-zigbuild.outcome == 'success' }}
         uses: actions/upload-artifact@v6
         with:
           name: realm-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
           path: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm
       - name: upload binary (cross-zigbuild-glibc-slim)
-        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        if: ${{ steps.try-zigbuild.outcome == 'success' }}
         uses: actions/upload-artifact@v6
         with:
           name: realm-slim-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}

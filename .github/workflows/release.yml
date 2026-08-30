@@ -63,8 +63,9 @@ jobs:
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
       # cross-zigbuild-glibc
-      - name: build cross
+      - name: try build cross-zigbuild-glibc
         if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        continue-on-error: true # may fail on some targets due to compiler-rt issues
         uses: ./.github/actions/build/cross
         with:
           mode: zigbuild
