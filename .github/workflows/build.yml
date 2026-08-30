@@ -59,7 +59,7 @@ jobs:
           - aarch64-apple-ios
     steps:
       - uses: actions/checkout@v6
-      - run: mkdir -p out/${{ matrix.target }} && mkdir -p out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
+      - run: mkdir -p out/${{ matrix.target }} && mkdir -p out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
       # cross
       - name: build cross
         if: |
@@ -80,7 +80,7 @@ jobs:
           mode: zigbuild
           zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
           target: ${{ matrix.target }}
-          outdir: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
+          outdir: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
       # windows
       - name: build windows
         if: contains(matrix.target, 'msvc')
@@ -110,11 +110,11 @@ jobs:
         if: ${{ steps.try-zigbuild.outcome == 'success' }}
         uses: actions/upload-artifact@v6
         with:
-          name: realm-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
-          path: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm
+          name: realm-${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+          path: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/realm
       - name: upload binary (cross-zigbuild-glibc-slim)
         if: ${{ steps.try-zigbuild.outcome == 'success' }}
         uses: actions/upload-artifact@v6
         with:
-          name: realm-slim-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
-          path: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm-slim
+          name: realm-slim-${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+          path: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/realm-slim
