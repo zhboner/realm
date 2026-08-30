@@ -12,6 +12,8 @@ on:
     paths-ignore: ["**.md"]
     branches: [master]
 
+env:
+  ZIGBUILD_GLIBC: "2.28"
 jobs:
   build:
     runs-on: >-
@@ -57,7 +59,7 @@ jobs:
           - aarch64-apple-ios
     steps:
       - uses: actions/checkout@v6
-      - run: mkdir -p out/${{ matrix.target }}
+      - run: mkdir -p out/${{ matrix.target }} && mkdir -p out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
       # cross
       - name: build cross
         if: |
@@ -65,8 +67,18 @@ jobs:
           !contains(matrix.target, 'msvc')
         uses: ./.github/actions/build/cross
         with:
+          mode: cross
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
+      # cross-zigbuild-glibc
+      - name: build cross-zigbuild-glibc
+        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        uses: ./.github/actions/build/cross
+        with:
+          mode: zigbuild
+          zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
+          target: ${{ matrix.target }}
+          outdir: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
       # windows
       - name: build windows
         if: contains(matrix.target, 'msvc')
@@ -74,7 +86,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
-      # apple
+      # # apple
       - name: build apple
         if: contains(matrix.target, 'apple')
         uses: ./.github/actions/build/apple
@@ -92,3 +104,15 @@ jobs:
         with:
           name: realm-slim-${{ matrix.target }}
           path: out/${{ matrix.target }}/realm-slim
+      - name: upload binary (cross-zigbuild-glibc)
+        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        uses: actions/upload-artifact@v6
+        with:
+          name: realm-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
+          path: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm
+      - name: upload binary (cross-zigbuild-glibc-slim)
+        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        uses: actions/upload-artifact@v6
+        with:
+          name: realm-slim-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
+          path: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm-slim

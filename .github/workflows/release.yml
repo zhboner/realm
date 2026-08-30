@@ -4,6 +4,8 @@ on:
     tags:
       - "v*.*.*"
 
+env:
+  ZIGBUILD_GLIBC: "2.28"
 jobs:
   release:
     runs-on: >-
@@ -49,7 +51,7 @@ jobs:
           - aarch64-apple-ios
     steps:
       - uses: actions/checkout@v6
-      - run: mkdir -p out/${{ matrix.target }}
+      - run: mkdir -p out/${{ matrix.target }} && mkdir -p out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
       # cross
       - name: build cross
         if: |
@@ -57,8 +59,18 @@ jobs:
           !contains(matrix.target, 'msvc')
         uses: ./.github/actions/build/cross
         with:
+          mode: cross
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
+      # cross-zigbuild-glibc
+      - name: build cross
+        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
+        uses: ./.github/actions/build/cross
+        with:
+          mode: zigbuild
+          zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
+          target: ${{ matrix.target }}
+          outdir: out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}
       # windows
       - name: build windows
         if: contains(matrix.target, 'msvc')
@@ -78,6 +90,10 @@ jobs:
         run: |
           tar -C out/${{ matrix.target }} -zcf out/${{ matrix.target }}/realm-${{ matrix.target }}.tar.gz realm
           tar -C out/${{ matrix.target }} -zcf out/${{ matrix.target }}/realm-slim-${{ matrix.target }}.tar.gz realm-slim
+          [ -f out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm ] && \
+            tar -C out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }} -zcf out/${{ matrix.target }}/realm-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}.tar.gz realm
+          [ -f out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}/realm-slim ] && \
+            tar -C out/${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }} -zcf out/${{ matrix.target }}/realm-slim-${{ matrix.target }}.${{ env.ZIGBUILD_GLIBC }}.tar.gz realm-slim
       - name: release
         uses: softprops/action-gh-release@v2
         env:

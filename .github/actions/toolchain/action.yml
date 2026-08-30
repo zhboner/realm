@@ -34,8 +34,14 @@ runs:
       continue-on-error: true
       with:
         toolchain: nightly
-        targets: "${{ inputs.cross == 'false' && inputs.target || 'x86_64-unknown-linux-gnu' }}"
+        targets: "${{ contains(inputs.target, 'mips') && 'x86_64-unknown-linux-gnu' || inputs.target }}"
         components: "${{ inputs.components }}"
+    - name: install mips extra tools
+      if: contains(inputs.target, 'mips')
+      run: |
+        rustup target add ${{ inputs.target }} 2>/dev/null || true
+        rustup component add rust-src
+      shell: bash
 
     - name: cache cross-rs
       if: ${{ inputs.cross == 'true' }}

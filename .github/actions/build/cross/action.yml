@@ -12,6 +12,10 @@ inputs:
     description: "Mode: native, cross, zigbuild"
     required: false
     default: "cross"
+  zigbuild-glibc:
+    description: "The glibc version for zigbuild"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -19,13 +23,15 @@ runs:
       uses: ./.github/actions/toolchain
       with:
         target: ${{ inputs.target }}
-        cross: ${{ inputs.mode != 'native' && 'true' || 'false' }}
+        cross: ${{ inputs.mode == 'cross' && 'true' || 'false' }}
+        zigbuild: ${{ inputs.mode == 'zigbuild' && 'true' || 'false' }}
+        components: rustfmt
     - name: generate flags
       id: flags
       if: contains(inputs.target, 'mips')
       run: |
         echo "rustc=-C target-feature=-crt-static" >> "$GITHUB_OUTPUT"
-        echo "build-std=-Z build-std=core,std,alloc,proc_macro,panic_abort" >> "$GITHUB_OUTPUT"
+        echo "build-std=-Zbuild-std=core,std,alloc,proc_macro,panic_abort" >> "$GITHUB_OUTPUT"
       shell: bash
     - name: export build command
       run: |
@@ -35,13 +41,15 @@ runs:
             ;;
           "zigbuild")
             cmd="cargo zigbuild"
+            [ -n "${{ inputs.zigbuild-glibc }}" ] && abi=".${{ inputs.zigbuild-glibc }}"
             ;;
           *)
             cmd="cargo build"
             ;;
         esac
         echo "RUSTFLAGS=${{ steps.flags.outputs.rustc }}" >> "$GITHUB_ENV"
-        echo "RSBUILD=$cmd ${{ steps.flags.outputs.build-std }}" >> "$GITHUB_ENV"
+        echo "RSBUILD=$cmd ${{ steps.flags.outputs.build-std }} \
+          --release --target ${{ inputs.target }}$abi" >> "$GITHUB_ENV"
         echo "EXT=${{ contains(inputs.target, 'windows') && '.exe' || '' }}" >> "$GITHUB_ENV"
       shell: bash
 
@@ -49,17 +57,17 @@ runs:
       if: | 
         !contains(inputs.target, 'mips')
       run: |
-        ${{ env.RSBUILD }} --release --target=${{ inputs.target }}
+        ${{ env.RSBUILD }}
         cp target/${{ inputs.target }}/release/realm${{ env.EXT }} ${{ inputs.outdir }}/realm
       shell: bash
     - name: build and copy binary (mips)
       if: contains(inputs.target, 'mips')
       run: |
-        ${{ env.RSBUILD }} --release --target=${{ inputs.target }} --no-default-features --features default-ring
+        ${{ env.RSBUILD }} --no-default-features --features default-ring
         cp target/${{ inputs.target }}/release/realm${{ env.EXT }} ${{ inputs.outdir }}/realm
       shell: bash
     - name: build and copy binary (slim)
       run: |
-        ${{ env.RSBUILD }} --release --target=${{ inputs.target }} --no-default-features --features default-slim
+        ${{ env.RSBUILD }} --no-default-features --features default-slim
         cp target/${{ inputs.target }}/release/realm${{ env.EXT }} ${{ inputs.outdir }}/realm-slim
       shell: bash
