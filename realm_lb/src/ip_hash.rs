@@ -1,6 +1,8 @@
 use std::net::IpAddr;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::{Balance, Token};
+use super::{Balance, Token, HealthCheckConfig};
 
 /// Iphash node.
 #[derive(Debug)]
@@ -9,11 +11,27 @@ struct Node {
     token: Token,
 }
 
+/// Backend health state (per real backend, not per virtual node).
+#[derive(Debug)]
+struct BackendHealth {
+    fails: AtomicU32,
+    checked: AtomicU32,
+}
+
 /// Iphash balancer.
 #[derive(Debug)]
 pub struct IpHash {
     nodes: Vec<Node>,
     total: u8,
+    config: Option<HealthCheckConfig>,
+    health: Vec<BackendHealth>,
+}
+
+fn now_secs() -> u32 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as u32
 }
 
 impl Balance for IpHash {
@@ -23,13 +41,23 @@ impl Balance for IpHash {
         self.total
     }
 
-    fn new(weights: &[u8]) -> Self {
+    fn new(weights: &[u8], config: Option<HealthCheckConfig>) -> Self {
         assert!(weights.len() <= u8::MAX as usize);
+
+        let backend_count = weights.len();
+        let health = (0..backend_count)
+            .map(|_| BackendHealth {
+                fails: AtomicU32::new(0),
+                checked: AtomicU32::new(0),
+            })
+            .collect();
 
         if weights.len() <= 1 {
             return Self {
                 nodes: Vec::new(),
                 total: weights.len() as u8,
+                config,
+                health,
             };
         }
 
@@ -52,6 +80,8 @@ impl Balance for IpHash {
         Self {
             nodes,
             total: weights.len() as u8,
+            config,
+            health,
         }
     }
 
@@ -71,7 +101,103 @@ impl Balance for IpHash {
             Err(idx) => idx,
         };
 
-        Some(self.nodes[idx].token)
+        let initial_token = self.nodes[idx].token;
+
+        if self.config.is_none() {
+            return Some(initial_token);
+        }
+
+        let cfg = self.config.as_ref().unwrap();
+        let now = now_secs();
+        let initial_backend = initial_token.0 as usize;
+
+        if let Some(health) = self.health.get(initial_backend) {
+            let fails = health.fails.load(Ordering::Relaxed);
+            let checked = health.checked.load(Ordering::Relaxed);
+
+            if fails < cfg.max_fails {
+                return Some(initial_token);
+            }
+
+            if now >= checked {
+                health.checked.store(0, Ordering::Relaxed);
+                return Some(initial_token);
+            }
+        }
+
+        // Probe along virtual node ring to preserve weight characteristics.
+        let mut visited = 0u32;
+        visited |= 1 << initial_backend;
+        let mut visited_count = 1;
+        
+        let nodes_len = self.nodes.len();
+        for offset in 1..nodes_len {
+            let probe_idx = (idx + offset) % nodes_len;
+            let probe_token = self.nodes[probe_idx].token;
+            let probe_backend = probe_token.0 as usize;
+            
+            // Skip already visited backends.
+            if visited & (1 << probe_backend) != 0 {
+                continue;
+            }
+            visited |= 1 << probe_backend;
+            visited_count += 1;
+            
+            if let Some(health) = self.health.get(probe_backend) {
+                let fails = health.fails.load(Ordering::Relaxed);
+                let checked = health.checked.load(Ordering::Relaxed);
+
+                if fails < cfg.max_fails {
+                    return Some(probe_token);
+                }
+
+                if now >= checked {
+                    health.checked.store(0, Ordering::Relaxed);
+                    return Some(probe_token);
+                }
+            }
+            
+            // Early exit if all backends visited.
+            if visited_count >= self.total as usize {
+                break;
+            }
+        }
+
+        // All backends unhealthy, reset and return initial backend as last resort.
+        if let Some(health) = self.health.get(initial_backend) {
+            health.checked.store(0, Ordering::Relaxed);
+        }
+        Some(initial_token)
+    }
+
+    fn on_success(&self, token: Token) {
+        if self.config.is_none() {
+            return;
+        }
+
+        let backend_idx = token.0 as usize;
+
+        if let Some(health) = self.health.get(backend_idx) {
+            health.fails.store(0, Ordering::Relaxed);
+        }
+    }
+
+    fn on_failure(&self, token: Token) {
+        if self.config.is_none() {
+            return;
+        }
+
+        let cfg = self.config.as_ref().unwrap();
+        let backend_idx = token.0 as usize;
+
+        if let Some(health) = self.health.get(backend_idx) {
+            let fails = health.fails.fetch_add(1, Ordering::Relaxed) + 1;
+
+            if fails >= cfg.max_fails {
+                let now = now_secs();
+                health.checked.store(now + cfg.fail_timeout_secs, Ordering::Relaxed);
+            }
+        }
     }
 }
 
@@ -241,7 +367,7 @@ mod tests {
         let ip3 = "114.51.4.19".parse::<IpAddr>().unwrap();
         let ip4 = "2001:4860:4860::8888".parse::<IpAddr>().unwrap();
 
-        let iphash = IpHash::new(&vec![1, 2, 3, 4]);
+        let iphash = IpHash::new(&vec![1, 2, 3, 4], None);
         assert_eq!(iphash.total, 4);
         assert!(iphash.nodes.len() >= (1 + 2 + 3 + 4) * 128 / 4);
 
@@ -260,7 +386,7 @@ mod tests {
 
     #[test]
     fn ih_same_weight() {
-        let iphash = IpHash::new(&vec![1; 16]);
+        let iphash = IpHash::new(&vec![1; 16], None);
         let mut distro = [0f64; 16];
 
         let mut total: usize = 0;
@@ -289,7 +415,7 @@ mod tests {
     #[test]
     fn ih_all_weights() {
         let weights: Vec<u8> = (1..=16).collect();
-        let iphash = IpHash::new(&weights);
+        let iphash = IpHash::new(&weights, None);
         let mut distro = [0f64; 16];
 
         let mut total: usize = 0;

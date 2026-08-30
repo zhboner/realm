@@ -2,7 +2,7 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::fmt::{Display, Formatter};
 
-use crate::{Token, Balance};
+use crate::{Token, Balance, HealthCheckConfig};
 use crate::ip_hash::IpHash;
 use crate::round_robin::RoundRobin;
 
@@ -52,11 +52,11 @@ pub enum Balancer {
 
 impl Balancer {
     /// Constructor.
-    pub fn new(strategy: Strategy, weights: &[u8]) -> Self {
+    pub fn new(strategy: Strategy, weights: &[u8], config: Option<HealthCheckConfig>) -> Self {
         match strategy {
             Strategy::Off => Self::Off,
-            Strategy::IpHash => Self::IpHash(Arc::new(IpHash::new(weights))),
-            Strategy::RoundRobin => Self::RoundRobin(Arc::new(RoundRobin::new(weights))),
+            Strategy::IpHash => Self::IpHash(Arc::new(IpHash::new(weights, config))),
+            Strategy::RoundRobin => Self::RoundRobin(Arc::new(RoundRobin::new(weights, config))),
         }
     }
 
@@ -87,9 +87,27 @@ impl Balancer {
         }
     }
 
+    /// Record success for a peer.
+    pub fn on_success(&self, token: Token) {
+        match self {
+            Balancer::Off => {}
+            Balancer::IpHash(iphash) => iphash.on_success(token),
+            Balancer::RoundRobin(rr) => rr.on_success(token),
+        }
+    }
+
+    /// Record failure for a peer.
+    pub fn on_failure(&self, token: Token) {
+        match self {
+            Balancer::Off => {}
+            Balancer::IpHash(iphash) => iphash.on_failure(token),
+            Balancer::RoundRobin(rr) => rr.on_failure(token),
+        }
+    }
+
     /// Parse balancer from string.
     /// Format: $strategy: $weight1, $weight2, ...
-    pub fn parse_from_str(s: &str) -> Self {
+    pub fn parse_from_str(s: &str, config: Option<HealthCheckConfig>) -> Self {
         let (strategy, weights) = s.split_once(':').unwrap();
 
         let strategy = Strategy::from(strategy.trim());
@@ -99,7 +117,7 @@ impl Balancer {
             .filter_map(|s| s.trim().parse().ok())
             .collect();
 
-        Self::new(strategy, &weights)
+        Self::new(strategy, &weights, config)
     }
 }
 
@@ -123,7 +141,7 @@ mod tests {
                 s.push_str(&format!("{}, ", weight));
             }
 
-            let balancer = Balancer::parse_from_str(&s);
+            let balancer = Balancer::parse_from_str(&s, None);
 
             println!("balancer: {:?}", balancer);
 

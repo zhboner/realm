@@ -40,41 +40,55 @@ pub async fn connect_and_relay(
     // - pre-connect hook
     // - load balance
     // ..
-    let raddr = {
+    #[cfg(feature = "balance")]
+    let (raddr, balance_token) = {
         #[cfg(feature = "hook")]
         {
             // accept or deny connection.
-            #[cfg(feature = "balance")]
-            {
-                hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?;
-            }
-
-            // accept or deny connection, or select a remote peer.
-            #[cfg(not(feature = "balance"))]
-            {
-                hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?
-            }
+            hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?;
         }
 
-        #[cfg(feature = "balance")]
+        use realm_lb::{Token, BalanceCtx};
+        let token = balancer.next(BalanceCtx {
+            src_ip: &local.peer_addr()?.ip(),
+        });
+        let selected_raddr = match token {
+            None | Some(Token(0)) => raddr.as_ref(),
+            Some(Token(idx)) => &extra_raddrs.as_ref()[idx as usize - 1],
+        };
+        (selected_raddr, token.unwrap_or(Token(0)))
+    };
+
+    #[cfg(not(feature = "balance"))]
+    let raddr = {
+        #[cfg(feature = "hook")]
         {
-            use realm_lb::{Token, BalanceCtx};
-            let token = balancer.next(BalanceCtx {
-                src_ip: &local.peer_addr()?.ip(),
-            });
-            log::debug!("[tcp]select remote peer, token: {:?}", token);
-            match token {
-                None | Some(Token(0)) => raddr.as_ref(),
-                Some(Token(idx)) => &extra_raddrs.as_ref()[idx as usize - 1],
-            }
+            // accept or deny connection, or select a remote peer.
+            hook::pre_connect_hook(&mut local, raddr.as_ref(), extra_raddrs.as_ref()).await?
         }
 
-        #[cfg(not(any(feature = "hook", feature = "balance")))]
+        #[cfg(not(feature = "hook"))]
         raddr.as_ref()
     };
 
     // connect!
+    #[cfg(feature = "balance")]
+    let mut remote = {
+        match socket::connect(raddr, conn_opts.as_ref()).await {
+            Ok(stream) => {
+                balancer.on_success(balance_token);
+                stream
+            }
+            Err(e) => {
+                balancer.on_failure(balance_token);
+                return Err(e);
+            }
+        }
+    };
+
+    #[cfg(not(feature = "balance"))]
     let mut remote = socket::connect(raddr, conn_opts.as_ref()).await?;
+
     log::info!("[tcp]{} => {} as {}", local.peer_addr()?, raddr, remote.peer_addr()?);
 
     // after connected

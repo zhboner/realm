@@ -59,6 +59,15 @@ pub struct NetConf {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub udp_timeout: Option<usize>,
+
+    // Health check options
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_fails: Option<u32>,
+
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fail_timeout: Option<u32>,
 }
 
 #[derive(Debug)]
@@ -67,6 +76,8 @@ pub struct NetInfo {
     pub conn_opts: ConnectOpts,
     pub no_tcp: bool,
     pub use_udp: bool,
+    pub max_fails: u32,
+    pub fail_timeout_ms: u32,
 }
 
 impl Config for NetConf {
@@ -77,7 +88,8 @@ impl Config for NetConf {
             no_tcp, use_udp, ipv6_only,
             send_mptcp, accept_mptcp,
             send_proxy, accept_proxy, send_proxy_version, accept_proxy_timeout,
-            tcp_keepalive, tcp_keepalive_probe, tcp_timeout, udp_timeout
+            tcp_keepalive, tcp_keepalive_probe, tcp_timeout, udp_timeout,
+            max_fails, fail_timeout
         ]
     }
 
@@ -100,6 +112,10 @@ impl Config for NetConf {
         let tcp_kpa_probe = unbox!(tcp_keepalive_probe, TCP_KEEPALIVE_PROBE);
         let tcp_timeout = unbox!(tcp_timeout, TCP_TIMEOUT);
         let udp_timeout = unbox!(udp_timeout, UDP_TIMEOUT);
+
+        // Health check options
+        let max_fails = unbox!(max_fails, 2);
+        let fail_timeout_ms = unbox!(fail_timeout, 120000);
 
         let bind_opts = BindOpts {
             ipv6_only,
@@ -144,6 +160,8 @@ impl Config for NetConf {
             conn_opts,
             no_tcp,
             use_udp,
+            max_fails,
+            fail_timeout_ms,
         }
     }
 
@@ -161,6 +179,8 @@ impl Config for NetConf {
         rst!(self, tcp_timeout, other);
         rst!(self, udp_timeout, other);
         rst!(self, send_proxy, other);
+        rst!(self, max_fails, other);
+        rst!(self, fail_timeout, other);
         rst!(self, accept_proxy, other);
         rst!(self, send_proxy_version, other);
         rst!(self, accept_proxy_timeout, other);
@@ -181,6 +201,8 @@ impl Config for NetConf {
         take!(self, tcp_timeout, other);
         take!(self, udp_timeout, other);
         take!(self, send_proxy, other);
+        take!(self, max_fails, other);
+        take!(self, fail_timeout, other);
         take!(self, accept_proxy, other);
         take!(self, send_proxy_version, other);
         take!(self, accept_proxy_timeout, other);
@@ -234,6 +256,8 @@ impl Config for NetConf {
             accept_proxy,
             send_proxy_version,
             accept_proxy_timeout,
+            max_fails: None,
+            fail_timeout: None,
         }
     }
 }
