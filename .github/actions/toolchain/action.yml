@@ -59,10 +59,14 @@ runs:
         key: zigbuild-${{ runner.os }}
         restore-keys: zigbuild-${{ runner.os }}
 
+    - name: reset target directory
+      run: cargo clean 2>/dev/null || true
+      shell: bash
+
     - uses: Swatinem/rust-cache@v2
       with:
         prefix-key: "rustc"
-        shared-key: ${{ inputs.target }}
+        shared-key: ${{ inputs.target }}${{ inputs.zigbuild == 'true' && '-zigbuild' || '' }}
         add-job-id-key: "false"
         add-rust-environment-hash-key: "false"
         env-vars: ""
