@@ -51,7 +51,7 @@ jobs:
           - aarch64-apple-ios
     steps:
       - uses: actions/checkout@v6
-      - run: mkdir -p out/${{ matrix.target }} && mkdir -p out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+      - run: mkdir -p out/${{ matrix.target }}
       # cross
       - name: build cross
         if: |
@@ -62,16 +62,6 @@ jobs:
           mode: cross
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
-      # cross-zigbuild-glibc
-      - name: try build cross-zigbuild-glibc
-        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
-        continue-on-error: true # may fail on some targets due to compiler-rt issues
-        uses: ./.github/actions/build/cross
-        with:
-          mode: zigbuild
-          zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
-          target: ${{ matrix.target }}
-          outdir: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
       # windows
       - name: build windows
         if: contains(matrix.target, 'msvc')
@@ -91,13 +81,50 @@ jobs:
         run: |
           tar -C out/${{ matrix.target }} -zcf out/${{ matrix.target }}/realm-${{ matrix.target }}.tar.gz realm
           tar -C out/${{ matrix.target }} -zcf out/${{ matrix.target }}/realm-slim-${{ matrix.target }}.tar.gz realm-slim
-          [ -f out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/realm ] && \
-            tar -C out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }} -zcf out/${{ matrix.target }}/realm-${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}.tar.gz realm
-          [ -f out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/realm-slim ] && \
-            tar -C out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }} -zcf out/${{ matrix.target }}/realm-slim-${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}.tar.gz realm-slim
       - name: release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: out/${{ matrix.target }}/*.tar.gz
+
+  zigbuild-glibc:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - arm-unknown-linux-gnueabi
+          - arm-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabi
+          - armv7-unknown-linux-gnueabihf
+          - mips-unknown-linux-gnu
+          - mipsel-unknown-linux-gnu
+          - mips64-unknown-linux-gnuabi64
+          - mips64el-unknown-linux-gnuabi64
+    steps:
+      - uses: actions/checkout@v6
+      - run: mkdir -p out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+      - name: try build cross-zigbuild-glibc
+        id: try-zigbuild
+        continue-on-error: true # may fail on some targets due to compiler-rt issues
+        uses: ./.github/actions/build/cross
+        with:
+          mode: zigbuild
+          zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
+          target: ${{ matrix.target }}
+          outdir: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+      # finalize
+      - name: gzip binaries (cross-zigbuild-glibc)
+        if: ${{ steps.try-zigbuild.outcome == 'success' }}
+        run: |
+          tar -C out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }} -zcf out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/realm-${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}.tar.gz realm
+          tar -C out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }} -zcf out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/realm-slim-${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}.tar.gz realm-slim
+      - name: release (cross-zigbuild-glibc)
+        if: ${{ steps.try-zigbuild.outcome == 'success' }}
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}/*.tar.gz

@@ -59,7 +59,7 @@ jobs:
           - aarch64-apple-ios
     steps:
       - uses: actions/checkout@v6
-      - run: mkdir -p out/${{ matrix.target }} && mkdir -p out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+      - run: mkdir -p out/${{ matrix.target }}
       # cross
       - name: build cross
         if: |
@@ -70,17 +70,6 @@ jobs:
           mode: cross
           target: ${{ matrix.target }}
           outdir: out/${{ matrix.target }}
-      # cross-zigbuild-glibc
-      - name: try build cross-zigbuild-glibc
-        id: try-zigbuild
-        if: contains(matrix.target, 'linux') && contains(matrix.target, 'gnu')
-        continue-on-error: true # may fail on some targets due to compiler-rt issues
-        uses: ./.github/actions/build/cross
-        with:
-          mode: zigbuild
-          zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
-          target: ${{ matrix.target }}
-          outdir: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
       # windows
       - name: build windows
         if: contains(matrix.target, 'msvc')
@@ -106,6 +95,35 @@ jobs:
         with:
           name: realm-slim-${{ matrix.target }}
           path: out/${{ matrix.target }}/realm-slim
+
+  build-glibc:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - arm-unknown-linux-gnueabi
+          - arm-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabi
+          - armv7-unknown-linux-gnueabihf
+          - mips-unknown-linux-gnu
+          - mipsel-unknown-linux-gnu
+          - mips64-unknown-linux-gnuabi64
+          - mips64el-unknown-linux-gnuabi64
+    steps:
+      - uses: actions/checkout@v6
+      - run: mkdir -p out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+      - name: try build cross-zigbuild-glibc
+        id: try-zigbuild
+        continue-on-error: true # may fail on some targets due to compiler-rt issues
+        uses: ./.github/actions/build/cross
+        with:
+          mode: zigbuild
+          zigbuild-glibc: ${{ env.ZIGBUILD_GLIBC }}
+          target: ${{ matrix.target }}
+          outdir: out/${{ matrix.target }}-glibc${{ env.ZIGBUILD_GLIBC }}
+      # finalize
       - name: upload binary (cross-zigbuild-glibc)
         if: ${{ steps.try-zigbuild.outcome == 'success' }}
         uses: actions/upload-artifact@v6

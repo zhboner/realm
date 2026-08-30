@@ -59,10 +59,6 @@ runs:
         key: zigbuild-${{ runner.os }}
         restore-keys: zigbuild-${{ runner.os }}
 
-    - name: reset target directory
-      run: cargo clean 2>/dev/null || true
-      shell: bash
-
     - uses: Swatinem/rust-cache@v2
       with:
         prefix-key: "rustc"
